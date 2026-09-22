@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>divine. — Admin</title><link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="analysis-page"><main class="shell"><a class="admin-home" href="./">Home</a><p class="eyebrow">PRIVATE EVENT CONTROL</p><h2>Admin overview</h2><div id="overview" class="card">Loading…</div><section id="simulation" class="hidden"><h2>Result simulation</h2><p class="muted">Choose a provisional finish order. Preview does not publish results or change the event.</p><div class="simulation-controls"><label for="simulation-alpha"><strong>UCI-points strength</strong><input id="simulation-alpha" type="number" min="0" max="1" step="0.01" value="0.50" /></label><input id="simulation-alpha-range" type="range" min="0" max="1" step="0.01" value="0.50" aria-label="UCI points strength" /><span id="simulation-alpha-value">0.50</span><button id="roll-dice" type="button">Roll dice</button></div><p id="simulation-help" class="muted">0.00: every starter is equally likely. 1.00: the top 10 UCI-points riders, in order.</p><div id="result-slots" class="riders"></div><button id="simulate" class="accent">Preview scoring</button><section id="simulation-output" class="card simulation-leaderboard"></section></section></main>
+    <script src="config.js"></script>
+    <script src="leaderboard-ui.js"></script>
+    <script>
+      const API_BASE_URL = (window.DIVINE_API_BASE_URL || '').replace(/\/$/, '');
+      const adminKey = sessionStorage.getItem('divine-admin-key') || window.prompt('Admin key');
+      if (adminKey) sessionStorage.setItem('divine-admin-key', adminKey);
+      const request = async (url, options = {}) => { const response = await fetch(`${API_BASE_URL}${url}`, {headers:{"Content-Type":"application/json", "X-Admin-Key": adminKey || ''}, ...options}); const body = await response.json(); if (!response.ok) throw new Error(body.detail); return body; };
+      const slots = document.querySelector('#result-slots');
+      const alphaInput = document.querySelector('#simulation-alpha');
+      const alphaRange = document.querySelector('#simulation-alpha-range');
+      const alphaValue = document.querySelector('#simulation-alpha-value');
+      let event;
+      const renderSlots = () => { slots.innerHTML = Array.from({length:20}, (_, index) => `<label>${index + 1}. <select data-position="${index + 1}"><option value="">No result entered</option>${event.riders.map(r => `<option value="${r.id}">${r.name} — UCI #${r.uci_rank}</option>`).join('')}</select></label>`).join(''); };
+      const setAlpha = value => { const alpha = Math.max(0, Math.min(1, Number(value) || 0)); const formatted = alpha.toFixed(2); alphaInput.value = formatted; alphaRange.value = formatted; alphaValue.textContent = formatted; };
+      const rollFinish = () => {
+        const alpha = Number(alphaInput.value);
+        const riders = [...event.riders];
+        const result = alpha === 1
+          ? riders.sort((a, b) => (b.uci_points || 0) - (a.uci_points || 0)).slice(0, 20)
+          : weightedSample(riders, alpha);
+        [...slots.querySelectorAll('select')].forEach((select, index) => { select.value = String(result[index].id); });
+        document.querySelector('#simulation-output').textContent = '';
+      };
+      const weightedSample = (riders, alpha) => {
+        const available = [...riders]; const picked = [];
+        // A power curve gives uniform selection at 0, increasingly UCI-point-led draws
+        // through the middle, and hands the exact deterministic case to alpha === 1 above.
+        const exponent = alpha / (1 - alpha);
+        while (picked.length < 20 && available.length) {
+          const logWeights = available.map(rider => exponent * Math.log((rider.uci_points || 0) + 1));
+          const largestLogWeight = Math.max(...logWeights);
+          const weights = logWeights.map(weight => Math.exp(weight - largestLogWeight));
+          let remaining = Math.random() * weights.reduce((sum, weight) => sum + weight, 0);
+          let chosen = weights.findIndex(weight => ((remaining -= weight) <= 0));
+          if (chosen < 0) chosen = available.length - 1;
+          picked.push(available.splice(chosen, 1)[0]);
+        }
+        return picked;
+      };
+      const run = async () => { const results = [...slots.querySelectorAll('select')].filter(s => s.value).map(s => ({position:Number(s.dataset.position), rider_id:Number(s.value)})); const preview = await request(`/api/admin/events/${event.id}/simulate`, {method:'POST', body:JSON.stringify({results})}); window.renderLeaderboard(document.querySelector('#simulation-output'), event, preview); };
+      (async () => { try { const overview = await request('/api/admin/overview'); document.querySelector('#overview').innerHTML = `<p><strong>Rules:</strong> exact ${overview.rules.exact_points}, ±1 ${overview.rules.one_away_points}, ±2 ${overview.rules.two_away_points}, appearance ${overview.rules.appearance_points}; one ${overview.rules.boost_multiplier}× boost; rank margin capped at ${overview.rules.rank_margin_cap}×.</p>${overview.events.map(e => `<p><strong>${e.name}</strong><br>${e.players_joined} joined · ${e.submitted} submitted · ${e.results_entered} results entered · ${e.status}</p>`).join('')}`; if (!overview.events.length) return; event = await request(`/api/admin/events/${overview.events[0].id}`); document.querySelector('#simulation').classList.remove('hidden'); renderSlots(); setAlpha(alphaInput.value); alphaInput.addEventListener('input', event => setAlpha(event.target.value)); alphaRange.addEventListener('input', event => setAlpha(event.target.value)); document.querySelector('#roll-dice').addEventListener('click', rollFinish); document.querySelector('#simulate').addEventListener('click', run); } catch (error) { document.querySelector('#overview').textContent = error.message; } })();
+    </script>
+  </body>
+</html>

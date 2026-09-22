@@ -1,0 +1,42 @@
+﻿race_key,race_label,year,race_name,race_date,classification,category,distance,finishers,startlist_riders,note,url
+world-championship,Worlds RR,2023,90th World Championships ME - Road Race,2023-08-06,WC,ME - Men Elite,271.1 km,51,52,,https://www.procyclingstats.com/race/world-championship/2023/result
+world-championship,Worlds RR,2024,91st World Championships ME - Road Race,2024-09-29,WC,ME - Men Elite,273.9 km,81,84,,https://www.procyclingstats.com/race/world-championship/2024/result
+world-championship,Worlds RR,2025,92nd World Championships ME - Road Race,2025-09-28,WC,ME - Men Elite,267.5 km,30,67,,https://www.procyclingstats.com/race/world-championship/2025/result
+world-championship,Worlds RR,2026,93rd World Championships ME - Road Race,2026-09-27,WC,ME - Men Elite,273.2 km,0,0,not ridden yet,https://www.procyclingstats.com/race/world-championship/2026/result
+strade-bianche,Strade Bianche,2023,17th Strade Bianche,2023-03-04,1.UWT,ME - Men Elite,184 km,129,34,,https://www.procyclingstats.com/race/strade-bianche/2023/result
+strade-bianche,Strade Bianche,2024,18th Strade Bianche,2024-03-02,1.UWT,ME - Men Elite,215 km,105,28,,https://www.procyclingstats.com/race/strade-bianche/2024/result
+strade-bianche,Strade Bianche,2025,19th Strade Bianche,2025-03-08,1.UWT,ME - Men Elite,213 km,98,40,,https://www.procyclingstats.com/race/strade-bianche/2025/result
+strade-bianche,Strade Bianche,2026,20th Strade Bianche,2026-03-07,1.UWT,ME - Men Elite,203 km,117,39,,https://www.procyclingstats.com/race/strade-bianche/2026/result
+san-sebastian,San Sebastián,2023,42nd Donostia San Sebastian Klasikoa,2023-07-29,1.UWT,ME - Men Elite,230.3 km,94,35,,https://www.procyclingstats.com/race/san-sebastian/2023/result
+san-sebastian,San Sebastián,2024,43rd Donostia San Sebastian Klasikoa,2024-08-10,1.UWT,ME - Men Elite,236 km,84,40,,https://www.procyclingstats.com/race/san-sebastian/2024/result
+san-sebastian,San Sebastián,2025,44th Donostia San Sebastian Klasikoa,2025-08-02,1.UWT,ME - Men Elite,211.4 km,103,41,,https://www.procyclingstats.com/race/san-sebastian/2025/result
+san-sebastian,San Sebastián,2026,45th DSSK (Donostia San Sebastian Klasikoa),2026-08-01,1.UWT,ME - Men Elite,221.2 km,106,44,,https://www.procyclingstats.com/race/san-sebastian/2026/result
+gp-quebec,GP Québec,2023,12th Grand Prix Cycliste de Québec,2023-09-08,1.UWT,ME - Men Elite,201.6 km,137,37,,https://www.procyclingstats.com/race/gp-quebec/2023/result
+gp-quebec,GP Québec,2024,13th Grand Prix Cycliste de Québec,2024-09-13,1.UWT,ME - Men Elite,201.6 km,131,38,,https://www.procyclingstats.com/race/gp-quebec/2024/result
+gp-quebec,GP Québec,2025,14th Grand Prix Cycliste de Québec,2025-09-12,1.UWT,ME - Men Elite,216 km,114,40,,https://www.procyclingstats.com/race/gp-quebec/2025/result
+gp-quebec,GP Québec,2026,15th Grand Prix Cycliste de Québec,2026-09-11,1.UWT,ME - Men Elite,206 km,77,54,,https://www.procyclingstats.com/race/gp-quebec/2026/result
+gp-montreal,GP Montréal,2023,12th Grand Prix Cycliste de Montréal,2023-09-10,1.UWT,ME - Men Elite,221.4 km,60,37,,https://www.procyclingstats.com/race/gp-montreal/2023/result
+gp-montreal,GP Montréal,2024,13th Grand Prix Cycliste de Montréal,2024-09-15,1.UWT,ME - Men Elite,209.1 km,89,38,,https://www.procyclingstats.com/race/gp-montreal/2024/result
+gp-montreal,GP Montréal,2025,14th Grand Prix Cycliste de Montréal,2025-09-14,1.UWT,ME - Men Elite,209.1 km,55,40,,https://www.procyclingstats.com/race/gp-montreal/2025/result
+gp-montreal,GP Montréal,2026,15th Grand Prix Cycliste de Montréal,2026-09-13,1.UWT,ME - Men Elite,214.4 km,59,54,,https://www.procyclingstats.com/race/gp-montreal/2026/result
+paris-roubaix,Paris-Roubaix,2023,120th Paris-Roubaix,2023-04-09,1.UWT,ME - Men Elite,256.6 km,135,20,,https://www.procyclingstats.com/race/paris-roubaix/2023/result
+paris-roubaix,Paris-Roubaix,2024,121st Paris-Roubaix,2024-04-07,1.UWT,ME - Men Elite,259.7 km,110,22,,https://www.procyclingstats.com/race/paris-roubaix/2024/result
+paris-roubaix,Paris-Roubaix,2025,122nd Paris-Roubaix,2025-04-13,1.UWT,ME - Men Elite,259.2 km,117,22,,https://www.procyclingstats.com/race/paris-roubaix/2025/result
+paris-roubaix,Paris-Roubaix,2026,123rd Paris-Roubaix Hauts-de-France,2026-04-12,1.UWT,ME - Men Elite,258.3 km,141,26,,https://www.procyclingstats.com/race/paris-roubaix/2026/result
+ronde-van-vlaanderen,Ronde van Vlaanderen,2023,107th Ronde van Vlaanderen - Tour des Flandres ME,2023-04-02,1.UWT,ME - Men Elite,273.4 km,96,28,,https://www.procyclingstats.com/race/ronde-van-vlaanderen/2023/result
+ronde-van-vlaanderen,Ronde van Vlaanderen,2024,108th Ronde van Vlaanderen - Tour des Flandres ME,2024-03-31,1.UWT,ME - Men Elite,270.8 km,87,31,,https://www.procyclingstats.com/race/ronde-van-vlaanderen/2024/result
+ronde-van-vlaanderen,Ronde van Vlaanderen,2025,109th Ronde van Vlaanderen - Tour des Flandres ME,2025-04-06,1.UWT,ME - Men Elite,268.9 km,113,33,,https://www.procyclingstats.com/race/ronde-van-vlaanderen/2025/result
+ronde-van-vlaanderen,Ronde van Vlaanderen,2026,110th Ronde van Vlaanderen ME,2026-04-05,1.UWT,ME - Men Elite,278.2 km,121,31,,https://www.procyclingstats.com/race/ronde-van-vlaanderen/2026/result
+milano-sanremo,Milano-Sanremo,2023,114th Milano-Sanremo,2023-03-18,1.UWT,ME - Men Elite,294 km,170,33,,https://www.procyclingstats.com/race/milano-sanremo/2023/result
+milano-sanremo,Milano-Sanremo,2024,115th Milano-Sanremo,2024-03-16,1.UWT,ME - Men Elite,288 km,164,34,,https://www.procyclingstats.com/race/milano-sanremo/2024/result
+milano-sanremo,Milano-Sanremo,2025,116th Milano-Sanremo,2025-03-22,1.UWT,ME - Men Elite,289 km,169,39,,https://www.procyclingstats.com/race/milano-sanremo/2025/result
+milano-sanremo,Milano-Sanremo,2026,117th Milano-Sanremo,2026-03-21,1.UWT,ME - Men Elite,298 km,168,41,,https://www.procyclingstats.com/race/milano-sanremo/2026/result
+liege-bastogne-liege,Liège-Bastogne-Liège,2023,109th Liège-Bastogne-Liège,2023-04-23,1.UWT,ME - Men Elite,258.1 km,113,37,,https://www.procyclingstats.com/race/liege-bastogne-liege/2023/result
+liege-bastogne-liege,Liège-Bastogne-Liège,2024,110th Liège-Bastogne-Liège,2024-04-21,1.UWT,ME - Men Elite,254.5 km,117,38,,https://www.procyclingstats.com/race/liege-bastogne-liege/2024/result
+liege-bastogne-liege,Liège-Bastogne-Liège,2025,111th Liège-Bastogne-Liège,2025-04-27,1.UWT,ME - Men Elite,252 km,129,43,,https://www.procyclingstats.com/race/liege-bastogne-liege/2025/result
+liege-bastogne-liege,Liège-Bastogne-Liège,2026,112th Liège-Bastogne-Liège,2026-04-26,1.UWT,ME - Men Elite,259.5 km,105,47,,https://www.procyclingstats.com/race/liege-bastogne-liege/2026/result
+il-lombardia,Il Lombardia,2023,117th Il Lombardia,2023-10-07,1.UWT,ME - Men Elite,238 km,122,38,,https://www.procyclingstats.com/race/il-lombardia/2023/result
+il-lombardia,Il Lombardia,2024,118th Il Lombardia,2024-10-12,1.UWT,ME - Men Elite,255 km,119,40,,https://www.procyclingstats.com/race/il-lombardia/2024/result
+il-lombardia,Il Lombardia,2025,119th Il Lombardia,2025-10-11,1.UWT,ME - Men Elite,241 km,96,44,,https://www.procyclingstats.com/race/il-lombardia/2025/result
+il-lombardia,Il Lombardia,2026,120th Il Lombardia,2026-10-10,1.UWT,ME - Men Elite,0 km,0,0,not ridden yet,https://www.procyclingstats.com/race/il-lombardia/2026/result
+olympic-games,Olympics RR,2024,Olympic Games ME - Road Race,2024-08-03,Olympics,ME - Men Elite,272.1 km,77,40,,https://www.procyclingstats.com/race/olympic-games/2024/result

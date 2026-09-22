@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>divine. — Leaderboard</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="analysis-page">
+    <main class="shell">
+      <p class="eyebrow">ROAD WORLDS / FINAL RESULTS</p>
+      <h2>Leaderboard</h2>
+      <div id="leaderboard" class="card">Loading…</div>
+    </main>
+    <script src="config.js"></script>
+    <script src="leaderboard-ui.js"></script>
+    <script>
+      const API_BASE_URL = (window.DIVINE_API_BASE_URL || '').replace(/\/$/, '');
+      (async () => {
+        const node = document.querySelector('#leaderboard');
+        const eventResponse = await fetch(`${API_BASE_URL}/api/events/latest-finished`);
+        if (!eventResponse.ok) {
+          node.textContent = 'Leaderboard is available after the race is finalized.';
+          return;
+        }
+        const event = await eventResponse.json();
+        const boardResponse = await fetch(`${API_BASE_URL}/api/events/${event.id}/leaderboard`);
+        const leaderboard = await boardResponse.json();
+        if (!boardResponse.ok) throw new Error(leaderboard.detail);
+        window.renderLeaderboard(node, event, leaderboard);
+      })().catch(error => {
+        document.querySelector('#leaderboard').textContent = error.message;
+      });
+    </script>
+  </body>
+</html>

@@ -178,4 +178,3 @@ loads the checked-in 2026 Road Worlds data instead.
 - Entering an existing username is the deliberate "sign in" flow. It is convenient for a trusted friend group, but it is not authentication: anyone who knows a username can edit that player's prediction.
 - Lock submissions at the configured event start time and retain an audit-friendly scoring version.
 - Treat external UCI data as unreliable input: validate, timestamp, cache, and expose the source timestamp to users.
-

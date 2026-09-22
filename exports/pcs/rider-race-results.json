@@ -1,0 +1,8985 @@
+{
+  "generated_at": "2026-09-22T17:16:11",
+  "years": [
+    2023,
+    2024,
+    2025,
+    2026
+  ],
+  "races": [
+    {
+      "key": "world-championship",
+      "label": "Worlds RR",
+      "editions": {
+        "2023": {
+          "name": "90th World Championships ME - Road Race",
+          "date": "2023-08-06",
+          "url": "https://www.procyclingstats.com/race/world-championship/2023/result",
+          "has_result": true,
+          "note": ""
+        },
+        "2024": {
+          "name": "91st World Championships ME - Road Race",
+          "date": "2024-09-29",
+          "url": "https://www.procyclingstats.com/race/world-championship/2024/result",
+          "has_result": true,
+          "note": ""
+        },
+        "2025": {
+          "name": "92nd World Championships ME - Road Race",
+          "date": "2025-09-28",
+          "url": "https://www.procyclingstats.com/race/world-championship/2025/result",
+          "has_result": true,
+          "note": ""
+        },
+        "2026": {
+          "name": "93rd World Championships ME - Road Race",
+          "date": "2026-09-27",
+          "url": "https://www.procyclingstats.com/race/world-championship/2026/result",
+          "has_result": false,
+          "note": "not ridden yet"
+        }
+      }
+    },
+    {
+      "key": "strade-bianche",
+      "label": "Strade Bianche",
+      "editions": {
+        "2023": {
+          "name": "17th Strade Bianche",
+          "date": "2023-03-04",
+          "url": "https://www.procyclingstats.com/race/strade-bianche/2023/result",
+          "has_result": true,
+          "note": ""
+        },
+        "2024": {
+          "name": "18th Strade Bianche",
+          "date": "2024-03-02",
+          "url": "https://www.procyclingstats.com/race/strade-bianche/2024/result",
+          "has_result": true,
+          "note": ""
+        },
+        "2025": {
+          "name": "19th Strade Bianche",
+          "date": "2025-03-08",
+          "url": "https://www.procyclingstats.com/race/strade-bianche/2025/result",
+          "has_result": true,
+          "note": ""
+        },
+        "2026": {
+          "name": "20th Strade Bianche",
+          "date": "2026-03-07",
+          "url": "https://www.procyclingstats.com/race/strade-bianche/2026/result",
+          "has_result": true,
+          "note": ""
+        }
+      }
+    },
+    {
+      "key": "san-sebastian",
+      "label": "San Sebastián",
+      "editions": {
+        "2023": {
+          "name": "42nd Donostia San Sebastian Klasikoa",
+          "date": "2023-07-29",
+          "url": "https://www.procyclingstats.com/race/san-sebastian/2023/result",
+          "has_result": true,
+          "note": ""
+        },
+        "2024": {
+          "name": "43rd Donostia San Sebastian Klasikoa",
+          "date": "2024-08-10",
+          "url": "https://www.procyclingstats.com/race/san-sebastian/2024/result",
+          "has_result": true,
+          "note": ""
+        },
+        "2025": {
+          "name": "44th Donostia San Sebastian Klasikoa",
+          "date": "2025-08-02",
+          "url": "https://www.procyclingstats.com/race/san-sebastian/2025/result",
+          "has_result": true,
+          "note": ""
+        },
+        "2026": {
+          "name": "45th DSSK (Donostia San Sebastian Klasikoa)",
+          "date": "2026-08-01",
+          "url": "https://www.procyclingstats.com/race/san-sebastian/2026/result",
+          "has_result": true,
+          "note": ""
+        }
+      }
+    },
+    {
+      "key": "gp-quebec",
+      "label": "GP Québec",
+      "editions": {
+        "2023": {
+          "name": "12th Grand Prix Cycliste de Québec",
+          "date": "2023-09-08",
+          "url": "https://www.procyclingstats.com/race/gp-quebec/2023/result",
+          "has_result": true,
+          "note": ""
+        },
+        "2024": {
+          "name": "13th Grand Prix Cycliste de Québec",
+          "date": "2024-09-13",
+          "url": "https://www.procyclingstats.com/race/gp-quebec/2024/result",
+          "has_result": true,
+          "note": ""
+        },
+        "2025": {
+          "name": "14th Grand Prix Cycliste de Québec",
+          "date": "2025-09-12",
+          "url": "https://www.procyclingstats.com/race/gp-quebec/2025/result",
+          "has_result": true,
+          "note": ""
+        },
+        "2026": {
+          "name": "15th Grand Prix Cycliste de Québec",
+          "date": "2026-09-11",
+          "url": "https://www.procyclingstats.com/race/gp-quebec/2026/result",
+          "has_result": true,
+          "note": ""
+        }
+      }
+    },
+    {
+      "key": "gp-montreal",
+      "label": "GP Montréal",
+      "editions": {
+        "2023": {
+          "name": "12th Grand Prix Cycliste de Montréal",
+          "date": "2023-09-10",
+          "url": "https://www.procyclingstats.com/race/gp-montreal/2023/result",
+          "has_result": true,
+          "note": ""
+        },
+        "2024": {
+          "name": "13th Grand Prix Cycliste de Montréal",
+          "date": "2024-09-15",
+          "url": "https://www.procyclingstats.com/race/gp-montreal/2024/result",
+          "has_result": true,
+          "note": ""
+        },
+        "2025": {
+          "name": "14th Grand Prix Cycliste de Montréal",
+          "date": "2025-09-14",
+          "url": "https://www.procyclingstats.com/race/gp-montreal/2025/result",
+          "has_result": true,
+          "note": ""
+        },
+        "2026": {
+          "name": "15th Grand Prix Cycliste de Montréal",
+          "date": "2026-09-13",
+          "url": "https://www.procyclingstats.com/race/gp-montreal/2026/result",
+          "has_result": true,
+          "note": ""
+        }
+      }
+    },
+    {
+      "key": "paris-roubaix",
+      "label": "Paris-Roubaix",
+      "editions": {
+        "2023": {
+          "name": "120th Paris-Roubaix",
+          "date": "2023-04-09",
+          "url": "https://www.procyclingstats.com/race/paris-roubaix/2023/result",
+          "has_result": true,
+          "note": ""
+        },
+        "2024": {
+          "name": "121st Paris-Roubaix",
+          "date": "2024-04-07",
+          "url": "https://www.procyclingstats.com/race/paris-roubaix/2024/result",
+          "has_result": true,
+          "note": ""
+        },
+        "2025": {
+          "name": "122nd Paris-Roubaix",
+          "date": "2025-04-13",
+          "url": "https://www.procyclingstats.com/race/paris-roubaix/2025/result",
+          "has_result": true,
+          "note": ""
+        },
+        "2026": {
+          "name": "123rd Paris-Roubaix Hauts-de-France",
+          "date": "2026-04-12",
+          "url": "https://www.procyclingstats.com/race/paris-roubaix/2026/result",
+          "has_result": true,
+          "note": ""
+        }
+      }
+    },
+    {
+      "key": "ronde-van-vlaanderen",
+      "label": "Ronde van Vlaanderen",
+      "editions": {
+        "2023": {
+          "name": "107th Ronde van Vlaanderen - Tour des Flandres ME",
+          "date": "2023-04-02",
+          "url": "https://www.procyclingstats.com/race/ronde-van-vlaanderen/2023/result",
+          "has_result": true,
+          "note": ""
+        },
+        "2024": {
+          "name": "108th Ronde van Vlaanderen - Tour des Flandres ME",
+          "date": "2024-03-31",
+          "url": "https://www.procyclingstats.com/race/ronde-van-vlaanderen/2024/result",
+          "has_result": true,
+          "note": ""
+        },
+        "2025": {
+          "name": "109th Ronde van Vlaanderen - Tour des Flandres ME",
+          "date": "2025-04-06",
+          "url": "https://www.procyclingstats.com/race/ronde-van-vlaanderen/2025/result",
+          "has_result": true,
+          "note": ""
+        },
+        "2026": {
+          "name": "110th Ronde van Vlaanderen ME",
+          "date": "2026-04-05",
+          "url": "https://www.procyclingstats.com/race/ronde-van-vlaanderen/2026/result",
+          "has_result": true,
+          "note": ""
+        }
+      }
+    },
+    {
+      "key": "milano-sanremo",
+      "label": "Milano-Sanremo",
+      "editions": {
+        "2023": {
+          "name": "114th Milano-Sanremo",
+          "date": "2023-03-18",
+          "url": "https://www.procyclingstats.com/race/milano-sanremo/2023/result",
+          "has_result": true,
+          "note": ""
+        },
+        "2024": {
+          "name": "115th Milano-Sanremo",
+          "date": "2024-03-16",
+          "url": "https://www.procyclingstats.com/race/milano-sanremo/2024/result",
+          "has_result": true,
+          "note": ""
+        },
+        "2025": {
+          "name": "116th Milano-Sanremo",
+          "date": "2025-03-22",
+          "url": "https://www.procyclingstats.com/race/milano-sanremo/2025/result",
+          "has_result": true,
+          "note": ""
+        },
+        "2026": {
+          "name": "117th Milano-Sanremo",
+          "date": "2026-03-21",
+          "url": "https://www.procyclingstats.com/race/milano-sanremo/2026/result",
+          "has_result": true,
+          "note": ""
+        }
+      }
+    },
+    {
+      "key": "liege-bastogne-liege",
+      "label": "Liège-Bastogne-Liège",
+      "editions": {
+        "2023": {
+          "name": "109th Liège-Bastogne-Liège",
+          "date": "2023-04-23",
+          "url": "https://www.procyclingstats.com/race/liege-bastogne-liege/2023/result",
+          "has_result": true,
+          "note": ""
+        },
+        "2024": {
+          "name": "110th Liège-Bastogne-Liège",
+          "date": "2024-04-21",
+          "url": "https://www.procyclingstats.com/race/liege-bastogne-liege/2024/result",
+          "has_result": true,
+          "note": ""
+        },
+        "2025": {
+          "name": "111th Liège-Bastogne-Liège",
+          "date": "2025-04-27",
+          "url": "https://www.procyclingstats.com/race/liege-bastogne-liege/2025/result",
+          "has_result": true,
+          "note": ""
+        },
+        "2026": {
+          "name": "112th Liège-Bastogne-Liège",
+          "date": "2026-04-26",
+          "url": "https://www.procyclingstats.com/race/liege-bastogne-liege/2026/result",
+          "has_result": true,
+          "note": ""
+        }
+      }
+    },
+    {
+      "key": "il-lombardia",
+      "label": "Il Lombardia",
+      "editions": {
+        "2023": {
+          "name": "117th Il Lombardia",
+          "date": "2023-10-07",
+          "url": "https://www.procyclingstats.com/race/il-lombardia/2023/result",
+          "has_result": true,
+          "note": ""
+        },
+        "2024": {
+          "name": "118th Il Lombardia",
+          "date": "2024-10-12",
+          "url": "https://www.procyclingstats.com/race/il-lombardia/2024/result",
+          "has_result": true,
+          "note": ""
+        },
+        "2025": {
+          "name": "119th Il Lombardia",
+          "date": "2025-10-11",
+          "url": "https://www.procyclingstats.com/race/il-lombardia/2025/result",
+          "has_result": true,
+          "note": ""
+        },
+        "2026": {
+          "name": "120th Il Lombardia",
+          "date": "2026-10-10",
+          "url": "https://www.procyclingstats.com/race/il-lombardia/2026/result",
+          "has_result": false,
+          "note": "not ridden yet"
+        }
+      }
+    },
+    {
+      "key": "olympic-games",
+      "label": "Olympics RR",
+      "editions": {
+        "2024": {
+          "name": "Olympic Games ME - Road Race",
+          "date": "2024-08-03",
+          "url": "https://www.procyclingstats.com/race/olympic-games/2024/result",
+          "has_result": true,
+          "note": ""
+        }
+      }
+    }
+  ],
+  "riders": {
+    "adam-yates": {
+      "name": "Adam Yates",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": 30,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 17,
+            "status": ""
+          },
+          "2025": {
+            "rank": 28,
+            "status": ""
+          },
+          "2026": {
+            "rank": 56,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": 1,
+            "status": ""
+          },
+          "2025": {
+            "rank": 5,
+            "status": ""
+          },
+          "2026": {
+            "rank": 13,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": 6,
+            "status": ""
+          },
+          "2024": {
+            "rank": 81,
+            "status": ""
+          },
+          "2025": {
+            "rank": 11,
+            "status": ""
+          }
+        }
+      }
+    },
+    "afonso-eulalio": {
+      "name": "Afonso Eulálio",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": 9,
+            "status": ""
+          }
+        },
+        "strade-bianche": {
+          "2025": {
+            "rank": 46,
+            "status": ""
+          },
+          "2026": {
+            "rank": 27,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2026": {
+            "rank": 47,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2025": {
+            "rank": 33,
+            "status": ""
+          },
+          "2026": {
+            "rank": 33,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": 9,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2026": {
+            "rank": 62,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2025": {
+            "rank": 96,
+            "status": ""
+          }
+        }
+      }
+    },
+    "alberto-bettiol": {
+      "name": "Alberto Bettiol",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": 10,
+            "status": ""
+          }
+        },
+        "strade-bianche": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": 24,
+            "status": ""
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": 103,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": 12,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": 20,
+            "status": ""
+          },
+          "2025": {
+            "rank": 3,
+            "status": ""
+          },
+          "2026": {
+            "rank": 22,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": 10,
+            "status": ""
+          },
+          "2026": {
+            "rank": 12,
+            "status": ""
+          }
+        },
+        "paris-roubaix": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2024": {
+            "rank": 9,
+            "status": ""
+          },
+          "2026": {
+            "rank": 24,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 54,
+            "status": ""
+          },
+          "2024": {
+            "rank": 5,
+            "status": ""
+          },
+          "2025": {
+            "rank": 57,
+            "status": ""
+          },
+          "2026": {
+            "rank": 103,
+            "status": ""
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 23,
+            "status": ""
+          }
+        }
+      }
+    },
+    "alec-segaert": {
+      "name": "Alec Segaert",
+      "results": {
+        "gp-quebec": {
+          "2026": {
+            "rank": 65,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2026": {
+            "rank": 55,
+            "status": ""
+          }
+        },
+        "paris-roubaix": {
+          "2024": {
+            "rank": 66,
+            "status": ""
+          },
+          "2025": {
+            "rank": 87,
+            "status": ""
+          },
+          "2026": {
+            "rank": 16,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2025": {
+            "rank": 32,
+            "status": ""
+          },
+          "2026": {
+            "rank": 15,
+            "status": ""
+          }
+        }
+      }
+    },
+    "alex-baudin": {
+      "name": "Alex Baudin",
+      "results": {
+        "san-sebastian": {
+          "2023": {
+            "rank": 29,
+            "status": ""
+          },
+          "2024": {
+            "rank": 59,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2024": {
+            "rank": 14,
+            "status": ""
+          },
+          "2025": {
+            "rank": 46,
+            "status": ""
+          },
+          "2026": {
+            "rank": 14,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2024": {
+            "rank": 38,
+            "status": ""
+          },
+          "2025": {
+            "rank": 18,
+            "status": ""
+          },
+          "2026": {
+            "rank": 11,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": 109,
+            "status": ""
+          },
+          "2025": {
+            "rank": 30,
+            "status": ""
+          },
+          "2026": {
+            "rank": 19,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2025": {
+            "rank": 29,
+            "status": ""
+          }
+        }
+      }
+    },
+    "alexandre-mayer": {
+      "name": "Alexandre Mayer",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "alfred-wright": {
+      "name": "Fred Wright",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-quebec": {
+          "2025": {
+            "rank": 15,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "paris-roubaix": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": 12,
+            "status": ""
+          },
+          "2025": {
+            "rank": 9,
+            "status": ""
+          },
+          "2026": {
+            "rank": 133,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2023": {
+            "rank": 8,
+            "status": ""
+          },
+          "2024": {
+            "rank": 50,
+            "status": ""
+          },
+          "2025": {
+            "rank": 23,
+            "status": ""
+          },
+          "2026": {
+            "rank": 74,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 79,
+            "status": ""
+          },
+          "2024": {
+            "rank": 30,
+            "status": ""
+          },
+          "2025": {
+            "rank": 10,
+            "status": ""
+          },
+          "2026": {
+            "rank": 52,
+            "status": ""
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 43,
+            "status": ""
+          }
+        }
+      }
+    },
+    "amanuel-ghebreigzabhier": {
+      "name": "Amanuel Ghebreigzabhier",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": 30,
+            "status": ""
+          }
+        },
+        "strade-bianche": {
+          "2023": {
+            "rank": 81,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2024": {
+            "rank": 80,
+            "status": ""
+          },
+          "2025": {
+            "rank": 69,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": 78,
+            "status": ""
+          }
+        }
+      }
+    },
+    "anders-skaarseth": {
+      "name": "Anders Skaarseth",
+      "results": {
+        "strade-bianche": {
+          "2026": {
+            "rank": 107,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": 103,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2024": {
+            "rank": 63,
+            "status": ""
+          },
+          "2025": {
+            "rank": 37,
+            "status": ""
+          },
+          "2026": {
+            "rank": 52,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2024": {
+            "rank": 60,
+            "status": ""
+          },
+          "2025": {
+            "rank": 49,
+            "status": ""
+          },
+          "2026": {
+            "rank": 48,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "milano-sanremo": {
+          "2025": {
+            "rank": 122,
+            "status": ""
+          },
+          "2026": {
+            "rank": 95,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2024": {
+            "rank": 110,
+            "status": ""
+          }
+        }
+      }
+    },
+    "andreas-kron": {
+      "name": "Andreas Kron",
+      "results": {
+        "strade-bianche": {
+          "2023": {
+            "rank": 10,
+            "status": ""
+          },
+          "2026": {
+            "rank": 9,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2024": {
+            "rank": 16,
+            "status": ""
+          },
+          "2025": {
+            "rank": 12,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": 37,
+            "status": ""
+          },
+          "2026": {
+            "rank": 65,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": 10,
+            "status": ""
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "andreas-leknessund": {
+      "name": "Andreas Leknessund",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": 50,
+            "status": ""
+          },
+          "2024": {
+            "rank": 75,
+            "status": ""
+          },
+          "2025": {
+            "rank": 25,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": 90,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 122,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "liege-bastogne-liege": {
+          "2024": {
+            "rank": 61,
+            "status": ""
+          },
+          "2025": {
+            "rank": 17,
+            "status": ""
+          },
+          "2026": {
+            "rank": 28,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2024": {
+            "rank": 77,
+            "status": ""
+          },
+          "2025": {
+            "rank": 79,
+            "status": ""
+          }
+        }
+      }
+    },
+    "andreas-miltiadis": {
+      "name": "Andreas Miltiadis",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "anthon-charmig": {
+      "name": "Anthon Charmig",
+      "results": {
+        "world-championship": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "san-sebastian": {
+          "2024": {
+            "rank": 32,
+            "status": ""
+          },
+          "2025": {
+            "rank": 18,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2025": {
+            "rank": 7,
+            "status": ""
+          },
+          "2026": {
+            "rank": 3,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2025": {
+            "rank": 26,
+            "status": ""
+          },
+          "2026": {
+            "rank": 39,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": 97,
+            "status": ""
+          },
+          "2024": {
+            "rank": 63,
+            "status": ""
+          },
+          "2026": {
+            "rank": 99,
+            "status": ""
+          }
+        }
+      }
+    },
+    "anton-kuzmin": {
+      "name": "Anton Kuzmin",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "strade-bianche": {
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "san-sebastian": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "liege-bastogne-liege": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "antonio-morgado": {
+      "name": "António Morgado",
+      "results": {
+        "world-championship": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "paris-roubaix": {
+          "2024": {
+            "rank": 87,
+            "status": ""
+          },
+          "2025": {
+            "rank": 24,
+            "status": ""
+          },
+          "2026": {
+            "rank": 118,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2024": {
+            "rank": 5,
+            "status": ""
+          },
+          "2025": {
+            "rank": 90,
+            "status": ""
+          },
+          "2026": {
+            "rank": 105,
+            "status": ""
+          }
+        }
+      }
+    },
+    "artem-shmidt": {
+      "name": "Artem Shmidt",
+      "results": {
+        "strade-bianche": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": 112,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2024": {
+            "rank": 95,
+            "status": ""
+          },
+          "2025": {
+            "rank": 51,
+            "status": ""
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-montreal": {
+          "2024": {
+            "rank": 89,
+            "status": ""
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "paris-roubaix": {
+          "2026": {
+            "rank": 113,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2026": {
+            "rank": 51,
+            "status": ""
+          }
+        }
+      }
+    },
+    "arthur-kluckers": {
+      "name": "Arthur Kluckers",
+      "results": {
+        "gp-quebec": {
+          "2023": {
+            "rank": 123,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "paris-roubaix": {
+          "2025": {
+            "rank": 74,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2025": {
+            "rank": 100,
+            "status": ""
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 109,
+            "status": ""
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": 156,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "attila-valter": {
+      "name": "Attila Valter",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": 27,
+            "status": ""
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "strade-bianche": {
+          "2023": {
+            "rank": 5,
+            "status": ""
+          },
+          "2024": {
+            "rank": 19,
+            "status": ""
+          },
+          "2025": {
+            "rank": 22,
+            "status": ""
+          },
+          "2026": {
+            "rank": 70,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2025": {
+            "rank": 57,
+            "status": ""
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-quebec": {
+          "2025": {
+            "rank": 112,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 34,
+            "status": ""
+          },
+          "2025": {
+            "rank": 35,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": 26,
+            "status": ""
+          },
+          "2024": {
+            "rank": 40,
+            "status": ""
+          },
+          "2025": {
+            "rank": 31,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": 22,
+            "status": ""
+          },
+          "2024": {
+            "rank": 46,
+            "status": ""
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 4,
+            "status": ""
+          }
+        }
+      }
+    },
+    "bart-lemmen": {
+      "name": "Bart Lemmen",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "strade-bianche": {
+          "2024": {
+            "rank": 44,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2026": {
+            "rank": 33,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2024": {
+            "rank": 71,
+            "status": ""
+          },
+          "2026": {
+            "rank": 27,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2024": {
+            "rank": 19,
+            "status": ""
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "il-lombardia": {
+          "2024": {
+            "rank": 93,
+            "status": ""
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "bauke-mollema": {
+      "name": "Bauke Mollema",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": 12,
+            "status": ""
+          },
+          "2025": {
+            "rank": 21,
+            "status": ""
+          }
+        },
+        "strade-bianche": {
+          "2025": {
+            "rank": 35,
+            "status": ""
+          },
+          "2026": {
+            "rank": 117,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": 50,
+            "status": ""
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-quebec": {
+          "2024": {
+            "rank": 6,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2024": {
+            "rank": 18,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": 29,
+            "status": ""
+          },
+          "2024": {
+            "rank": 13,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": 43,
+            "status": ""
+          },
+          "2024": {
+            "rank": 12,
+            "status": ""
+          },
+          "2025": {
+            "rank": 54,
+            "status": ""
+          }
+        }
+      }
+    },
+    "ben-healy": {
+      "name": "Ben Healy",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": 7,
+            "status": ""
+          },
+          "2025": {
+            "rank": 3,
+            "status": ""
+          }
+        },
+        "strade-bianche": {
+          "2024": {
+            "rank": 12,
+            "status": ""
+          },
+          "2025": {
+            "rank": 4,
+            "status": ""
+          },
+          "2026": {
+            "rank": 12,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": 45,
+            "status": ""
+          },
+          "2026": {
+            "rank": 85,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 84,
+            "status": ""
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": 26,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": 25,
+            "status": ""
+          },
+          "2024": {
+            "rank": 22,
+            "status": ""
+          },
+          "2026": {
+            "rank": 8,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": 4,
+            "status": ""
+          },
+          "2024": {
+            "rank": 27,
+            "status": ""
+          },
+          "2025": {
+            "rank": 3,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": 30,
+            "status": ""
+          },
+          "2024": {
+            "rank": 49,
+            "status": ""
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 10,
+            "status": ""
+          }
+        }
+      }
+    },
+    "ben-o-connor": {
+      "name": "Ben O'Connor",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": 2,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": 11,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 87,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": 7,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": 50,
+            "status": ""
+          },
+          "2025": {
+            "rank": 44,
+            "status": ""
+          },
+          "2026": {
+            "rank": 25,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": 34,
+            "status": ""
+          },
+          "2025": {
+            "rank": 18,
+            "status": ""
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 51,
+            "status": ""
+          }
+        }
+      }
+    },
+    "ben-oliver": {
+      "name": "Ben Oliver",
+      "results": {
+        "gp-quebec": {
+          "2026": {
+            "rank": 37,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "paris-roubaix": {
+          "2026": {
+            "rank": 47,
+            "status": ""
+          }
+        }
+      }
+    },
+    "biniam-girmay": {
+      "name": "Biniam Girmay",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 38,
+            "status": ""
+          },
+          "2024": {
+            "rank": 2,
+            "status": ""
+          },
+          "2025": {
+            "rank": 23,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "paris-roubaix": {
+          "2025": {
+            "rank": 15,
+            "status": ""
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": 59,
+            "status": ""
+          },
+          "2025": {
+            "rank": 35,
+            "status": ""
+          },
+          "2026": {
+            "rank": 41,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 28,
+            "status": ""
+          },
+          "2024": {
+            "rank": 27,
+            "status": ""
+          },
+          "2025": {
+            "rank": 14,
+            "status": ""
+          },
+          "2026": {
+            "rank": 108,
+            "status": ""
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 49,
+            "status": ""
+          }
+        }
+      }
+    },
+    "brandon-mcnulty": {
+      "name": "Brandon Mcnulty",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": 17,
+            "status": ""
+          }
+        },
+        "strade-bianche": {
+          "2023": {
+            "rank": 70,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2024": {
+            "rank": 10,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 47,
+            "status": ""
+          },
+          "2025": {
+            "rank": 49,
+            "status": ""
+          },
+          "2026": {
+            "rank": 21,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": 13,
+            "status": ""
+          },
+          "2025": {
+            "rank": 1,
+            "status": ""
+          },
+          "2026": {
+            "rank": 3,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2026": {
+            "rank": 28,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2025": {
+            "rank": 26,
+            "status": ""
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 24,
+            "status": ""
+          }
+        }
+      }
+    },
+    "brandon-smith-rivera-vargas": {
+      "name": "Brandon Smith Rivera",
+      "results": {
+        "world-championship": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "strade-bianche": {
+          "2023": {
+            "rank": 61,
+            "status": ""
+          },
+          "2025": {
+            "rank": 34,
+            "status": ""
+          },
+          "2026": {
+            "rank": 75,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": 24,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2026": {
+            "rank": 77,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "liege-bastogne-liege": {
+          "2024": {
+            "rank": 87,
+            "status": ""
+          },
+          "2026": {
+            "rank": 94,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2024": {
+            "rank": 101,
+            "status": ""
+          }
+        }
+      }
+    },
+    "bruno-armirail": {
+      "name": "Bruno Armirail",
+      "results": {
+        "san-sebastian": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "liege-bastogne-liege": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "byron-munton": {
+      "name": "Byron Munton",
+      "results": {
+        "world-championship": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-quebec": {
+          "2026": {
+            "rank": 76,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "callum-thornley": {
+      "name": "Callum Thornley",
+      "results": {
+        "paris-roubaix": {
+          "2026": {
+            "rank": 101,
+            "status": ""
+          }
+        }
+      }
+    },
+    "carlos-verona": {
+      "name": "Carlos Verona",
+      "results": {
+        "world-championship": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "strade-bianche": {
+          "2023": {
+            "rank": 64,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2025": {
+            "rank": 98,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2026": {
+            "rank": 63,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": 58,
+            "status": ""
+          }
+        }
+      }
+    },
+    "christian-scaroni": {
+      "name": "Christian Scaroni",
+      "results": {
+        "strade-bianche": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "san-sebastian": {
+          "2025": {
+            "rank": 8,
+            "status": ""
+          },
+          "2026": {
+            "rank": 4,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2024": {
+            "rank": 36,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": 87,
+            "status": ""
+          },
+          "2024": {
+            "rank": 53,
+            "status": ""
+          },
+          "2025": {
+            "rank": 23,
+            "status": ""
+          },
+          "2026": {
+            "rank": 8,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": 69,
+            "status": ""
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": 15,
+            "status": ""
+          }
+        }
+      }
+    },
+    "corbin-strong": {
+      "name": "Corbin Strong",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 2,
+            "status": ""
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": 10,
+            "status": ""
+          },
+          "2026": {
+            "rank": 34,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": 9,
+            "status": ""
+          },
+          "2026": {
+            "rank": 42,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2024": {
+            "rank": 48,
+            "status": ""
+          },
+          "2025": {
+            "rank": 50,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 86,
+            "status": ""
+          },
+          "2024": {
+            "rank": 17,
+            "status": ""
+          },
+          "2025": {
+            "rank": 12,
+            "status": ""
+          },
+          "2026": {
+            "rank": 5,
+            "status": ""
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 27,
+            "status": ""
+          }
+        }
+      }
+    },
+    "daan-hoole": {
+      "name": "Daan Hoole",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "paris-roubaix": {
+          "2023": {
+            "rank": 49,
+            "status": ""
+          },
+          "2024": {
+            "rank": 53,
+            "status": ""
+          },
+          "2025": {
+            "rank": 17,
+            "status": ""
+          },
+          "2026": {
+            "rank": 15,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2023": {
+            "rank": 61,
+            "status": ""
+          },
+          "2024": {
+            "rank": 68,
+            "status": ""
+          },
+          "2025": {
+            "rank": 83,
+            "status": ""
+          },
+          "2026": {
+            "rank": 20,
+            "status": ""
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 72,
+            "status": ""
+          }
+        }
+      }
+    },
+    "daniil-marukhin": {
+      "name": "Daniil Marukhin",
+      "results": {
+        "san-sebastian": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "darren-rafferty": {
+      "name": "Darren Rafferty",
+      "results": {
+        "world-championship": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "san-sebastian": {
+          "2026": {
+            "rank": 27,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-montreal": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "davide-piganzoli": {
+      "name": "Davide Piganzoli",
+      "results": {
+        "il-lombardia": {
+          "2023": {
+            "rank": 28,
+            "status": ""
+          },
+          "2024": {
+            "rank": 28,
+            "status": ""
+          },
+          "2025": {
+            "rank": 16,
+            "status": ""
+          }
+        }
+      }
+    },
+    "derek-gee": {
+      "name": "Derek Gee-West",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "strade-bianche": {
+          "2023": {
+            "rank": null,
+            "status": "OTL"
+          }
+        },
+        "san-sebastian": {
+          "2026": {
+            "rank": 52,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 105,
+            "status": ""
+          },
+          "2024": {
+            "rank": 110,
+            "status": ""
+          },
+          "2026": {
+            "rank": 31,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": 47,
+            "status": ""
+          },
+          "2024": {
+            "rank": 48,
+            "status": ""
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "paris-roubaix": {
+          "2023": {
+            "rank": 135,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 98,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2024": {
+            "rank": 86,
+            "status": ""
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 44,
+            "status": ""
+          }
+        }
+      }
+    },
+    "eder-frayre": {
+      "name": "Eder Frayre",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "edgar-cadena": {
+      "name": "Edgar David Cadena",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": 74,
+            "status": ""
+          }
+        }
+      }
+    },
+    "embret-svestad-bardseng": {
+      "name": "Embret Svestad-Bårdseng",
+      "results": {
+        "world-championship": {
+          "2025": {
+            "rank": 27,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2025": {
+            "rank": 87,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2025": {
+            "rank": 38,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2025": {
+            "rank": 36,
+            "status": ""
+          }
+        }
+      }
+    },
+    "emils-liepins": {
+      "name": "Emīls Liepiņš",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": 29,
+            "status": ""
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 125,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "paris-roubaix": {
+          "2023": {
+            "rank": 105,
+            "status": ""
+          },
+          "2026": {
+            "rank": 89,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2023": {
+            "rank": 71,
+            "status": ""
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "milano-sanremo": {
+          "2025": {
+            "rank": 126,
+            "status": ""
+          }
+        }
+      }
+    },
+    "enric-mas": {
+      "name": "Enric Mas",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": 8,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2026": {
+            "rank": 17,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": 99,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": 5,
+            "status": ""
+          }
+        }
+      }
+    },
+    "eric-antonio-fagundez": {
+      "name": "Eric Antonio Fagúndez",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": 81,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": 81,
+            "status": ""
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2026": {
+            "rank": 70,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 55,
+            "status": ""
+          }
+        }
+      }
+    },
+    "fabio-christen": {
+      "name": "Fabio Christen",
+      "results": {
+        "world-championship": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "strade-bianche": {
+          "2025": {
+            "rank": 87,
+            "status": ""
+          }
+        },
+        "paris-roubaix": {
+          "2024": {
+            "rank": 61,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2024": {
+            "rank": 46,
+            "status": ""
+          },
+          "2025": {
+            "rank": 65,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2025": {
+            "rank": 63,
+            "status": ""
+          }
+        }
+      }
+    },
+    "felix-engelhardt": {
+      "name": "Felix Engelhardt",
+      "results": {
+        "world-championship": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "strade-bianche": {
+          "2023": {
+            "rank": null,
+            "status": "OTL"
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": 57,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": 85,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2025": {
+            "rank": 153,
+            "status": ""
+          }
+        }
+      }
+    },
+    "felix-gall": {
+      "name": "Felix Gall",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": 20,
+            "status": ""
+          },
+          "2026": {
+            "rank": 18,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2024": {
+            "rank": 47,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": 80,
+            "status": ""
+          }
+        }
+      }
+    },
+    "felix-grossschartner": {
+      "name": "Felix Großschartner",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": 29,
+            "status": ""
+          }
+        },
+        "strade-bianche": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": 52,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-montreal": {
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 92,
+            "status": ""
+          },
+          "2026": {
+            "rank": 132,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": 84,
+            "status": ""
+          },
+          "2025": {
+            "rank": 101,
+            "status": ""
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 26,
+            "status": ""
+          }
+        }
+      }
+    },
+    "finlay-pickering": {
+      "name": "Finlay Pickering",
+      "results": {
+        "san-sebastian": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": 59,
+            "status": ""
+          }
+        }
+      }
+    },
+    "finn-fisher-black": {
+      "name": "Finn Fisher-Black",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-quebec": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-montreal": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "milano-sanremo": {
+          "2026": {
+            "rank": 121,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": 45,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "florian-lipowitz": {
+      "name": "Florian Lipowitz",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": 28,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2024": {
+            "rank": 15,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-montreal": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "il-lombardia": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "francisco-penuela": {
+      "name": "Francisco Joel Peñuela",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "fredd-matute": {
+      "name": "Fredd Matute",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "gal-glivar": {
+      "name": "Gal Glivar",
+      "results": {
+        "world-championship": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "strade-bianche": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "san-sebastian": {
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "liege-bastogne-liege": {
+          "2025": {
+            "rank": 126,
+            "status": ""
+          },
+          "2026": {
+            "rank": 52,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "georg-zimmermann": {
+      "name": "Georg Zimmermann",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": 15,
+            "status": ""
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "strade-bianche": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-quebec": {
+          "2024": {
+            "rank": 60,
+            "status": ""
+          },
+          "2026": {
+            "rank": 30,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2024": {
+            "rank": 42,
+            "status": ""
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2024": {
+            "rank": 61,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2024": {
+            "rank": 39,
+            "status": ""
+          },
+          "2026": {
+            "rank": 25,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": 56,
+            "status": ""
+          },
+          "2024": {
+            "rank": 49,
+            "status": ""
+          },
+          "2025": {
+            "rank": 48,
+            "status": ""
+          },
+          "2026": {
+            "rank": 26,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": 95,
+            "status": ""
+          },
+          "2024": {
+            "rank": 19,
+            "status": ""
+          },
+          "2025": {
+            "rank": 75,
+            "status": ""
+          }
+        }
+      }
+    },
+    "george-bennett": {
+      "name": "George Bennett",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "strade-bianche": {
+          "2023": {
+            "rank": 106,
+            "status": ""
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": 23,
+            "status": ""
+          },
+          "2024": {
+            "rank": 12,
+            "status": ""
+          },
+          "2026": {
+            "rank": 61,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": 73,
+            "status": ""
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNS"
+          },
+          "2026": {
+            "rank": 36,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2024": {
+            "rank": 82,
+            "status": ""
+          }
+        }
+      }
+    },
+    "gianni-vermeersch": {
+      "name": "Gianni Vermeersch",
+      "results": {
+        "strade-bianche": {
+          "2023": {
+            "rank": 22,
+            "status": ""
+          },
+          "2024": {
+            "rank": 32,
+            "status": ""
+          },
+          "2025": {
+            "rank": 7,
+            "status": ""
+          },
+          "2026": {
+            "rank": 5,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-quebec": {
+          "2024": {
+            "rank": 12,
+            "status": ""
+          },
+          "2025": {
+            "rank": 13,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "paris-roubaix": {
+          "2023": {
+            "rank": 11,
+            "status": ""
+          },
+          "2024": {
+            "rank": 6,
+            "status": ""
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": 12,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2023": {
+            "rank": 30,
+            "status": ""
+          },
+          "2024": {
+            "rank": 23,
+            "status": ""
+          },
+          "2025": {
+            "rank": 15,
+            "status": ""
+          },
+          "2026": {
+            "rank": 10,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 81,
+            "status": ""
+          },
+          "2024": {
+            "rank": 57,
+            "status": ""
+          }
+        }
+      }
+    },
+    "giulio-ciccone": {
+      "name": "Giulio Ciccone",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": 25,
+            "status": ""
+          },
+          "2025": {
+            "rank": 6,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2024": {
+            "rank": 35,
+            "status": ""
+          },
+          "2025": {
+            "rank": 1,
+            "status": ""
+          },
+          "2026": {
+            "rank": 6,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2026": {
+            "rank": 2,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2026": {
+            "rank": 7,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2025": {
+            "rank": 47,
+            "status": ""
+          },
+          "2026": {
+            "rank": 38,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": 13,
+            "status": ""
+          },
+          "2025": {
+            "rank": 2,
+            "status": ""
+          },
+          "2026": {
+            "rank": 20,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2024": {
+            "rank": 3,
+            "status": ""
+          }
+        }
+      }
+    },
+    "giulio-pellizzari": {
+      "name": "Giulio Pellizzari",
+      "results": {
+        "strade-bianche": {
+          "2026": {
+            "rank": 79,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": 89,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2026": {
+            "rank": 40,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2025": {
+            "rank": 57,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2024": {
+            "rank": 14,
+            "status": ""
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "guillermo-thomas-silva-coussan": {
+      "name": "Guillermo Thomas Silva",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": 80,
+            "status": ""
+          }
+        },
+        "strade-bianche": {
+          "2026": {
+            "rank": 34,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2024": {
+            "rank": 76,
+            "status": ""
+          },
+          "2026": {
+            "rank": 38,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2026": {
+            "rank": 32,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2026": {
+            "rank": 20,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2026": {
+            "rank": 23,
+            "status": ""
+          }
+        }
+      }
+    },
+    "harold-tejada": {
+      "name": "Harold Tejada",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": 40,
+            "status": ""
+          },
+          "2025": {
+            "rank": 14,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "henok-mulubrhan": {
+      "name": "Henok Mulubrhan",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-quebec": {
+          "2025": {
+            "rank": 94,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 162,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": 113,
+            "status": ""
+          }
+        }
+      }
+    },
+    "henrique-da-silva-avancini": {
+      "name": "Henrique da Silva Avancini",
+      "results": {
+        "world-championship": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "hugo-houle": {
+      "name": "Hugo Houle",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "strade-bianche": {
+          "2025": {
+            "rank": 54,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 50,
+            "status": ""
+          },
+          "2024": {
+            "rank": 67,
+            "status": ""
+          },
+          "2025": {
+            "rank": 44,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": 51,
+            "status": ""
+          },
+          "2025": {
+            "rank": 45,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2023": {
+            "rank": 66,
+            "status": ""
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 65,
+            "status": ""
+          },
+          "2024": {
+            "rank": 77,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2026": {
+            "rank": 91,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "igor-arrieta-lizarraga": {
+      "name": "Igor Arrieta",
+      "results": {
+        "san-sebastian": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": 65,
+            "status": ""
+          },
+          "2026": {
+            "rank": 28,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-montreal": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "isaac-del-toro": {
+      "name": "Isaac Del Toro",
+      "results": {
+        "world-championship": {
+          "2025": {
+            "rank": 7,
+            "status": ""
+          }
+        },
+        "strade-bianche": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": 33,
+            "status": ""
+          },
+          "2026": {
+            "rank": 3,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2024": {
+            "rank": 49,
+            "status": ""
+          },
+          "2025": {
+            "rank": 5,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2026": {
+            "rank": 55,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2026": {
+            "rank": 1,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2024": {
+            "rank": 73,
+            "status": ""
+          },
+          "2025": {
+            "rank": 13,
+            "status": ""
+          },
+          "2026": {
+            "rank": 110,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2025": {
+            "rank": 5,
+            "status": ""
+          }
+        }
+      }
+    },
+    "iustin-ioan-vaidian": {
+      "name": "Iustin-Ioan Văidian",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "ivan-romeo": {
+      "name": "Iván Romeo",
+      "results": {
+        "world-championship": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "strade-bianche": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": 79,
+            "status": ""
+          },
+          "2024": {
+            "rank": 38,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "paris-roubaix": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "liege-bastogne-liege": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "ivo-emanuel-alves": {
+      "name": "Ivo Oliveira",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 134,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "jack-haig": {
+      "name": "Jack Haig",
+      "results": {
+        "strade-bianche": {
+          "2026": {
+            "rank": 53,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2024": {
+            "rank": 30,
+            "status": ""
+          },
+          "2026": {
+            "rank": 25,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 48,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "milano-sanremo": {
+          "2026": {
+            "rank": 105,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2025": {
+            "rank": 53,
+            "status": ""
+          },
+          "2026": {
+            "rank": 59,
+            "status": ""
+          }
+        }
+      }
+    },
+    "jai-hindley": {
+      "name": "Jai Hindley",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": 18,
+            "status": ""
+          },
+          "2025": {
+            "rank": 16,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 62,
+            "status": ""
+          },
+          "2024": {
+            "rank": 42,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": 30,
+            "status": ""
+          },
+          "2024": {
+            "rank": 10,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": 83,
+            "status": ""
+          },
+          "2024": {
+            "rank": 52,
+            "status": ""
+          },
+          "2026": {
+            "rank": 16,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": 44,
+            "status": ""
+          },
+          "2024": {
+            "rank": 24,
+            "status": ""
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "jakob-soderqvist": {
+      "name": "Jakob Söderqvist",
+      "results": {
+        "paris-roubaix": {
+          "2026": {
+            "rank": 76,
+            "status": ""
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 58,
+            "status": ""
+          }
+        }
+      }
+    },
+    "jakub-otruba": {
+      "name": "Jakub Otruba",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "liege-bastogne-liege": {
+          "2026": {
+            "rank": 80,
+            "status": ""
+          }
+        }
+      }
+    },
+    "james-shaw": {
+      "name": "James Shaw",
+      "results": {
+        "strade-bianche": {
+          "2023": {
+            "rank": 27,
+            "status": ""
+          },
+          "2024": {
+            "rank": 78,
+            "status": ""
+          },
+          "2025": {
+            "rank": 67,
+            "status": ""
+          },
+          "2026": {
+            "rank": 56,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2025": {
+            "rank": 26,
+            "status": ""
+          },
+          "2026": {
+            "rank": 77,
+            "status": ""
+          }
+        },
+        "paris-roubaix": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "liege-bastogne-liege": {
+          "2024": {
+            "rank": 95,
+            "status": ""
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNS"
+          }
+        },
+        "il-lombardia": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "jan-christen": {
+      "name": "Jan Christen",
+      "results": {
+        "world-championship": {
+          "2025": {
+            "rank": 29,
+            "status": ""
+          }
+        },
+        "strade-bianche": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": 6,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2024": {
+            "rank": 9,
+            "status": ""
+          },
+          "2025": {
+            "rank": 2,
+            "status": ""
+          },
+          "2026": {
+            "rank": 7,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "il-lombardia": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "jan-tratnik": {
+      "name": "Jan Tratnik",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "strade-bianche": {
+          "2025": {
+            "rank": 60,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2024": {
+            "rank": 72,
+            "status": ""
+          },
+          "2025": {
+            "rank": 36,
+            "status": ""
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-montreal": {
+          "2024": {
+            "rank": 65,
+            "status": ""
+          },
+          "2025": {
+            "rank": 42,
+            "status": ""
+          },
+          "2026": {
+            "rank": 38,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2026": {
+            "rank": 50,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 91,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": 25,
+            "status": ""
+          },
+          "2026": {
+            "rank": 88,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": 47,
+            "status": ""
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNS"
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 8,
+            "status": ""
+          }
+        }
+      }
+    },
+    "jefferson-alexander-cepeda": {
+      "name": "Jefferson Alexander Cepeda",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "san-sebastian": {
+          "2025": {
+            "rank": 85,
+            "status": ""
+          }
+        }
+      }
+    },
+    "jefferson-cepeda-hernandez": {
+      "name": "Jefferson Alveiro Cepeda",
+      "results": {
+        "san-sebastian": {
+          "2024": {
+            "rank": 13,
+            "status": ""
+          },
+          "2025": {
+            "rank": 73,
+            "status": ""
+          }
+        }
+      }
+    },
+    "jhonatan-narvaez": {
+      "name": "Jhonatan Narváez",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": 72,
+            "status": ""
+          },
+          "2024": {
+            "rank": 5,
+            "status": ""
+          },
+          "2026": {
+            "rank": 35,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2025": {
+            "rank": 20,
+            "status": ""
+          },
+          "2026": {
+            "rank": 23,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2025": {
+            "rank": 11,
+            "status": ""
+          },
+          "2026": {
+            "rank": 15,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2023": {
+            "rank": 25,
+            "status": ""
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 32,
+            "status": ""
+          },
+          "2024": {
+            "rank": 35,
+            "status": ""
+          },
+          "2025": {
+            "rank": 85,
+            "status": ""
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 45,
+            "status": ""
+          }
+        }
+      }
+    },
+    "joao-almeida": {
+      "name": "João Almeida",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "liege-bastogne-liege": {
+          "2024": {
+            "rank": 29,
+            "status": ""
+          }
+        }
+      }
+    },
+    "jordan-jegat": {
+      "name": "Jordan Jegat",
+      "results": {
+        "world-championship": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "san-sebastian": {
+          "2024": {
+            "rank": 27,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2024": {
+            "rank": 77,
+            "status": ""
+          },
+          "2025": {
+            "rank": 24,
+            "status": ""
+          }
+        }
+      }
+    },
+    "jordan-labrosse": {
+      "name": "Jordan Labrosse",
+      "results": {
+        "strade-bianche": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": 17,
+            "status": ""
+          },
+          "2026": {
+            "rank": 11,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": 72,
+            "status": ""
+          },
+          "2026": {
+            "rank": 31,
+            "status": ""
+          }
+        },
+        "paris-roubaix": {
+          "2024": {
+            "rank": 101,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2026": {
+            "rank": 36,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2025": {
+            "rank": 70,
+            "status": ""
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "jorgen-nordhagen": {
+      "name": "Jørgen Nordhagen",
+      "results": {
+        "strade-bianche": {
+          "2025": {
+            "rank": 85,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2025": {
+            "rank": 33,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-montreal": {
+          "2025": {
+            "rank": 33,
+            "status": ""
+          }
+        }
+      }
+    },
+    "juan-ayuso-pesquera": {
+      "name": "Juan Ayuso",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": 26,
+            "status": ""
+          },
+          "2025": {
+            "rank": 8,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": 11,
+            "status": ""
+          },
+          "2025": {
+            "rank": 39,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2024": {
+            "rank": 89,
+            "status": ""
+          },
+          "2026": {
+            "rank": 28,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 22,
+            "status": ""
+          }
+        }
+      }
+    },
+    "kaden-hopkins": {
+      "name": "Kaden Hopkins",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "kasper-asgreen": {
+      "name": "Kasper Asgreen",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "strade-bianche": {
+          "2024": {
+            "rank": 40,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-quebec": {
+          "2026": {
+            "rank": 61,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "paris-roubaix": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": 88,
+            "status": ""
+          },
+          "2025": {
+            "rank": 61,
+            "status": ""
+          },
+          "2026": {
+            "rank": 28,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2023": {
+            "rank": 7,
+            "status": ""
+          },
+          "2024": {
+            "rank": 47,
+            "status": ""
+          },
+          "2026": {
+            "rank": 28,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 36,
+            "status": ""
+          },
+          "2024": {
+            "rank": 16,
+            "status": ""
+          },
+          "2026": {
+            "rank": 27,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2025": {
+            "rank": 117,
+            "status": ""
+          }
+        }
+      }
+    },
+    "kevin-vermaerke": {
+      "name": "Kevin Vermaerke",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": 20,
+            "status": ""
+          },
+          "2024": {
+            "rank": 19,
+            "status": ""
+          },
+          "2025": {
+            "rank": 23,
+            "status": ""
+          }
+        },
+        "strade-bianche": {
+          "2024": {
+            "rank": 30,
+            "status": ""
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": 54,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": 21,
+            "status": ""
+          },
+          "2024": {
+            "rank": 4,
+            "status": ""
+          },
+          "2025": {
+            "rank": 51,
+            "status": ""
+          },
+          "2026": {
+            "rank": 13,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 21,
+            "status": ""
+          },
+          "2024": {
+            "rank": 39,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": 20,
+            "status": ""
+          },
+          "2024": {
+            "rank": 28,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 71,
+            "status": ""
+          },
+          "2024": {
+            "rank": 48,
+            "status": ""
+          },
+          "2025": {
+            "rank": 76,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": 92,
+            "status": ""
+          },
+          "2024": {
+            "rank": 23,
+            "status": ""
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": 23,
+            "status": ""
+          },
+          "2025": {
+            "rank": 56,
+            "status": ""
+          }
+        }
+      }
+    },
+    "kristians-belohvosciks": {
+      "name": "Kristiāns Belohvoščiks",
+      "results": {
+        "world-championship": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "laurence-pithie": {
+      "name": "Laurence Pithie",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-quebec": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-montreal": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "paris-roubaix": {
+          "2024": {
+            "rank": 7,
+            "status": ""
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": 26,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2024": {
+            "rank": 39,
+            "status": ""
+          },
+          "2025": {
+            "rank": 11,
+            "status": ""
+          },
+          "2026": {
+            "rank": 14,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2024": {
+            "rank": 15,
+            "status": ""
+          },
+          "2025": {
+            "rank": 48,
+            "status": ""
+          },
+          "2026": {
+            "rank": 19,
+            "status": ""
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 39,
+            "status": ""
+          }
+        }
+      }
+    },
+    "lawrence-warbasse": {
+      "name": "Larry Warbasse",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": 70,
+            "status": ""
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "strade-bianche": {
+          "2025": {
+            "rank": 74,
+            "status": ""
+          },
+          "2026": {
+            "rank": 100,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2024": {
+            "rank": 29,
+            "status": ""
+          },
+          "2025": {
+            "rank": 53,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2024": {
+            "rank": 47,
+            "status": ""
+          },
+          "2025": {
+            "rank": 48,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2024": {
+            "rank": 36,
+            "status": ""
+          },
+          "2025": {
+            "rank": 34,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 61,
+            "status": ""
+          },
+          "2024": {
+            "rank": 109,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": 80,
+            "status": ""
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": 34,
+            "status": ""
+          },
+          "2025": {
+            "rank": 60,
+            "status": ""
+          }
+        }
+      }
+    },
+    "luka-mezgec": {
+      "name": "Luka Mezgec",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "paris-roubaix": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 23,
+            "status": ""
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 38,
+            "status": ""
+          }
+        }
+      }
+    },
+    "madis-mihkels": {
+      "name": "Madis Mihkels",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "paris-roubaix": {
+          "2023": {
+            "rank": 114,
+            "status": ""
+          },
+          "2024": {
+            "rank": 10,
+            "status": ""
+          },
+          "2025": {
+            "rank": 14,
+            "status": ""
+          },
+          "2026": {
+            "rank": 81,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2025": {
+            "rank": 66,
+            "status": ""
+          },
+          "2026": {
+            "rank": 83,
+            "status": ""
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 30,
+            "status": ""
+          }
+        }
+      }
+    },
+    "mads-pedersen": {
+      "name": "Mads Pedersen",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": 4,
+            "status": ""
+          },
+          "2024": {
+            "rank": 13,
+            "status": ""
+          }
+        },
+        "paris-roubaix": {
+          "2023": {
+            "rank": 4,
+            "status": ""
+          },
+          "2024": {
+            "rank": 3,
+            "status": ""
+          },
+          "2025": {
+            "rank": 3,
+            "status": ""
+          },
+          "2026": {
+            "rank": 7,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2023": {
+            "rank": 3,
+            "status": ""
+          },
+          "2024": {
+            "rank": 22,
+            "status": ""
+          },
+          "2025": {
+            "rank": 2,
+            "status": ""
+          },
+          "2026": {
+            "rank": 5,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 6,
+            "status": ""
+          },
+          "2024": {
+            "rank": 4,
+            "status": ""
+          },
+          "2025": {
+            "rank": 7,
+            "status": ""
+          },
+          "2026": {
+            "rank": 4,
+            "status": ""
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 20,
+            "status": ""
+          }
+        }
+      }
+    },
+    "marc-hirschi": {
+      "name": "Marc Hirschi",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": 6,
+            "status": ""
+          },
+          "2025": {
+            "rank": 18,
+            "status": ""
+          }
+        },
+        "strade-bianche": {
+          "2024": {
+            "rank": 68,
+            "status": ""
+          },
+          "2025": {
+            "rank": 24,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": 13,
+            "status": ""
+          },
+          "2024": {
+            "rank": 1,
+            "status": ""
+          },
+          "2025": {
+            "rank": 25,
+            "status": ""
+          },
+          "2026": {
+            "rank": 8,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 8,
+            "status": ""
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": 10,
+            "status": ""
+          },
+          "2026": {
+            "rank": 27,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "milano-sanremo": {
+          "2024": {
+            "rank": 112,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": 10,
+            "status": ""
+          },
+          "2024": {
+            "rank": 17,
+            "status": ""
+          },
+          "2025": {
+            "rank": 45,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": 19,
+            "status": ""
+          },
+          "2024": {
+            "rank": 44,
+            "status": ""
+          },
+          "2025": {
+            "rank": 27,
+            "status": ""
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 16,
+            "status": ""
+          }
+        }
+      }
+    },
+    "marcel-camprubi": {
+      "name": "Marcel Camprubí",
+      "results": {
+        "strade-bianche": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "san-sebastian": {
+          "2026": {
+            "rank": 9,
+            "status": ""
+          }
+        },
+        "paris-roubaix": {
+          "2025": {
+            "rank": 88,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "liege-bastogne-liege": {
+          "2025": {
+            "rank": 123,
+            "status": ""
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "il-lombardia": {
+          "2025": {
+            "rank": 64,
+            "status": ""
+          }
+        }
+      }
+    },
+    "marco-brenner": {
+      "name": "Marco Brenner",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "strade-bianche": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": 93,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 109,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "milano-sanremo": {
+          "2025": {
+            "rank": 127,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2025": {
+            "rank": 104,
+            "status": ""
+          },
+          "2026": {
+            "rank": 103,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "mark-donovan": {
+      "name": "Mark Donovan",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "strade-bianche": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": 45,
+            "status": ""
+          },
+          "2025": {
+            "rank": 27,
+            "status": ""
+          },
+          "2026": {
+            "rank": 38,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-montreal": {
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 70,
+            "status": ""
+          },
+          "2025": {
+            "rank": 105,
+            "status": ""
+          },
+          "2026": {
+            "rank": 34,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": 72,
+            "status": ""
+          }
+        }
+      }
+    },
+    "markel-beloki": {
+      "name": "Markel Beloki",
+      "results": {
+        "san-sebastian": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "martin-svrcek": {
+      "name": "Martin Svrček",
+      "results": {
+        "world-championship": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "strade-bianche": {
+          "2026": {
+            "rank": 115,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "milano-sanremo": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "martins-pluto": {
+      "name": "Mārtiņš Pluto",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "matej-mohoric": {
+      "name": "Matej Mohorič",
+      "results": {
+        "world-championship": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "strade-bianche": {
+          "2023": {
+            "rank": 6,
+            "status": ""
+          },
+          "2024": {
+            "rank": 5,
+            "status": ""
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNS"
+          },
+          "2026": {
+            "rank": 24,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 5,
+            "status": ""
+          },
+          "2024": {
+            "rank": 30,
+            "status": ""
+          },
+          "2025": {
+            "rank": 5,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": 18,
+            "status": ""
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "paris-roubaix": {
+          "2023": {
+            "rank": 29,
+            "status": ""
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": 21,
+            "status": ""
+          },
+          "2026": {
+            "rank": 8,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 8,
+            "status": ""
+          },
+          "2024": {
+            "rank": 6,
+            "status": ""
+          },
+          "2025": {
+            "rank": 100,
+            "status": ""
+          },
+          "2026": {
+            "rank": 15,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": 40,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2024": {
+            "rank": 111,
+            "status": ""
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "matevz-govekar": {
+      "name": "Matevž Govekar",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": 33,
+            "status": ""
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "strade-bianche": {
+          "2023": {
+            "rank": 107,
+            "status": ""
+          },
+          "2024": {
+            "rank": 101,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-montreal": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "paris-roubaix": {
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": 89,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2024": {
+            "rank": 145,
+            "status": ""
+          }
+        }
+      }
+    },
+    "mathias-vacek": {
+      "name": "Mathias Vacek",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": 20,
+            "status": ""
+          }
+        },
+        "strade-bianche": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 130,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "paris-roubaix": {
+          "2023": {
+            "rank": 67,
+            "status": ""
+          },
+          "2024": {
+            "rank": 43,
+            "status": ""
+          },
+          "2025": {
+            "rank": 116,
+            "status": ""
+          },
+          "2026": {
+            "rank": 22,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2023": {
+            "rank": 65,
+            "status": ""
+          },
+          "2025": {
+            "rank": 80,
+            "status": ""
+          },
+          "2026": {
+            "rank": 49,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2026": {
+            "rank": 117,
+            "status": ""
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 14,
+            "status": ""
+          }
+        }
+      }
+    },
+    "mathieu-van-der-poel": {
+      "name": "Mathieu Van Der Poel",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": 1,
+            "status": ""
+          },
+          "2024": {
+            "rank": 3,
+            "status": ""
+          }
+        },
+        "strade-bianche": {
+          "2023": {
+            "rank": 15,
+            "status": ""
+          }
+        },
+        "paris-roubaix": {
+          "2023": {
+            "rank": 1,
+            "status": ""
+          },
+          "2024": {
+            "rank": 1,
+            "status": ""
+          },
+          "2025": {
+            "rank": 1,
+            "status": ""
+          },
+          "2026": {
+            "rank": 4,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2023": {
+            "rank": 2,
+            "status": ""
+          },
+          "2024": {
+            "rank": 1,
+            "status": ""
+          },
+          "2025": {
+            "rank": 3,
+            "status": ""
+          },
+          "2026": {
+            "rank": 2,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 1,
+            "status": ""
+          },
+          "2024": {
+            "rank": 10,
+            "status": ""
+          },
+          "2025": {
+            "rank": 1,
+            "status": ""
+          },
+          "2026": {
+            "rank": 8,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2024": {
+            "rank": 3,
+            "status": ""
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 12,
+            "status": ""
+          }
+        }
+      }
+    },
+    "mathijs-paasschens": {
+      "name": "Mathijs Paasschens",
+      "results": {
+        "strade-bianche": {
+          "2023": {
+            "rank": 114,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 111,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "paris-roubaix": {
+          "2024": {
+            "rank": null,
+            "status": "OTL"
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": 68,
+            "status": ""
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": 112,
+            "status": ""
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "matteo-jorgenson": {
+      "name": "Matteo Jorgenson",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": 34,
+            "status": ""
+          }
+        },
+        "strade-bianche": {
+          "2026": {
+            "rank": 8,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2026": {
+            "rank": 12,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 42,
+            "status": ""
+          },
+          "2024": {
+            "rank": 35,
+            "status": ""
+          },
+          "2026": {
+            "rank": 8,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": 24,
+            "status": ""
+          },
+          "2024": {
+            "rank": 12,
+            "status": ""
+          },
+          "2026": {
+            "rank": 19,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2023": {
+            "rank": 9,
+            "status": ""
+          },
+          "2024": {
+            "rank": 31,
+            "status": ""
+          },
+          "2025": {
+            "rank": 47,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2026": {
+            "rank": 42,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": 23,
+            "status": ""
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 9,
+            "status": ""
+          }
+        }
+      }
+    },
+    "matteo-trentin": {
+      "name": "Matteo Trentin",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "paris-roubaix": {
+          "2023": {
+            "rank": 19,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2023": {
+            "rank": 10,
+            "status": ""
+          },
+          "2024": {
+            "rank": 19,
+            "status": ""
+          },
+          "2025": {
+            "rank": 22,
+            "status": ""
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 19,
+            "status": ""
+          },
+          "2024": {
+            "rank": 21,
+            "status": ""
+          },
+          "2025": {
+            "rank": 9,
+            "status": ""
+          },
+          "2026": {
+            "rank": 9,
+            "status": ""
+          }
+        }
+      }
+    },
+    "mattia-cattaneo": {
+      "name": "Mattia Cattaneo",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": 63,
+            "status": ""
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "strade-bianche": {
+          "2025": {
+            "rank": 29,
+            "status": ""
+          },
+          "2026": {
+            "rank": 77,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-quebec": {
+          "2025": {
+            "rank": 72,
+            "status": ""
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-montreal": {
+          "2025": {
+            "rank": 43,
+            "status": ""
+          },
+          "2026": {
+            "rank": 51,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2024": {
+            "rank": 76,
+            "status": ""
+          },
+          "2025": {
+            "rank": 88,
+            "status": ""
+          },
+          "2026": {
+            "rank": 148,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": 70,
+            "status": ""
+          },
+          "2024": {
+            "rank": 63,
+            "status": ""
+          },
+          "2025": {
+            "rank": 69,
+            "status": ""
+          }
+        }
+      }
+    },
+    "mauro-schmid": {
+      "name": "Mauro Schmid",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": 13,
+            "status": ""
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "san-sebastian": {
+          "2025": {
+            "rank": 11,
+            "status": ""
+          },
+          "2026": {
+            "rank": 34,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 75,
+            "status": ""
+          },
+          "2025": {
+            "rank": 32,
+            "status": ""
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": 24,
+            "status": ""
+          },
+          "2026": {
+            "rank": 36,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2025": {
+            "rank": 32,
+            "status": ""
+          },
+          "2026": {
+            "rank": 31,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": 22,
+            "status": ""
+          },
+          "2026": {
+            "rank": 11,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "maxim-van-gils": {
+      "name": "Maxim Van Gils",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": 51,
+            "status": ""
+          }
+        },
+        "strade-bianche": {
+          "2023": {
+            "rank": 23,
+            "status": ""
+          },
+          "2024": {
+            "rank": 3,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2024": {
+            "rank": 18,
+            "status": ""
+          },
+          "2025": {
+            "rank": 3,
+            "status": ""
+          },
+          "2026": {
+            "rank": 21,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 52,
+            "status": ""
+          },
+          "2024": {
+            "rank": 53,
+            "status": ""
+          },
+          "2026": {
+            "rank": 12,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": 4,
+            "status": ""
+          },
+          "2026": {
+            "rank": 34,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 38,
+            "status": ""
+          },
+          "2024": {
+            "rank": 7,
+            "status": ""
+          },
+          "2025": {
+            "rank": 19,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": 11,
+            "status": ""
+          },
+          "2024": {
+            "rank": 4,
+            "status": ""
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": 14,
+            "status": ""
+          }
+        }
+      }
+    },
+    "maximilian-schachmann": {
+      "name": "Maximilian Schachmann",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": 74,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2024": {
+            "rank": 27,
+            "status": ""
+          },
+          "2026": {
+            "rank": 10,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2024": {
+            "rank": 39,
+            "status": ""
+          },
+          "2026": {
+            "rank": 31,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2025": {
+            "rank": 33,
+            "status": ""
+          },
+          "2026": {
+            "rank": 26,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2025": {
+            "rank": 92,
+            "status": ""
+          },
+          "2026": {
+            "rank": 30,
+            "status": ""
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 28,
+            "status": ""
+          }
+        }
+      }
+    },
+    "menno-huising": {
+      "name": "Menno Huising",
+      "results": {
+        "world-championship": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "strade-bianche": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "san-sebastian": {
+          "2025": {
+            "rank": 75,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2026": {
+            "rank": 56,
+            "status": ""
+          }
+        }
+      }
+    },
+    "merhawi-kudus": {
+      "name": "Merhawi Kudus",
+      "results": {
+        "world-championship": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "san-sebastian": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "michael-leonard1": {
+      "name": "Michael Leonard",
+      "results": {
+        "world-championship": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "san-sebastian": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": 100,
+            "status": ""
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-quebec": {
+          "2024": {
+            "rank": 117,
+            "status": ""
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": 67,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2024": {
+            "rank": 79,
+            "status": ""
+          },
+          "2025": {
+            "rank": 55,
+            "status": ""
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "liege-bastogne-liege": {
+          "2026": {
+            "rank": 54,
+            "status": ""
+          }
+        }
+      }
+    },
+    "michael-matthews": {
+      "name": "Michael Matthews",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 3,
+            "status": ""
+          },
+          "2024": {
+            "rank": 1,
+            "status": ""
+          },
+          "2025": {
+            "rank": 9,
+            "status": ""
+          },
+          "2026": {
+            "rank": 6,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": 26,
+            "status": ""
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": 54,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": 11,
+            "status": ""
+          },
+          "2025": {
+            "rank": 13,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2024": {
+            "rank": 2,
+            "status": ""
+          },
+          "2025": {
+            "rank": 4,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2024": {
+            "rank": 36,
+            "status": ""
+          },
+          "2025": {
+            "rank": 11,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2025": {
+            "rank": 21,
+            "status": ""
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 15,
+            "status": ""
+          }
+        }
+      }
+    },
+    "michael-storer": {
+      "name": "Michael Storer",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": 19,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2024": {
+            "rank": 13,
+            "status": ""
+          },
+          "2025": {
+            "rank": 3,
+            "status": ""
+          }
+        }
+      }
+    },
+    "michael-valgren-andersen": {
+      "name": "Michael Valgren",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "strade-bianche": {
+          "2025": {
+            "rank": 8,
+            "status": ""
+          },
+          "2026": {
+            "rank": 13,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2024": {
+            "rank": 111,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2024": {
+            "rank": 45,
+            "status": ""
+          },
+          "2026": {
+            "rank": 18,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2024": {
+            "rank": 100,
+            "status": ""
+          },
+          "2026": {
+            "rank": 30,
+            "status": ""
+          }
+        }
+      }
+    },
+    "michael-woods": {
+      "name": "Michael Woods",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": 54,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2024": {
+            "rank": 8,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 49,
+            "status": ""
+          },
+          "2026": {
+            "rank": 66,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": 15,
+            "status": ""
+          },
+          "2024": {
+            "rank": 8,
+            "status": ""
+          },
+          "2026": {
+            "rank": 18,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": 12,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": 12,
+            "status": ""
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 41,
+            "status": ""
+          }
+        }
+      }
+    },
+    "michal-kwiatkowski": {
+      "name": "Michał Kwiatkowski",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "strade-bianche": {
+          "2023": {
+            "rank": 18,
+            "status": ""
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "san-sebastian": {
+          "2025": {
+            "rank": 89,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 72,
+            "status": ""
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 139,
+            "status": ""
+          },
+          "2024": {
+            "rank": 54,
+            "status": ""
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "il-lombardia": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "mikkel-bjerg": {
+      "name": "Mikkel Bjerg",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "paris-roubaix": {
+          "2023": {
+            "rank": 40,
+            "status": ""
+          },
+          "2024": {
+            "rank": 51,
+            "status": ""
+          },
+          "2025": {
+            "rank": 50,
+            "status": ""
+          },
+          "2026": {
+            "rank": 126,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2023": {
+            "rank": 15,
+            "status": ""
+          },
+          "2024": {
+            "rank": 4,
+            "status": ""
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 73,
+            "status": ""
+          }
+        }
+      }
+    },
+    "mikkel-honore": {
+      "name": "Mikkel Frølich Honoré",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": 52,
+            "status": ""
+          },
+          "2025": {
+            "rank": 12,
+            "status": ""
+          }
+        },
+        "strade-bianche": {
+          "2023": {
+            "rank": 66,
+            "status": ""
+          },
+          "2024": {
+            "rank": 47,
+            "status": ""
+          },
+          "2025": {
+            "rank": 38,
+            "status": ""
+          },
+          "2026": {
+            "rank": 67,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 31,
+            "status": ""
+          },
+          "2024": {
+            "rank": 29,
+            "status": ""
+          },
+          "2025": {
+            "rank": 71,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": 44,
+            "status": ""
+          },
+          "2025": {
+            "rank": 22,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2023": {
+            "rank": 39,
+            "status": ""
+          },
+          "2025": {
+            "rank": 44,
+            "status": ""
+          },
+          "2026": {
+            "rank": 63,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 69,
+            "status": ""
+          },
+          "2025": {
+            "rank": 17,
+            "status": ""
+          },
+          "2026": {
+            "rank": 32,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": 46,
+            "status": ""
+          },
+          "2026": {
+            "rank": 35,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "nadav-raisberg": {
+      "name": "Nadav Raisberg",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "strade-bianche": {
+          "2024": {
+            "rank": 100,
+            "status": ""
+          },
+          "2025": {
+            "rank": 93,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-montreal": {
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "paris-roubaix": {
+          "2024": {
+            "rank": 67,
+            "status": ""
+          }
+        }
+      }
+    },
+    "nairo-quintana": {
+      "name": "Nairo Quintana",
+      "results": {
+        "san-sebastian": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": 94,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2024": {
+            "rank": 16,
+            "status": ""
+          },
+          "2025": {
+            "rank": 31,
+            "status": ""
+          }
+        }
+      }
+    },
+    "natnael-tesfatsion": {
+      "name": "Natnael Tesfatsion",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": 53,
+            "status": ""
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "strade-bianche": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "milano-sanremo": {
+          "2026": {
+            "rank": 35,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2026": {
+            "rank": 43,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": 84,
+            "status": ""
+          }
+        }
+      }
+    },
+    "neilson-powless": {
+      "name": "Neilson Powless",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": 11,
+            "status": ""
+          },
+          "2024": {
+            "rank": 39,
+            "status": ""
+          }
+        },
+        "strade-bianche": {
+          "2024": {
+            "rank": 86,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": 4,
+            "status": ""
+          },
+          "2024": {
+            "rank": 6,
+            "status": ""
+          },
+          "2025": {
+            "rank": 6,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 20,
+            "status": ""
+          },
+          "2024": {
+            "rank": 8,
+            "status": ""
+          },
+          "2025": {
+            "rank": 25,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": 33,
+            "status": ""
+          },
+          "2024": {
+            "rank": 23,
+            "status": ""
+          },
+          "2025": {
+            "rank": 4,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2023": {
+            "rank": 5,
+            "status": ""
+          },
+          "2025": {
+            "rank": 42,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 7,
+            "status": ""
+          },
+          "2025": {
+            "rank": 37,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": 65,
+            "status": ""
+          },
+          "2025": {
+            "rank": 10,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2024": {
+            "rank": 8,
+            "status": ""
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "nelson-oliveira": {
+      "name": "Nelson Oliveira",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": 46,
+            "status": ""
+          },
+          "2024": {
+            "rank": 55,
+            "status": ""
+          }
+        },
+        "strade-bianche": {
+          "2023": {
+            "rank": 36,
+            "status": ""
+          },
+          "2024": {
+            "rank": 36,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2026": {
+            "rank": 44,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2026": {
+            "rank": 32,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2025": {
+            "rank": 54,
+            "status": ""
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 33,
+            "status": ""
+          }
+        }
+      }
+    },
+    "nickolas-zukowsky": {
+      "name": "Nickolas Zukowsky",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": 40,
+            "status": ""
+          }
+        },
+        "strade-bianche": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "san-sebastian": {
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-quebec": {
+          "2026": {
+            "rank": 71,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2026": {
+            "rank": 49,
+            "status": ""
+          }
+        },
+        "paris-roubaix": {
+          "2023": {
+            "rank": 125,
+            "status": ""
+          },
+          "2026": {
+            "rank": 139,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": 112,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2025": {
+            "rank": 71,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2025": {
+            "rank": 125,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "nico-denz": {
+      "name": "Nico Denz",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-quebec": {
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-montreal": {
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2024": {
+            "rank": 60,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 114,
+            "status": ""
+          },
+          "2024": {
+            "rank": 45,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "nicolas-prodhomme": {
+      "name": "Nicolas Prodhomme",
+      "results": {
+        "strade-bianche": {
+          "2025": {
+            "rank": 91,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": 43,
+            "status": ""
+          },
+          "2025": {
+            "rank": 16,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2026": {
+            "rank": 68,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2026": {
+            "rank": 43,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2024": {
+            "rank": 38,
+            "status": ""
+          },
+          "2026": {
+            "rank": 60,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": 42,
+            "status": ""
+          },
+          "2024": {
+            "rank": 79,
+            "status": ""
+          },
+          "2025": {
+            "rank": 49,
+            "status": ""
+          }
+        }
+      }
+    },
+    "orluis-aular": {
+      "name": "Orluis Aular",
+      "results": {
+        "ronde-van-vlaanderen": {
+          "2025": {
+            "rank": 36,
+            "status": ""
+          },
+          "2026": {
+            "rank": 117,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2025": {
+            "rank": 28,
+            "status": ""
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "il-lombardia": {
+          "2025": {
+            "rank": 77,
+            "status": ""
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 53,
+            "status": ""
+          }
+        }
+      }
+    },
+    "oscar-onley": {
+      "name": "Oscar Onley",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": 16,
+            "status": ""
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "strade-bianche": {
+          "2023": {
+            "rank": 41,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2025": {
+            "rank": 13,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-montreal": {
+          "2025": {
+            "rank": 19,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2025": {
+            "rank": 12,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": 77,
+            "status": ""
+          },
+          "2025": {
+            "rank": 17,
+            "status": ""
+          }
+        }
+      }
+    },
+    "pascal-eenkhoorn": {
+      "name": "Pascal Eenkhoorn",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 81,
+            "status": ""
+          },
+          "2025": {
+            "rank": 73,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2025": {
+            "rank": 84,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2024": {
+            "rank": 70,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2026": {
+            "rank": 78,
+            "status": ""
+          }
+        }
+      }
+    },
+    "patrick-konrad": {
+      "name": "Patrick Konrad",
+      "results": {
+        "strade-bianche": {
+          "2023": {
+            "rank": 24,
+            "status": ""
+          },
+          "2026": {
+            "rank": 81,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2024": {
+            "rank": 7,
+            "status": ""
+          },
+          "2026": {
+            "rank": 43,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2024": {
+            "rank": 100,
+            "status": ""
+          },
+          "2025": {
+            "rank": 50,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2024": {
+            "rank": 45,
+            "status": ""
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": 8,
+            "status": ""
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": 63,
+            "status": ""
+          },
+          "2026": {
+            "rank": 92,
+            "status": ""
+          }
+        }
+      }
+    },
+    "paul-seixas": {
+      "name": "Paul Seixas",
+      "results": {
+        "world-championship": {
+          "2025": {
+            "rank": 13,
+            "status": ""
+          }
+        },
+        "strade-bianche": {
+          "2026": {
+            "rank": 2,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2026": {
+            "rank": 17,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2026": {
+            "rank": 2,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2026": {
+            "rank": 2,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2025": {
+            "rank": 7,
+            "status": ""
+          }
+        }
+      }
+    },
+    "pavel-novak": {
+      "name": "Pavel Novák",
+      "results": {
+        "strade-bianche": {
+          "2026": {
+            "rank": 95,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-quebec": {
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-montreal": {
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "paris-roubaix": {
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "liege-bastogne-liege": {
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "pavel-sivakov": {
+      "name": "Pavel Sivakov",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": 35,
+            "status": ""
+          },
+          "2025": {
+            "rank": 15,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2024": {
+            "rank": 19,
+            "status": ""
+          },
+          "2026": {
+            "rank": 78,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 53,
+            "status": ""
+          },
+          "2025": {
+            "rank": 2,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": 2,
+            "status": ""
+          },
+          "2025": {
+            "rank": 20,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": 14,
+            "status": ""
+          },
+          "2025": {
+            "rank": 38,
+            "status": ""
+          },
+          "2026": {
+            "rank": 68,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": 45,
+            "status": ""
+          },
+          "2024": {
+            "rank": 6,
+            "status": ""
+          },
+          "2025": {
+            "rank": 63,
+            "status": ""
+          }
+        }
+      }
+    },
+    "pier-andre-cote": {
+      "name": "Pier-André Côté",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": 44,
+            "status": ""
+          }
+        },
+        "strade-bianche": {
+          "2026": {
+            "rank": 82,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 66,
+            "status": ""
+          },
+          "2026": {
+            "rank": 73,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "milano-sanremo": {
+          "2025": {
+            "rank": 98,
+            "status": ""
+          },
+          "2026": {
+            "rank": 126,
+            "status": ""
+          }
+        }
+      }
+    },
+    "piotr-pekala": {
+      "name": "Piotr Pękala",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "primoz-roglic": {
+      "name": "Primož Roglič",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": 64,
+            "status": ""
+          },
+          "2025": {
+            "rank": 11,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2025": {
+            "rank": 22,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2026": {
+            "rank": 37,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": 3,
+            "status": ""
+          },
+          "2025": {
+            "rank": 22,
+            "status": ""
+          }
+        }
+      }
+    },
+    "quinn-simmons": {
+      "name": "Quinn Simmons",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": 9,
+            "status": ""
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "strade-bianche": {
+          "2023": {
+            "rank": 12,
+            "status": ""
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": 63,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-quebec": {
+          "2024": {
+            "rank": 24,
+            "status": ""
+          },
+          "2025": {
+            "rank": 40,
+            "status": ""
+          },
+          "2026": {
+            "rank": 5,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": 3,
+            "status": ""
+          },
+          "2026": {
+            "rank": 4,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2025": {
+            "rank": 4,
+            "status": ""
+          }
+        }
+      }
+    },
+    "quinten-hermans": {
+      "name": "Quinten Hermans",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "strade-bianche": {
+          "2024": {
+            "rank": 69,
+            "status": ""
+          },
+          "2025": {
+            "rank": 15,
+            "status": ""
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": 32,
+            "status": ""
+          },
+          "2026": {
+            "rank": 11,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 13,
+            "status": ""
+          },
+          "2025": {
+            "rank": 6,
+            "status": ""
+          },
+          "2026": {
+            "rank": 18,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": 12,
+            "status": ""
+          },
+          "2026": {
+            "rank": 33,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 80,
+            "status": ""
+          },
+          "2025": {
+            "rank": 45,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": 48,
+            "status": ""
+          },
+          "2024": {
+            "rank": 35,
+            "status": ""
+          },
+          "2025": {
+            "rank": 47,
+            "status": ""
+          },
+          "2026": {
+            "rank": 38,
+            "status": ""
+          }
+        }
+      }
+    },
+    "raul-garcia-pierna": {
+      "name": "Raúl García Pierna",
+      "results": {
+        "world-championship": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "milano-sanremo": {
+          "2025": {
+            "rank": 82,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": 101,
+            "status": ""
+          },
+          "2025": {
+            "rank": 97,
+            "status": ""
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "remco-evenepoel": {
+      "name": "Remco Evenepoel",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": 25,
+            "status": ""
+          },
+          "2024": {
+            "rank": 5,
+            "status": ""
+          },
+          "2025": {
+            "rank": 2,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": 1,
+            "status": ""
+          },
+          "2026": {
+            "rank": 1,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2026": {
+            "rank": 1,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2026": {
+            "rank": 5,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2026": {
+            "rank": 3,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": 1,
+            "status": ""
+          },
+          "2025": {
+            "rank": 59,
+            "status": ""
+          },
+          "2026": {
+            "rank": 3,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": 9,
+            "status": ""
+          },
+          "2024": {
+            "rank": 2,
+            "status": ""
+          },
+          "2025": {
+            "rank": 2,
+            "status": ""
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 1,
+            "status": ""
+          }
+        }
+      }
+    },
+    "ryan-mullen": {
+      "name": "Ryan Mullen",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "paris-roubaix": {
+          "2023": {
+            "rank": 116,
+            "status": ""
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": 124,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 153,
+            "status": ""
+          },
+          "2024": {
+            "rank": 156,
+            "status": ""
+          },
+          "2025": {
+            "rank": 156,
+            "status": ""
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 60,
+            "status": ""
+          }
+        }
+      }
+    },
+    "santiago-buitrago-sanchez": {
+      "name": "Santiago Buitrago",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": 61,
+            "status": ""
+          },
+          "2024": {
+            "rank": 42,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2024": {
+            "rank": 83,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2024": {
+            "rank": 41,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": 3,
+            "status": ""
+          },
+          "2024": {
+            "rank": 41,
+            "status": ""
+          },
+          "2025": {
+            "rank": 37,
+            "status": ""
+          },
+          "2026": {
+            "rank": 22,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": 32,
+            "status": ""
+          },
+          "2024": {
+            "rank": 86,
+            "status": ""
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 19,
+            "status": ""
+          }
+        }
+      }
+    },
+    "sean-quinn": {
+      "name": "Sean Quinn",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "strade-bianche": {
+          "2023": {
+            "rank": 35,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-quebec": {
+          "2024": {
+            "rank": 61,
+            "status": ""
+          },
+          "2026": {
+            "rank": 15,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "sergio-higuita": {
+      "name": "Sergio Higuita",
+      "results": {
+        "strade-bianche": {
+          "2023": {
+            "rank": 38,
+            "status": ""
+          },
+          "2024": {
+            "rank": 34,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2024": {
+            "rank": 69,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2024": {
+            "rank": 28,
+            "status": ""
+          },
+          "2026": {
+            "rank": 43,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2024": {
+            "rank": 21,
+            "status": ""
+          },
+          "2026": {
+            "rank": 44,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": 85,
+            "status": ""
+          },
+          "2025": {
+            "rank": 24,
+            "status": ""
+          }
+        }
+      }
+    },
+    "soren-kragh-andersen": {
+      "name": "Søren Kragh Andersen",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2026": {
+            "rank": 31,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 5,
+            "status": ""
+          },
+          "2024": {
+            "rank": 31,
+            "status": ""
+          },
+          "2026": {
+            "rank": 129,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": 67,
+            "status": ""
+          }
+        }
+      }
+    },
+    "stefan-bissegger": {
+      "name": "Stefan Bissegger",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-quebec": {
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-montreal": {
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "paris-roubaix": {
+          "2024": {
+            "rank": 26,
+            "status": ""
+          },
+          "2025": {
+            "rank": 7,
+            "status": ""
+          },
+          "2026": {
+            "rank": 8,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2024": {
+            "rank": 36,
+            "status": ""
+          },
+          "2025": {
+            "rank": 19,
+            "status": ""
+          },
+          "2026": {
+            "rank": 37,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 145,
+            "status": ""
+          }
+        }
+      }
+    },
+    "stefan-kung": {
+      "name": "Stefan Küng",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": 5,
+            "status": ""
+          },
+          "2024": {
+            "rank": 37,
+            "status": ""
+          }
+        },
+        "paris-roubaix": {
+          "2023": {
+            "rank": 5,
+            "status": ""
+          },
+          "2024": {
+            "rank": 5,
+            "status": ""
+          },
+          "2025": {
+            "rank": 43,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2023": {
+            "rank": 6,
+            "status": ""
+          },
+          "2024": {
+            "rank": 41,
+            "status": ""
+          },
+          "2025": {
+            "rank": 7,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2024": {
+            "rank": 23,
+            "status": ""
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 7,
+            "status": ""
+          }
+        }
+      }
+    },
+    "thibau-nys": {
+      "name": "Thibau Nys",
+      "results": {
+        "liege-bastogne-liege": {
+          "2025": {
+            "rank": 5,
+            "status": ""
+          }
+        }
+      }
+    },
+    "tiago-antunes": {
+      "name": "Tiago Antunes",
+      "results": {
+        "world-championship": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "tiesj-benoot": {
+      "name": "Tiesj Benoot",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": 9,
+            "status": ""
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "strade-bianche": {
+          "2023": {
+            "rank": 3,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": 10,
+            "status": ""
+          },
+          "2025": {
+            "rank": 4,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 46,
+            "status": ""
+          },
+          "2024": {
+            "rank": 4,
+            "status": ""
+          },
+          "2025": {
+            "rank": 16,
+            "status": ""
+          },
+          "2026": {
+            "rank": 48,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": 11,
+            "status": ""
+          },
+          "2024": {
+            "rank": 7,
+            "status": ""
+          },
+          "2025": {
+            "rank": 7,
+            "status": ""
+          },
+          "2026": {
+            "rank": 52,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2023": {
+            "rank": 13,
+            "status": ""
+          },
+          "2024": {
+            "rank": 15,
+            "status": ""
+          },
+          "2025": {
+            "rank": 6,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": 7,
+            "status": ""
+          },
+          "2024": {
+            "rank": 12,
+            "status": ""
+          },
+          "2025": {
+            "rank": 13,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": 63,
+            "status": ""
+          },
+          "2024": {
+            "rank": 58,
+            "status": ""
+          },
+          "2025": {
+            "rank": 46,
+            "status": ""
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 48,
+            "status": ""
+          }
+        }
+      }
+    },
+    "tilen-finkst": {
+      "name": "Tilen Finkšt",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "tim-van-dijke": {
+      "name": "Tim Van Dijke",
+      "results": {
+        "strade-bianche": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 71,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "paris-roubaix": {
+          "2023": {
+            "rank": 43,
+            "status": ""
+          },
+          "2024": {
+            "rank": 16,
+            "status": ""
+          },
+          "2025": {
+            "rank": 30,
+            "status": ""
+          },
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2023": {
+            "rank": 42,
+            "status": ""
+          },
+          "2024": {
+            "rank": 30,
+            "status": ""
+          },
+          "2025": {
+            "rank": 52,
+            "status": ""
+          },
+          "2026": {
+            "rank": 11,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2024": {
+            "rank": 158,
+            "status": ""
+          }
+        }
+      }
+    },
+    "tobias-foss": {
+      "name": "Tobias Foss",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-quebec": {
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-montreal": {
+          "2026": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "milano-sanremo": {
+          "2025": {
+            "rank": 43,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 74,
+            "status": ""
+          }
+        }
+      }
+    },
+    "tobias-halland-johannessen": {
+      "name": "Tobias Halland Johannessen",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": 51,
+            "status": ""
+          },
+          "2024": {
+            "rank": 41,
+            "status": ""
+          }
+        },
+        "strade-bianche": {
+          "2025": {
+            "rank": 23,
+            "status": ""
+          },
+          "2026": {
+            "rank": 23,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2024": {
+            "rank": 24,
+            "status": ""
+          },
+          "2025": {
+            "rank": 49,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2024": {
+            "rank": 52,
+            "status": ""
+          },
+          "2025": {
+            "rank": 77,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2024": {
+            "rank": 47,
+            "status": ""
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "milano-sanremo": {
+          "2025": {
+            "rank": 39,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": 24,
+            "status": ""
+          },
+          "2024": {
+            "rank": 25,
+            "status": ""
+          },
+          "2026": {
+            "rank": 9,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2024": {
+            "rank": 97,
+            "status": ""
+          }
+        }
+      }
+    },
+    "tom-pidcock": {
+      "name": "Tom Pidcock",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": 57,
+            "status": ""
+          },
+          "2025": {
+            "rank": 10,
+            "status": ""
+          }
+        },
+        "strade-bianche": {
+          "2023": {
+            "rank": 1,
+            "status": ""
+          },
+          "2024": {
+            "rank": 4,
+            "status": ""
+          },
+          "2025": {
+            "rank": 2,
+            "status": ""
+          },
+          "2026": {
+            "rank": 7,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2026": {
+            "rank": 4,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2026": {
+            "rank": 6,
+            "status": ""
+          }
+        },
+        "paris-roubaix": {
+          "2024": {
+            "rank": 17,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2023": {
+            "rank": 52,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2024": {
+            "rank": 11,
+            "status": ""
+          },
+          "2025": {
+            "rank": 40,
+            "status": ""
+          },
+          "2026": {
+            "rank": 2,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2023": {
+            "rank": 2,
+            "status": ""
+          },
+          "2024": {
+            "rank": 10,
+            "status": ""
+          },
+          "2025": {
+            "rank": 9,
+            "status": ""
+          },
+          "2026": {
+            "rank": 101,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2025": {
+            "rank": 6,
+            "status": ""
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 13,
+            "status": ""
+          }
+        }
+      }
+    },
+    "toms-skujins": {
+      "name": "Toms Skujiņš",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": 8,
+            "status": ""
+          },
+          "2024": {
+            "rank": 4,
+            "status": ""
+          },
+          "2025": {
+            "rank": 5,
+            "status": ""
+          }
+        },
+        "strade-bianche": {
+          "2023": {
+            "rank": 17,
+            "status": ""
+          },
+          "2024": {
+            "rank": 2,
+            "status": ""
+          },
+          "2025": {
+            "rank": 12,
+            "status": ""
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": 6,
+            "status": ""
+          },
+          "2025": {
+            "rank": 43,
+            "status": ""
+          },
+          "2026": {
+            "rank": 80,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2023": {
+            "rank": 28,
+            "status": ""
+          },
+          "2024": {
+            "rank": 22,
+            "status": ""
+          },
+          "2026": {
+            "rank": 20,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2023": {
+            "rank": 35,
+            "status": ""
+          },
+          "2024": {
+            "rank": 6,
+            "status": ""
+          },
+          "2026": {
+            "rank": 29,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2024": {
+            "rank": 10,
+            "status": ""
+          },
+          "2025": {
+            "rank": 37,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 88,
+            "status": ""
+          },
+          "2024": {
+            "rank": 32,
+            "status": ""
+          }
+        },
+        "liege-bastogne-liege": {
+          "2024": {
+            "rank": 48,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2024": {
+            "rank": 96,
+            "status": ""
+          },
+          "2025": {
+            "rank": 28,
+            "status": ""
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 5,
+            "status": ""
+          }
+        }
+      }
+    },
+    "ulises-alfredo-castillo": {
+      "name": "Ulises Alfredo Castillo",
+      "results": {
+        "world-championship": {
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          }
+        }
+      }
+    },
+    "valentin-paret-peintre": {
+      "name": "Valentin Paret-Peintre",
+      "results": {
+        "world-championship": {
+          "2025": {
+            "rank": 28,
+            "status": ""
+          }
+        },
+        "strade-bianche": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "gp-quebec": {
+          "2025": {
+            "rank": 111,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "il-lombardia": {
+          "2023": {
+            "rank": 101,
+            "status": ""
+          }
+        }
+      }
+    },
+    "vicente-rojas": {
+      "name": "Vicente Rojas",
+      "results": {
+        "milano-sanremo": {
+          "2025": {
+            "rank": 77,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2025": {
+            "rank": 78,
+            "status": ""
+          }
+        }
+      }
+    },
+    "victor-langellotti": {
+      "name": "Victor Langellotti",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2024": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "san-sebastian": {
+          "2023": {
+            "rank": null,
+            "status": "DNF"
+          },
+          "2025": {
+            "rank": 48,
+            "status": ""
+          }
+        },
+        "il-lombardia": {
+          "2025": {
+            "rank": 80,
+            "status": ""
+          }
+        }
+      }
+    },
+    "wout-van-aert": {
+      "name": "Wout Van Aert",
+      "results": {
+        "world-championship": {
+          "2023": {
+            "rank": 2,
+            "status": ""
+          }
+        },
+        "strade-bianche": {
+          "2026": {
+            "rank": 10,
+            "status": ""
+          }
+        },
+        "gp-quebec": {
+          "2025": {
+            "rank": 14,
+            "status": ""
+          }
+        },
+        "gp-montreal": {
+          "2025": {
+            "rank": null,
+            "status": "DNF"
+          }
+        },
+        "paris-roubaix": {
+          "2023": {
+            "rank": 3,
+            "status": ""
+          },
+          "2025": {
+            "rank": 4,
+            "status": ""
+          },
+          "2026": {
+            "rank": 1,
+            "status": ""
+          }
+        },
+        "ronde-van-vlaanderen": {
+          "2023": {
+            "rank": 4,
+            "status": ""
+          },
+          "2025": {
+            "rank": 4,
+            "status": ""
+          },
+          "2026": {
+            "rank": 4,
+            "status": ""
+          }
+        },
+        "milano-sanremo": {
+          "2023": {
+            "rank": 3,
+            "status": ""
+          },
+          "2026": {
+            "rank": 3,
+            "status": ""
+          }
+        },
+        "olympic-games": {
+          "2024": {
+            "rank": 37,
+            "status": ""
+          }
+        }
+      }
+    }
+  }
+}

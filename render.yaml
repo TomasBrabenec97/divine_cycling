@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: divine-cycling-api
+    runtime: python
+    plan: free
+    autoDeploy: true
+    buildCommand: >-
+      pip install . &&
+      python -m app.db init &&
+      python -m scripts.load_road_worlds_2026_csv &&
+      python -m scripts.load_pcs_data
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: ADMIN_API_KEY
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: https://tomasbrabenec97.github.io
