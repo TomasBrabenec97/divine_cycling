@@ -115,12 +115,19 @@ function matchesAdvancedFilters(rider) {
     && (!ageMax || (age !== null && age !== undefined && age <= Number(ageMax)));
 }
 
+function updateAdvancedFilterBadge() {
+  const count = hasAdvancedFilters();
+  const badge = $("#advanced-filter-count");
+  badge.textContent = count || "";
+  badge.classList.toggle("hidden", !count);
+  badge.setAttribute("aria-label", count ? `${count} advanced filters applied` : "");
+}
+
 function renderAdvancedFilters() {
   const content = $("#advanced-filter-content");
   const { raceSelections, yearSelections, resultMin, resultMax, trendMin, trendMax, ageMin, ageMax } = state.filters;
   const selected = new Set(raceSelections);
-  $("#advanced-filter-count").textContent = hasAdvancedFilters() ? hasAdvancedFilters() : "";
-  $("#advanced-filter-count").classList.toggle("hidden", !hasAdvancedFilters());
+  updateAdvancedFilterBadge();
   if (!state.reference) return;
   const races = state.reference.races;
   const years = [...new Set(races.flatMap((race) => race.editions.map((edition) => edition.year)))].sort((a, b) => b - a);
@@ -141,14 +148,24 @@ function readAdvancedFilterValues() {
 
 async function openAdvancedFilters() {
   const dialog = $("#advanced-filter-modal");
-  if (!dialog.open) dialog.showModal();
-  $("#advanced-filter-content").innerHTML = "<p class=\"muted\">Loading race history…</p>";
+  const content = $("#advanced-filter-content");
+  const pageScrollY = window.scrollY;
+  const positionModalAndPage = () => {
+    dialog.scrollTop = 0;
+    window.scrollTo(0, pageScrollY);
+  };
+  content.innerHTML = "<p class=\"muted\">Loading race history…</p>";
+  if (!dialog.open) {
+    dialog.showModal();
+    window.requestAnimationFrame(positionModalAndPage);
+  }
   try {
     if (!state.reference) state.reference = await request("/api/riders/reference");
     renderAdvancedFilters();
   } catch (error) {
-    $("#advanced-filter-content").innerHTML = `<p class="message">${escapeHtml(error.message)}</p>`;
+    content.innerHTML = `<p class="message">${escapeHtml(error.message)}</p>`;
   }
+  window.requestAnimationFrame(positionModalAndPage);
 }
 
 function renderRiderDetail(riderId) {

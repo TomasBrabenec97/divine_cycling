@@ -61,7 +61,7 @@ button:hover,button.selected { background:var(--ink); color:var(--paper); } butt
 .advanced-race-actions { display:flex; align-items:center; gap:12px; }.advanced-race-actions button { border:0; border-bottom:1px solid var(--line); background:transparent; padding:2px 0; color:var(--muted); font-size:11px; font-weight:600; white-space:nowrap; }.advanced-race-actions button:hover { border-bottom-color:var(--ink); background:transparent; color:var(--ink); }
 @media(max-width:650px) { .advanced-filter-modal { width:calc(100vw - 20px); padding:22px 16px 16px; }.advanced-filter-section-heading,.advanced-profile-filters { display:grid; grid-template-columns:1fr; gap:14px; }.advanced-race-actions { justify-content:space-between; }.race-filter-list,.advanced-profile-grid { grid-template-columns:1fr; }.advanced-filter-actions { position:sticky; bottom:-16px; padding:12px 0 0; background:var(--paper); }.advanced-filter-actions button { flex:1; } }
 .rider-detail-modal { position:fixed !important; top:16px; left:50%; width:min(760px,calc(100vw - 32px)); margin:0; transform:translateX(-50%); }
-.filter-actions .filter-icon-button { width:auto; min-width:0; height:30px; grid-template-columns:16px auto; gap:6px; padding:5px 10px; border-radius:0; }.filter-icon-button::after { content:"Advanced"; }.filter-actions .filter-icon-button #advanced-filter-count { display:none !important; }
+.filter-actions .filter-icon-button { width:auto; min-width:0; height:30px; grid-template-columns:16px auto; gap:6px; padding:5px 10px; border-radius:0; }.filter-icon-button::after { content:"Advanced"; }.filter-actions .filter-icon-button #advanced-filter-count { top:-7px; right:-7px; }.filter-actions #advanced-filter-count.hidden { display:none; }
 .rider-history-heading { justify-content:center; text-align:center; }.rider-history-table { width:min(620px,100%); }
 .api-status { display:flex; align-items:center; gap:9px; margin:0 0 18px; border:1px solid var(--line); background:var(--surface); padding:9px 13px; color:var(--muted); font-size:13px; }
 .api-status.hidden { display:none; }
@@ -81,3 +81,4 @@ button:hover,button.selected { background:var(--ink); color:var(--paper); } butt
 .rider { padding-right:38px; }
 .rider.selected { padding-right:82px; }
 @media(max-width:650px) { .rider-add { top:5px; right:5px; width:34px; height:34px; font:400 22px/1 inherit; }.rider { padding-right:48px; }.rider.selected { padding-right:100px; }.rider.selected .rider-add { right:56px; } }
+.advanced-filter-modal { position:fixed !important; top:16px; left:50%; margin:0; transform:translateX(-50%); }
