@@ -15,7 +15,8 @@ What it does, in order:
    between the lists; the second saves a final prediction directly.
 4. Opens the admin page, enters a finishing order and previews the scoring.
 5. Checks the previewed scores against the scoring module run independently,
-   and that the leaderboard shows each player's total.
+   that the leaderboard shows each player's total, and that the compare chart
+   never falls and ends exactly on each score, as a line and as stacked bars.
 
 Screenshots of every step are written to the output folder printed at the end.
 It never touches `data/game.sqlite3` or any remote database.
@@ -35,6 +36,7 @@ import sys
 import tempfile
 import time
 from datetime import UTC, datetime, timedelta
+from itertools import pairwise
 from pathlib import Path
 
 import httpx
@@ -213,10 +215,38 @@ def simulate(page, base: str, finish: list[int], shots: Path) -> dict:
     with page.expect_response(lambda response: "/simulate" in response.url) as response:
         page.click("#simulate")
     preview = response.value.json()
-    page.wait_for_selector("#simulation-output .leaderboard-entry, #simulation-output tr")
+    page.wait_for_selector("#simulation-output .lb-table")
     page.screenshot(path=shots / "admin-simulation.png", full_page=True)
     preview["page_text"] = page.inner_text("#simulation-output")
+    page.click('#simulation-output [data-tab="compare"]')
+    page.wait_for_selector("#simulation-output .viz-line")
+    preview["chart_lines"] = page.evaluate(CHART_VALUES, "line")
+    page.screenshot(path=shots / "admin-compare.png", full_page=True)
+    page.click("#simulation-output .viz-chart-toggle >> text=Stacked bars")
+    page.wait_for_selector("#simulation-output .viz-segment")
+    preview["chart_bars"] = page.evaluate(CHART_VALUES, "stacked")
     return preview
+
+
+# Reads the compare chart back into points using its own y-axis: each line's
+# values left to right, or each stacked bar's top.
+CHART_VALUES = """mode => {
+  const svg = document.querySelector('#simulation-output .viz-svg');
+  const grid = [...svg.querySelectorAll('.viz-grid')].map(line => Number(line.getAttribute('y1')));
+  const ticks = [...svg.querySelectorAll('text.viz-axis[text-anchor="end"]')].map(t => Number(t.textContent));
+  const value = y => ((grid[0] - y) / (grid[0] - grid[grid.length - 1])) * ticks[ticks.length - 1];
+  if (mode === 'line') {
+    return [...svg.querySelectorAll('.viz-line')].map(path => path.getAttribute('d')
+      .split(/[ML]/).filter(Boolean).map(point => value(Number(point.split(',')[1]))));
+  }
+  const tops = new Map();
+  svg.querySelectorAll('.viz-segment').forEach(segment => {
+    const box = segment.getBBox();
+    const key = Math.round(box.x);
+    tops.set(key, Math.min(tops.get(key) ?? Infinity, box.y));
+  });
+  return [...tops.entries()].sort((a, b) => a[0] - b[0]).map(([, top]) => value(top));
+}"""
 
 
 def main() -> int:
@@ -295,6 +325,18 @@ def main() -> int:
                 failures.append(f"{username} missing from the admin leaderboard")
         if not any(total > 0 for total in totals.values()):
             failures.append("nobody scored: the finishing order did not overlap any pick")
+        # Compare view: the two leaders, as it opens by default.
+        leaders = [entry["total_points"] for entry in preview["entries"][:2]]
+        for values, total in zip(preview["chart_lines"], leaders, strict=True):
+            if any(later < earlier - 0.01 for earlier, later in pairwise(values)):
+                failures.append(f"compare line falls somewhere: {values}")
+            if abs(values[-1] - total) > 0.01:
+                failures.append(f"compare line ends at {values[-1]:.2f}, not {total}")
+        for top, total in zip(preview["chart_bars"], leaders, strict=True):
+            if abs(top - total) > 0.01:
+                failures.append(f"stacked bar reaches {top:.2f}, not {total}")
+        print(f"  compare chart: lines end at {[round(v[-1], 2) for v in preview['chart_lines']]}, "
+              f"bars reach {[round(v, 2) for v in preview['chart_bars']]}")
     finally:
         if args.keep_server:
             print(f"Server still running at {base} (pid {server.pid})")

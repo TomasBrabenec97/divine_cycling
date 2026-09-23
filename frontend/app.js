@@ -1130,6 +1130,20 @@ async function boot() {
     $("#event-meta").textContent = error.message;
     setApiStatus("error", error.message);
     if (!state.player) $("#identity").classList.remove("hidden");
+    showFinishedRace();
+  }
+}
+// Once the result is published there is no open event: point to the leaderboard.
+async function showFinishedRace() {
+  try {
+    const finished = await request("/api/events/latest-finished");
+    $("#event-context").classList.remove("hidden");
+    $("#event-context").classList.add("race-finished");
+    $("#event-title").textContent = finished.name;
+    $("#event-meta").innerHTML = 'The race is over. <a href="leaderboard.html">See the leaderboard and your score</a>.';
+    setApiStatus("ready", "Results are in");
+  } catch (_) {
+    // No finished race either; the error above stands.
   }
 }
 $("#join").addEventListener("click", async () => {
