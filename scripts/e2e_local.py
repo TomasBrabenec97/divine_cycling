@@ -9,8 +9,10 @@ What it does, in order:
    exports -- the same three commands the Render build runs -- and moves the
    event deadline a week ahead so the test still works after the real race.
 2. Starts uvicorn on a free port with a throwaway admin key.
-3. Drives the real UI in a browser: registers two players, fills each Top 10
-   and three wildcards through the rider list and saves them.
+3. Drives the real UI in a browser: registers two players and fills each Top
+   10 and three wildcards through the rider list. The first player keeps a
+   named template, saves it as final, then edits the template and switches
+   between the lists; the second saves a final prediction directly.
 4. Opens the admin page, enters a finishing order and previews the scoring.
 5. Checks the previewed scores against the scoring module run independently,
    and that the leaderboard shows each player's total.
@@ -125,7 +127,19 @@ def expected_total(picks: list[int], finish: list[int], ranks: dict[int, int]) -
     return score["total_points"]
 
 
-def fill_top_ten(page, base: str, username: str, picks: list[int], shots: Path) -> None:
+def shown_top_ten(page) -> list[int]:
+    return page.eval_on_selector_all(
+        "#picks li", "items => items.map(item => Number(item.dataset.pickedRider || 0))"
+    )
+
+
+def saved_message(page, text: str) -> None:
+    page.wait_for_function(
+        "text => document.querySelector('#prediction-message').textContent.includes(text)", arg=text
+    )
+
+
+def sign_in_and_pick(page, base: str, username: str, picks: list[int]) -> None:
     page.goto(base)
     page.wait_for_selector("#identity:not(.hidden)")
     page.fill("#username", username)
@@ -134,11 +148,49 @@ def fill_top_ten(page, base: str, username: str, picks: list[int], shots: Path) 
     page.wait_for_selector("[data-rider-add]")
     for rider_id in picks:
         page.click(f'[data-rider-add="{rider_id}"]')
+
+
+def fill_top_ten(page, base: str, username: str, picks: list[int], shots: Path) -> None:
+    sign_in_and_pick(page, base, username, picks)
     page.click("#save")
-    page.wait_for_selector("#prediction-message.ok")
+    saved_message(page, "Final prediction saved")
     page.screenshot(path=shots / f"{username}-top10.png", full_page=True)
     page.click("#logout")
     page.wait_for_selector("#identity:not(.hidden)")
+
+
+def keep_a_template(page, base: str, username: str, picks: list[int], spare: int, shots: Path):
+    """Save the picks as a named template and as final, then change only the template.
+
+    Returns the template's picks after the edit; the final keeps `picks`.
+    """
+    sign_in_and_pick(page, base, username, picks)
+    page.click("#save-new-template")
+    page.wait_for_selector("[data-rename]")
+    page.fill("[data-rename]", "Plan A")
+    page.keyboard.press("Enter")
+    page.wait_for_selector('.list-tab.active:has-text("Plan A")')
+    page.click("#save")
+    saved_message(page, "as your final prediction")
+
+    page.click('[data-remove="9"]')
+    page.click(f'[data-rider-add="{spare}"]')
+    page.click("#save-template")
+    saved_message(page, "Saved “Plan A”")
+    edited = shown_top_ten(page)
+    page.screenshot(path=shots / f"{username}-template.png", full_page=False)
+
+    page.click('[data-list="final"]')
+    page.wait_for_selector('.list-tab.final.active')
+    if shown_top_ten(page) != picks[:10]:
+        raise AssertionError(f"Final tab shows {shown_top_ten(page)}, expected {picks[:10]}")
+    page.click('.list-tab:has-text("Plan A")')
+    page.wait_for_selector('.list-tab.active:has-text("Plan A")')
+    if shown_top_ten(page) != edited:
+        raise AssertionError(f"Template tab shows {shown_top_ten(page)}, expected {edited}")
+    page.click("#logout")
+    page.wait_for_selector("#identity:not(.hidden)")
+    return edited
 
 
 def simulate(page, base: str, finish: list[int], shots: Path) -> dict:
@@ -190,15 +242,31 @@ def main() -> int:
             page = context.new_page()
             page.on("pageerror", lambda error: failures.append(f"page error: {error}"))
 
-            for username, rider_ids in picks.items():
+            template_edits: dict[str, list[int]] = {}
+            for index, (username, rider_ids) in enumerate(picks.items()):
                 print(f"Filling the Top 10 of {username} through the UI")
-                fill_top_ten(page, base, username, rider_ids, shots)
+                if index == 0:
+                    spare = next(r for r in ranks if r not in rider_ids)
+                    template_edits[username] = keep_a_template(
+                        page, base, username, rider_ids, spare, shots
+                    )
+                else:
+                    fill_top_ten(page, base, username, rider_ids, shots)
                 player = httpx.get(f"{base}/api/players/by-username/{username}").json()
                 saved = httpx.get(f"{base}/api/events/{event['id']}/predictions/{player['id']}")
                 body = saved.json()
                 saved_ids = [item["rider_id"] for item in body["selections"]] + body["wildcards"]
                 if saved_ids != rider_ids:
                     failures.append(f"{username}: saved {saved_ids}, picked {rider_ids}")
+                if username in template_edits:
+                    lists = httpx.get(
+                        f"{base}/api/events/{event['id']}/players/{player['id']}/templates"
+                    ).json()
+                    stored = {item["position"]: item["rider_id"] for item in lists[0]["selections"]}
+                    if [lists[0]["name"], [stored.get(p, 0) for p in range(1, 11)]] != [
+                        "Plan A", template_edits[username]
+                    ]:
+                        failures.append(f"{username}: template stored as {lists}")
 
             print("Previewing the scoring on the admin page")
             preview = simulate(page, base, finish, shots)

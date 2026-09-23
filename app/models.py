@@ -91,6 +91,25 @@ class Prediction(Base):
     )
 
 
+class PredictionTemplate(Base):
+    """A named draft list a player keeps next to the final prediction.
+
+    Templates are never scored; saving one as final copies its picks into the
+    player's `Prediction`. The picks are stored as JSON because a draft may be
+    incomplete and is always read and written whole.
+    """
+
+    __tablename__ = "prediction_templates"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    player_id: Mapped[int] = mapped_column(ForeignKey("players.id"), index=True)
+    event_id: Mapped[int] = mapped_column(ForeignKey("events.id"), index=True)
+    name: Mapped[str] = mapped_column(String(40))
+    picks_json: Mapped[str] = mapped_column(Text, default='{"selections": [], "wildcards": []}')
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
 class PredictionItem(Base):
     __tablename__ = "prediction_items"
     __table_args__ = (

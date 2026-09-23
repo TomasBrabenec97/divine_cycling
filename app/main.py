@@ -21,6 +21,7 @@ from app.models import (
     Player,
     Prediction,
     PredictionItem,
+    PredictionTemplate,
     PredictionWildcard,
     Race,
     RaceEdition,
@@ -33,13 +34,15 @@ from app.schemas import (
     EventResponse,
     LeaderboardEntry,
     LeaderboardResponse,
+    PicksBase,
     PlayerCreate,
     PlayerResponse,
-    PredictionPicks,
     PredictionResponse,
     PredictionUpsert,
     ResultUpsert,
     RiderResponse,
+    TemplateResponse,
+    TemplateUpsert,
 )
 from app.scoring import (
     DEFAULT_RULES,
@@ -54,7 +57,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
     allow_credentials=False,
-    allow_methods=["GET", "POST", "PUT", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "X-Admin-Key"],
 )
 # The rider reference set is a few hundred KB of JSON the page now loads on
@@ -257,7 +260,16 @@ def rider_reference_data(db: Session = Depends(get_db)) -> dict:
     }
 
 
-def require_startlist_picks(event: Event, picks: PredictionPicks, db: Session) -> None:
+def require_open_event(event_id: int, db: Session) -> Event:
+    event = db.get(Event, event_id)
+    if event is None:
+        raise HTTPException(status_code=404, detail="Event not found")
+    if event.status != "open" or datetime.utcnow() >= event.prediction_deadline:
+        raise HTTPException(status_code=409, detail="Predictions are locked for this event")
+    return event
+
+
+def require_startlist_picks(event: Event, picks: PicksBase, db: Session) -> None:
     eligible_ids = set(
         db.scalars(
             select(EventRider.rider_id).where(
@@ -276,11 +288,7 @@ def require_startlist_picks(event: Event, picks: PredictionPicks, db: Session) -
 def upsert_prediction(
     event_id: int, payload: PredictionUpsert, db: Session = Depends(get_db)
 ) -> PredictionResponse:
-    event = db.get(Event, event_id)
-    if event is None:
-        raise HTTPException(status_code=404, detail="Event not found")
-    if event.status != "open" or datetime.utcnow() >= event.prediction_deadline:
-        raise HTTPException(status_code=409, detail="Predictions are locked for this event")
+    event = require_open_event(event_id, db)
     if db.get(Player, payload.player_id) is None:
         raise HTTPException(status_code=404, detail="Player not found")
 
@@ -331,6 +339,132 @@ def get_prediction(
     if prediction is None:
         raise HTTPException(status_code=404, detail="Prediction not found")
     return prediction_response(prediction)
+
+
+# -- templates: named draft lists next to the final prediction -------------
+
+MAX_TEMPLATES = 12
+
+
+def template_response(template: PredictionTemplate) -> TemplateResponse:
+    picks = json.loads(template.picks_json)
+    return TemplateResponse(
+        id=template.id,
+        name=template.name,
+        selections=picks.get("selections", []),
+        wildcards=picks.get("wildcards", []),
+        created_at=template.created_at,
+        updated_at=template.updated_at,
+    )
+
+
+def template_picks_json(payload: TemplateUpsert) -> str:
+    return json.dumps(
+        {
+            "selections": [
+                item.model_dump() for item in sorted(payload.selections, key=lambda i: i.position)
+            ],
+            "wildcards": payload.wildcards,
+        }
+    )
+
+
+def require_unique_template_name(
+    db: Session, event_id: int, player_id: int, name: str, template_id: int | None = None
+) -> None:
+    names = db.execute(
+        select(PredictionTemplate.id, PredictionTemplate.name).where(
+            PredictionTemplate.event_id == event_id, PredictionTemplate.player_id == player_id
+        )
+    ).all()
+    if any(row.name.casefold() == name.casefold() and row.id != template_id for row in names):
+        raise HTTPException(status_code=409, detail=f"You already have a list called {name}")
+
+
+def owned_template(
+    db: Session, event_id: int, template_id: int, player_id: int
+) -> PredictionTemplate:
+    template = db.get(PredictionTemplate, template_id)
+    if template is None or template.event_id != event_id or template.player_id != player_id:
+        raise HTTPException(status_code=404, detail="List not found")
+    return template
+
+
+@app.get(
+    "/api/events/{event_id}/players/{player_id}/templates", response_model=list[TemplateResponse]
+)
+def list_templates(
+    event_id: int, player_id: int, db: Session = Depends(get_db)
+) -> list[TemplateResponse]:
+    templates = db.scalars(
+        select(PredictionTemplate)
+        .where(PredictionTemplate.event_id == event_id, PredictionTemplate.player_id == player_id)
+        .order_by(PredictionTemplate.created_at, PredictionTemplate.id)
+    ).all()
+    return [template_response(template) for template in templates]
+
+
+@app.post(
+    "/api/events/{event_id}/templates",
+    response_model=TemplateResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_template(
+    event_id: int, payload: TemplateUpsert, db: Session = Depends(get_db)
+) -> TemplateResponse:
+    event = require_open_event(event_id, db)
+    if db.get(Player, payload.player_id) is None:
+        raise HTTPException(status_code=404, detail="Player not found")
+    require_startlist_picks(event, payload, db)
+    existing = db.scalars(
+        select(PredictionTemplate.id).where(
+            PredictionTemplate.event_id == event_id,
+            PredictionTemplate.player_id == payload.player_id,
+        )
+    ).all()
+    if len(existing) >= MAX_TEMPLATES:
+        raise HTTPException(status_code=409, detail=f"You can keep up to {MAX_TEMPLATES} lists")
+    require_unique_template_name(db, event_id, payload.player_id, payload.name)
+    now = datetime.utcnow()
+    template = PredictionTemplate(
+        player_id=payload.player_id,
+        event_id=event_id,
+        name=payload.name,
+        picks_json=template_picks_json(payload),
+        created_at=now,
+        updated_at=now,
+    )
+    db.add(template)
+    db.commit()
+    db.refresh(template)
+    return template_response(template)
+
+
+@app.put("/api/events/{event_id}/templates/{template_id}", response_model=TemplateResponse)
+def update_template(
+    event_id: int, template_id: int, payload: TemplateUpsert, db: Session = Depends(get_db)
+) -> TemplateResponse:
+    event = require_open_event(event_id, db)
+    template = owned_template(db, event_id, template_id, payload.player_id)
+    require_startlist_picks(event, payload, db)
+    require_unique_template_name(db, event_id, payload.player_id, payload.name, template_id)
+    template.name = payload.name
+    template.picks_json = template_picks_json(payload)
+    template.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(template)
+    return template_response(template)
+
+
+@app.delete(
+    "/api/events/{event_id}/templates/{template_id}", status_code=status.HTTP_204_NO_CONTENT
+)
+def delete_template(
+    event_id: int, template_id: int, player_id: int, db: Session = Depends(get_db)
+) -> None:
+    require_open_event(event_id, db)
+    db.delete(owned_template(db, event_id, template_id, player_id))
+    db.commit()
 
 
 def score_event(event: Event, db: Session, is_simulation: bool) -> LeaderboardResponse:
