@@ -26,6 +26,7 @@ class RiderResponse(BaseModel):
     nation: str
     uci_rank: int
     uci_points: float | None
+    team: str | None = None
 
 
 class EventResponse(BaseModel):

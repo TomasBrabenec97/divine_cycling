@@ -5,6 +5,7 @@ from pathlib import Path
 
 from fastapi import Depends, FastAPI, Header, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import delete, select
@@ -48,6 +49,9 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "OPTIONS"],
     allow_headers=["Content-Type", "X-Admin-Key"],
 )
+# The rider reference set is a few hundred KB of JSON the page now loads on
+# every visit; compressed it is a tenth of that.
+app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 
 @app.on_event("startup")
@@ -74,10 +78,21 @@ def active_event_or_404(db: Session) -> Event:
     return event
 
 
+def rider_team(rider: Rider) -> str | None:
+    """The trade team from the PCS profile, else from the latest ranking snapshot."""
+    if rider.profile is not None and rider.profile.team:
+        return rider.profile.team
+    latest = max(rider.rankings, key=lambda ranking: ranking.ranking_date, default=None)
+    return latest.team if latest is not None and latest.team else None
+
+
 def event_response(event: Event, db: Session) -> EventResponse:
     rows = db.scalars(
         select(EventRider)
-        .options(joinedload(EventRider.rider))
+        .options(
+            joinedload(EventRider.rider).selectinload(Rider.profile),
+            joinedload(EventRider.rider).selectinload(Rider.rankings),
+        )
         .where(EventRider.event_id == event.id, EventRider.is_starter.is_(True))
         .order_by(EventRider.uci_rank)
     ).all()
@@ -97,6 +112,7 @@ def event_response(event: Event, db: Session) -> EventResponse:
                 nation=row.rider.nation,
                 uci_rank=row.uci_rank,
                 uci_points=row.uci_points,
+                team=rider_team(row.rider),
             )
             for row in rows
         ],
@@ -193,6 +209,7 @@ def rider_reference_data(db: Session = Depends(get_db)) -> dict:
                     "age": rider.profile.age,
                     "date_of_birth": rider.profile.date_of_birth,
                     "wins_total": rider.profile.wins_total,
+                    "profile_url": rider.profile.profile_url,
                 },
                 "seasons": [
                     {

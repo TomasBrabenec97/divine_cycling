@@ -1,5 +1,22 @@
-const emptyAdvancedFilters = () => ({ raceSelections: [], yearSelections: [], resultMin: "", resultMax: "", trendMin: "", trendMax: "", ageMin: "", ageMax: "" });
-const state = { event: null, player: null, reference: null, apiStatus: "starting", apiReadyPromise: null, picks: Array(10).fill(null), savedPicks: Array(10).fill(null), undoStack: [], redoStack: [], mobilePendingRiderId: null, riderView: "country", riderSort: "alphabetical", riderSortDirection: "asc", riderSelectionFilter: "all", filters: { search: "", countries: [], rankMin: "", rankMax: "", pointsMin: "", pointsMax: "", ...emptyAdvancedFilters() } };
+// Season-start snapshot every "trend" and "change" in the UI is measured against.
+const SEASON_START = "2025-12-30";
+const TREND_THRESHOLD_PCT = 10;
+const NO_TEAM = "No trade team";
+// One row per rider-data filter in the advanced panel. `value` reads the number
+// a rider is compared on; filters with `modes` can compare absolute or relative change.
+const PROFILE_FILTERS = [
+  { key: "winsSeason", label: "Wins", hint: "this season", value: (rider, reference) => currentSeason(reference)?.wins ?? 0 },
+  { key: "winsTotal", label: "Career wins", value: (rider, reference) => reference.profile?.wins_total ?? null },
+  { key: "top10sSeason", label: "Top 10 finishes", hint: "this season", value: (rider, reference) => currentSeason(reference)?.top10s ?? 0 },
+  { key: "racedaysSeason", label: "Race days", hint: "this season", value: (rider, reference) => currentSeason(reference)?.racedays ?? 0 },
+  { key: "age", label: "Age", value: (rider, reference) => reference.profile?.age ?? null },
+  { key: "pointsChange", label: "UCI points change", hint: "since season start", modes: [{ id: "abs", label: "pts" }, { id: "pct", label: "%" }], value: (rider, reference, mode) => pointsTrend(rider, reference)?.[mode] ?? null },
+  { key: "rankChange", label: "UCI rank change", hint: "since season start", modes: [{ id: "abs", label: "places" }, { id: "pct", label: "%" }], value: (rider, reference, mode) => rankTrend(rider, reference)?.[mode] ?? null },
+];
+const emptyProfileFilters = () => Object.fromEntries(PROFILE_FILTERS.map((filter) => [filter.key, { min: "", max: "", mode: filter.modes?.[0].id }]));
+const emptyAdvancedFilters = () => ({ resultCells: [], resultMin: "", resultMax: "", profile: emptyProfileFilters() });
+const emptyFilters = () => ({ search: "", countries: [], teams: [], rankMin: "", rankMax: "", pointsMin: "", pointsMax: "", ...emptyAdvancedFilters() });
+const state = { event: null, player: null, reference: null, referencePromise: null, teamIcons: {}, apiStatus: "starting", apiReadyPromise: null, picks: Array(10).fill(null), savedPicks: Array(10).fill(null), undoStack: [], redoStack: [], mobilePendingRiderId: null, riderView: "country", riderSort: "alphabetical", riderSortDirection: "asc", riderSelectionFilter: "all", filters: emptyFilters(), advancedDraft: null };
 const $ = (selector) => document.querySelector(selector);
 const isMobileLayout = () => window.matchMedia("(max-width: 650px)").matches;
 const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
@@ -7,6 +24,22 @@ const flag = (country) => `<span class="flag"><img src="flags/${country.toLocale
 const countryName = (country) => {
   try { return countryNames.of(country) || country; } catch (_) { return country; }
 };
+const teamLabel = (team) => team || NO_TEAM;
+// Jerseys come from teams/index.json; a team without one gets its initials instead.
+function teamIcon(team) {
+  const file = team && state.teamIcons[team];
+  if (file) return `<span class="team-icon"><img src="teams/${encodeURIComponent(file)}" alt="" loading="lazy" /></span>`;
+  const initials = team ? team.split(/[\s|-]+/).filter((word) => /^[\p{L}\d]/u.test(word)).slice(0, 2).map((word) => word[0]).join("").toUpperCase() : "–";
+  return `<span class="team-icon team-monogram" aria-hidden="true">${escapeHtml(initials)}</span>`;
+}
+async function loadTeamIcons() {
+  try {
+    const response = await fetch("teams/index.json");
+    if (response.ok) state.teamIcons = await response.json();
+  } catch (_) {
+    state.teamIcons = {};
+  }
+}
 const savedPicks = () => state.picks.filter(Boolean);
 const hasUnsavedPickChanges = () => state.picks.some((riderId, index) => riderId !== state.savedPicks[index]);
 const rememberPickState = () => { state.undoStack.push([...state.picks]); if (state.undoStack.length > 50) state.undoStack.shift(); state.redoStack = []; };
@@ -80,70 +113,199 @@ function resultCell(result) {
   if (!result) return "";
   if (result.status) return `<span class="result-status">${escapeHtml(result.status)}</span>`;
   if (result.position <= 3) return `<span class="result-medal medal-${result.position}">${result.position}</span>`;
-  if (result.position <= 5) return `<span class="result-top-five">${result.position}</span>`;
+  if (result.position <= 10) return `<span class="result-top-ten">${result.position}</span>`;
   return `<span class="result-place">${result.position}</span>`;
 }
 
-const hasAdvancedFilters = () => {
-  const { raceSelections, yearSelections, resultMin, resultMax, trendMin, trendMax, ageMin, ageMax } = state.filters;
-  return raceSelections.length + yearSelections.length + [resultMin, resultMax, trendMin, trendMax, ageMin, ageMax].filter(Boolean).length;
-};
-const riderReference = (riderId) => state.reference?.riders.find((item) => item.id === riderId);
-const rankingTrend = (rider, reference) => {
+// The PCS reference set is one payload; the trend arrows want it early, the
+// detail card and the advanced filters must wait for it.
+function loadReference() {
+  state.referencePromise = state.referencePromise || request("/api/riders/reference").then((reference) => {
+    reference.currentSeason = Math.max(0, ...reference.riders.flatMap((rider) => rider.seasons.map((season) => season.season)));
+    reference.byId = new Map(reference.riders.map((rider) => [rider.id, rider]));
+    state.reference = reference;
+    return reference;
+  }).catch((error) => {
+    state.referencePromise = null;
+    throw error;
+  });
+  return state.referencePromise;
+}
+const riderReference = (riderId) => state.reference?.byId.get(riderId);
+const currentSeason = (reference) => reference?.seasons.find((season) => season.season === state.reference?.currentSeason);
+function seasonStartRanking(reference) {
   const rankings = [...(reference?.rankings || [])].sort((a, b) => String(a.date).localeCompare(String(b.date)));
-  const seasonStart = rankings.find((item) => String(item.date).startsWith("2025-12-30")) || rankings[0];
-  return seasonStart?.uci_rank && rider.uci_rank !== 999999 ? seasonStart.uci_rank - rider.uci_rank : null;
-};
-function matchesAdvancedFilters(rider) {
-  if (!hasAdvancedFilters()) return true;
+  return rankings.find((item) => String(item.date).startsWith(SEASON_START)) || rankings[0];
+}
+function pointsTrend(rider, reference) {
+  const start = seasonStartRanking(reference);
+  if (start?.uci_points === null || start?.uci_points === undefined || rider.uci_points === null) return null;
+  const abs = rider.uci_points - start.uci_points;
+  return { abs, pct: start.uci_points > 0 ? (100 * abs) / start.uci_points : null, from: start.uci_points };
+}
+function rankTrend(rider, reference) {
+  const start = seasonStartRanking(reference);
+  if (!start?.uci_rank || rider.uci_rank === 999999) return null;
+  const abs = start.uci_rank - rider.uci_rank;
+  return { abs, pct: (100 * abs) / start.uci_rank, from: start.uci_rank };
+}
+function trendDirection(rider, reference) {
+  const trend = pointsTrend(rider, reference);
+  if (!trend) return null;
+  const pct = trend.pct ?? (trend.abs > 0 ? Infinity : trend.abs < 0 ? -Infinity : 0);
+  return pct >= TREND_THRESHOLD_PCT ? "up" : pct <= -TREND_THRESHOLD_PCT ? "down" : "flat";
+}
+const TREND_PATHS = { up: "M7 17 17 7M9 7h8v8", down: "M7 7l10 10M17 9v8H9", flat: "M5 12h14M13 7l5 5-5 5" };
+function trendArrow(rider) {
+  const reference = riderReference(rider.id);
+  const direction = reference && trendDirection(rider, reference);
+  if (!direction) return "";
+  const trend = pointsTrend(rider, reference);
+  const change = trend.pct === null ? `${trend.abs >= 0 ? "+" : ""}${Math.round(trend.abs).toLocaleString()} pts` : `${trend.pct >= 0 ? "+" : ""}${Math.round(trend.pct)}%`;
+  const label = `${{ up: "Trending up", down: "Trending down", flat: "Holding steady" }[direction]}: UCI points ${change} since the season start`;
+  return `<span class="trend-arrow trend-${direction}" title="${label}" aria-label="${label}" role="img"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${TREND_PATHS[direction]}" /></svg></span>`;
+}
+
+const activeProfileFilters = (filters) => PROFILE_FILTERS.filter((filter) => filters.profile[filter.key].min !== "" || filters.profile[filter.key].max !== "");
+const hasResultFilter = (filters) => filters.resultCells.length > 0 || filters.resultMin !== "" || filters.resultMax !== "";
+const countAdvancedFilters = (filters = state.filters) => (hasResultFilter(filters) ? 1 : 0) + activeProfileFilters(filters).length;
+const inRange = (value, min, max) => value !== null && value !== undefined && Number.isFinite(value)
+  && (min === "" || value >= Number(min)) && (max === "" || value <= Number(max));
+function matchesAdvancedFilters(rider, filters = state.filters) {
+  if (!countAdvancedFilters(filters)) return true;
   const reference = riderReference(rider.id);
   if (!reference) return false;
-  const { raceSelections, yearSelections, resultMin, resultMax, trendMin, trendMax, ageMin, ageMax } = state.filters;
-  const resultInRange = (result) => !result.status && result.position
-    && (!resultMin || result.position >= Number(resultMin))
-    && (!resultMax || result.position <= Number(resultMax));
-  const matchesRace = (result) => resultInRange(result) && (yearSelections.includes(String(result.year)) || raceSelections.some((selection) => {
-    const [raceKey, year] = selection.split(":");
-    return result.race_key === raceKey && (year === "all" || Number(year) === result.year);
-  }));
-  const trend = rankingTrend(rider, reference);
-  const age = reference.profile?.age;
-  return (!(raceSelections.length || yearSelections.length) || reference.results.some(matchesRace))
-    && (!trendMin || (trend !== null && trend >= Number(trendMin)))
-    && (!trendMax || (trend !== null && trend <= Number(trendMax)))
-    && (!ageMin || (age !== null && age !== undefined && age >= Number(ageMin)))
-    && (!ageMax || (age !== null && age !== undefined && age <= Number(ageMax)));
+  if (hasResultFilter(filters)) {
+    // With no editions picked, a place range applies to every tracked race.
+    const cells = new Set(filters.resultCells);
+    const qualifies = (result) => !result.status && result.position
+      && (!cells.size || cells.has(`${result.race_key}:${result.year}`))
+      && inRange(result.position, filters.resultMin, filters.resultMax);
+    if (!reference.results.some(qualifies)) return false;
+  }
+  return activeProfileFilters(filters).every((filter) => {
+    const { min, max, mode } = filters.profile[filter.key];
+    return inRange(filter.value(rider, reference, mode), min, max);
+  });
 }
 
 function updateAdvancedFilterBadge() {
-  const count = hasAdvancedFilters();
+  const count = countAdvancedFilters();
   const badge = $("#advanced-filter-count");
   badge.textContent = count || "";
   badge.classList.toggle("hidden", !count);
   badge.setAttribute("aria-label", count ? `${count} advanced filters applied` : "");
 }
 
-function renderAdvancedFilters() {
-  const content = $("#advanced-filter-content");
-  const { raceSelections, yearSelections, resultMin, resultMax, trendMin, trendMax, ageMin, ageMax } = state.filters;
-  const selected = new Set(raceSelections);
-  updateAdvancedFilterBadge();
-  if (!state.reference) return;
-  const races = state.reference.races;
-  const years = [...new Set(races.flatMap((race) => race.editions.map((edition) => edition.year)))].sort((a, b) => b - a);
-  const selectedYears = new Set(yearSelections);
-  content.innerHTML = `<section class="advanced-filter-section"><div class="advanced-filter-section-heading"><div><h3>Race results</h3><p class="muted">Match a finish in any selected race, edition, or whole year.</p></div><div class="advanced-race-actions"><button id="expand-race-filters" type="button">Expand all</button><button id="collapse-race-filters" type="button">Collapse all</button><div class="advanced-range"><span class="advanced-range-label">Place</span><input id="advanced-result-min" type="number" min="1" placeholder="From" aria-label="Minimum finishing place" value="${escapeHtml(resultMin)}" /><span>to</span><input id="advanced-result-max" type="number" min="1" placeholder="To" aria-label="Maximum finishing place" value="${escapeHtml(resultMax)}" /></div></div></div><div class="year-filter-row"><span>All races in</span>${years.map((year) => `<label><input type="checkbox" data-year-selection="${year}" ${selectedYears.has(String(year)) ? "checked" : ""} /> ${year}</label>`).join("")}</div><div class="race-filter-list">${races.map((race) => { const aggregate = `${race.key}:all`; return `<details class="race-filter"><summary><label><input type="checkbox" data-race-selection="${aggregate}" ${selected.has(aggregate) ? "checked" : ""} /> ${escapeHtml(race.label)} <span>all years</span></label></summary><div class="race-editions">${race.editions.map((edition) => `<label><input type="checkbox" data-race-selection="${race.key}:${edition.year}" ${selected.has(`${race.key}:${edition.year}`) ? "checked" : ""} /> ${edition.year}${edition.note ? ` <span>${escapeHtml(edition.note)}</span>` : ""}</label>`).join("")}</div></details>`; }).join("")}</div></section><section class="advanced-filter-section advanced-profile-filters"><div><h3>Rider profile</h3><p class="muted">Ranking trend is places gained since the season-start UCI ranking.</p></div><div class="advanced-profile-grid"><label>Ranking trend <div class="advanced-range"><input id="advanced-trend-min" type="number" placeholder="From" value="${escapeHtml(trendMin)}" /><span>to</span><input id="advanced-trend-max" type="number" placeholder="To" value="${escapeHtml(trendMax)}" /></div><small>Positive means moving up.</small></label><label>Age <div class="advanced-range"><input id="advanced-age-min" type="number" min="16" max="60" placeholder="From" value="${escapeHtml(ageMin)}" /><span>to</span><input id="advanced-age-max" type="number" min="16" max="60" placeholder="To" value="${escapeHtml(ageMax)}" /></div></label></div></section>`;
-  $("#expand-race-filters").addEventListener("click", () => document.querySelectorAll(".race-filter").forEach((race) => { race.open = true; }));
-  $("#collapse-race-filters").addEventListener("click", () => document.querySelectorAll(".race-filter").forEach((race) => { race.open = false; }));
+const cloneAdvancedFilters = (filters) => ({ resultCells: [...filters.resultCells], resultMin: filters.resultMin, resultMax: filters.resultMax, profile: structuredClone(filters.profile) });
+function trackedRaces() {
+  const calendarDate = (race) => {
+    const datedEditions = race.editions.filter((edition) => edition.date);
+    if (!datedEditions.length) return "99-99";
+    const latestYear = Math.max(...datedEditions.map((edition) => edition.year));
+    return String(datedEditions.find((edition) => edition.year === latestYear).date).slice(5);
+  };
+  const races = [...state.reference.races].sort((left, right) => calendarDate(left).localeCompare(calendarDate(right)) || left.label.localeCompare(right.label));
+  const years = [...new Set(races.flatMap((race) => race.editions.map((edition) => edition.year)))].sort((a, b) => a - b);
+  return { races, years };
+}
+// Editions a result filter can use: ridden ones, not the upcoming or never-held.
+function selectableCells() {
+  const { races } = trackedRaces();
+  return races.flatMap((race) => race.editions.filter((edition) => !edition.note).map((edition) => ({ race: race.key, year: edition.year, id: `${race.key}:${edition.year}` })));
 }
 
-function readAdvancedFilterValues() {
-  state.filters.raceSelections = [...document.querySelectorAll("[data-race-selection]:checked")].map((input) => input.dataset.raceSelection);
-  state.filters.yearSelections = [...document.querySelectorAll("[data-year-selection]:checked")].map((input) => input.dataset.yearSelection);
-  ["resultMin", "resultMax", "trendMin", "trendMax", "ageMin", "ageMax"].forEach((key) => {
-    const input = $(`#advanced-${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`);
-    state.filters[key] = input?.value.trim() || "";
-  });
+function renderResultMatrix() {
+  const draft = state.advancedDraft;
+  const { races, years } = trackedRaces();
+  const selected = new Set(draft.resultCells);
+  const selectable = selectableCells();
+  const allOn = (cells) => cells.length > 0 && cells.every((cell) => selected.has(cell.id));
+  const header = years.map((year) => {
+    const cells = selectable.filter((cell) => cell.year === year);
+    return `<th scope="col"><button type="button" class="matrix-axis ${allOn(cells) ? "on" : ""}" data-matrix-year="${year}" aria-pressed="${allOn(cells)}" ${cells.length ? "" : "disabled"}>${year}</button></th>`;
+  }).join("");
+  const rows = races.map((race) => {
+    const rowCells = selectable.filter((cell) => cell.race === race.key);
+    const cells = years.map((year) => {
+      const edition = race.editions.find((item) => item.year === year);
+      if (!edition) return `<td><span class="matrix-cell missing" title="Not held in ${year}"></span></td>`;
+      if (edition.note) return `<td><span class="matrix-cell upcoming" title="${escapeHtml(race.label)} ${year}: ${escapeHtml(edition.note)}">·</span></td>`;
+      const id = `${race.key}:${year}`;
+      return `<td><button type="button" class="matrix-cell ${selected.has(id) ? "on" : ""}" data-matrix-cell="${id}" aria-pressed="${selected.has(id)}" aria-label="${escapeHtml(race.label)} ${year}"></button></td>`;
+    }).join("");
+    return `<tr><th scope="row"><button type="button" class="matrix-axis ${allOn(rowCells) ? "on" : ""}" data-matrix-race="${race.key}" aria-pressed="${allOn(rowCells)}">${escapeHtml(race.label)}</button></th>${cells}</tr>`;
+  }).join("");
+  const count = draft.resultCells.length;
+  $("#result-matrix").innerHTML = `<table class="result-matrix"><thead><tr><th scope="col"><button type="button" class="matrix-axis ${allOn(selectable) ? "on" : ""}" data-matrix-all aria-pressed="${allOn(selectable)}">All races</button></th>${header}</tr></thead><tbody>${rows}</tbody></table>`;
+  $("#result-matrix-summary").innerHTML = count
+    ? `${count} ${count === 1 ? "edition" : "editions"} selected <button type="button" class="text-button" data-matrix-clear>Clear</button>`
+    : "No edition selected: a place range alone applies to every tracked race.";
+}
+
+function renderAdvancedMatchCount() {
+  const button = $("#apply-advanced-filters");
+  if (!state.advancedDraft || !state.event) return;
+  const draftFilters = { ...state.filters, ...state.advancedDraft };
+  const matching = state.event.riders.filter((rider) => matchesFilters(rider, draftFilters)).length;
+  button.textContent = `Show ${matching} ${matching === 1 ? "rider" : "riders"}`;
+}
+
+function renderAdvancedFilters() {
+  const content = $("#advanced-filter-content");
+  updateAdvancedFilterBadge();
+  if (!state.reference || !state.advancedDraft) return;
+  const draft = state.advancedDraft;
+  const season = state.reference.currentSeason;
+  const profileRows = PROFILE_FILTERS.map((filter) => {
+    const values = draft.profile[filter.key];
+    const modes = filter.modes ? `<div class="unit-toggle" role="group" aria-label="${filter.label} unit">${filter.modes.map((mode) => `<button type="button" data-profile-mode="${filter.key}:${mode.id}" class="${values.mode === mode.id ? "active" : ""}" aria-pressed="${values.mode === mode.id}">${mode.label}</button>`).join("")}</div>` : "";
+    return `<div class="profile-filter"><div class="profile-filter-label"><span>${filter.label}</span>${filter.hint ? `<small>${filter.hint}</small>` : ""}</div>${modes}<div class="advanced-range"><input type="number" data-profile-min="${filter.key}" placeholder="From" aria-label="${filter.label} from" value="${escapeHtml(values.min)}" /><span>to</span><input type="number" data-profile-max="${filter.key}" placeholder="To" aria-label="${filter.label} to" value="${escapeHtml(values.max)}" /></div></div>`;
+  }).join("");
+  content.innerHTML = `<section class="advanced-filter-section"><div class="advanced-filter-section-heading"><div><h3>Past results</h3><p class="muted">Tap editions, a whole race or a whole year. A rider matches with one finish in range.</p></div><div class="advanced-range"><span class="advanced-range-label">Finished</span><input id="advanced-result-min" type="number" min="1" placeholder="1" aria-label="Best finishing place" value="${escapeHtml(draft.resultMin)}" /><span>to</span><input id="advanced-result-max" type="number" min="1" placeholder="Any" aria-label="Worst finishing place" value="${escapeHtml(draft.resultMax)}" /></div></div><div id="result-matrix" class="result-matrix-wrap"></div><p id="result-matrix-summary" class="muted matrix-summary"></p></section><section class="advanced-filter-section"><div class="advanced-filter-section-heading"><div><h3>Rider data</h3><p class="muted">Season figures are for ${season}. Changes compare today's UCI ranking with the season start (${SEASON_START}); positive means improving.</p></div></div><div class="profile-filter-grid">${profileRows}</div></section>`;
+  renderResultMatrix();
+  renderAdvancedMatchCount();
+}
+
+function toggleMatrixCells(cellIds) {
+  const selected = new Set(state.advancedDraft.resultCells);
+  const turnOn = !cellIds.every((id) => selected.has(id));
+  cellIds.forEach((id) => (turnOn ? selected.add(id) : selected.delete(id)));
+  state.advancedDraft.resultCells = [...selected];
+  renderResultMatrix();
+  renderAdvancedMatchCount();
+}
+
+function handleAdvancedFilterClick(event) {
+  const target = event.target.closest("button");
+  if (!target || !state.advancedDraft) return;
+  const selectable = selectableCells();
+  if (target.dataset.matrixCell) toggleMatrixCells([target.dataset.matrixCell]);
+  else if (target.dataset.matrixRace) toggleMatrixCells(selectable.filter((cell) => cell.race === target.dataset.matrixRace).map((cell) => cell.id));
+  else if (target.dataset.matrixYear) toggleMatrixCells(selectable.filter((cell) => cell.year === Number(target.dataset.matrixYear)).map((cell) => cell.id));
+  else if (target.hasAttribute("data-matrix-all")) toggleMatrixCells(selectable.map((cell) => cell.id));
+  else if (target.hasAttribute("data-matrix-clear")) toggleMatrixCells([...state.advancedDraft.resultCells]);
+  else if (target.dataset.profileMode) {
+    const [key, mode] = target.dataset.profileMode.split(":");
+    state.advancedDraft.profile[key].mode = mode;
+    target.parentElement.querySelectorAll("button").forEach((button) => {
+      button.classList.toggle("active", button === target);
+      button.setAttribute("aria-pressed", String(button === target));
+    });
+    renderAdvancedMatchCount();
+  }
+}
+
+function handleAdvancedFilterInput(event) {
+  const input = event.target;
+  if (!state.advancedDraft || !(input instanceof HTMLInputElement)) return;
+  const value = input.value.trim();
+  if (input.id === "advanced-result-min") state.advancedDraft.resultMin = value;
+  else if (input.id === "advanced-result-max") state.advancedDraft.resultMax = value;
+  else if (input.dataset.profileMin) state.advancedDraft.profile[input.dataset.profileMin].min = value;
+  else if (input.dataset.profileMax) state.advancedDraft.profile[input.dataset.profileMax].max = value;
+  else return;
+  renderAdvancedMatchCount();
 }
 
 async function openAdvancedFilters() {
@@ -154,13 +316,15 @@ async function openAdvancedFilters() {
     dialog.scrollTop = 0;
     window.scrollTo(0, pageScrollY);
   };
-  content.innerHTML = "<p class=\"muted\">Loading race history…</p>";
+  state.advancedDraft = cloneAdvancedFilters(state.filters);
+  $("#apply-advanced-filters").textContent = "Apply filters";
+  if (!state.reference) content.innerHTML = "<p class=\"muted\">Loading race history…</p>";
   if (!dialog.open) {
     dialog.showModal();
     window.requestAnimationFrame(positionModalAndPage);
   }
   try {
-    if (!state.reference) state.reference = await request("/api/riders/reference");
+    await loadReference();
     renderAdvancedFilters();
   } catch (error) {
     content.innerHTML = `<p class="message">${escapeHtml(error.message)}</p>`;
@@ -170,35 +334,27 @@ async function openAdvancedFilters() {
 
 function renderRiderDetail(riderId) {
   const rider = state.event.riders.find((item) => item.id === riderId);
-  const reference = state.reference.riders.find((item) => item.id === riderId);
+  const reference = riderReference(riderId);
   const content = $("#rider-detail-content");
   if (!rider || !reference) {
     content.innerHTML = "<p class=\"muted\">No reference data is available for this rider.</p>";
     return;
   }
-  const rankings = [...reference.rankings].sort((a, b) => String(a.date).localeCompare(String(b.date)));
-  const seasonStart = rankings.find((item) => String(item.date).startsWith("2025-12-30")) || rankings[0];
+  const seasonStart = seasonStartRanking(reference);
   const profile = reference.profile || {};
-  const rankChange = seasonStart?.uci_rank && rider.uci_rank !== 999999 ? seasonStart.uci_rank - rider.uci_rank : null;
-  const pointChange = seasonStart?.uci_points !== null && seasonStart?.uci_points !== undefined && rider.uci_points !== null
-    ? rider.uci_points - seasonStart.uci_points : null;
+  const rankChange = rankTrend(rider, reference)?.abs ?? null;
+  const pointChange = pointsTrend(rider, reference)?.abs ?? null;
   const trendClass = rankChange === null ? "neutral" : rankChange > 0 ? "better" : rankChange < 0 ? "worse" : "neutral";
   const trendText = rankChange === null
     ? "No comparable ranking"
-    : `${rankChange > 0 ? "↑" : rankChange < 0 ? "↓" : "→"} ${Math.abs(rankChange)} places · ${pointChange >= 0 ? "+" : ""}${Math.round(pointChange).toLocaleString()} pts`;
-  const years = [...new Set(state.reference.races.flatMap((race) => race.editions.map((edition) => edition.year)))].sort((a, b) => a - b);
+    : `${rankChange > 0 ? "↑" : rankChange < 0 ? "↓" : "→"} ${Math.abs(rankChange)} places${pointChange === null ? "" : ` · ${pointChange >= 0 ? "+" : ""}${Math.round(pointChange).toLocaleString()} pts`}`;
+  const { races, years } = trackedRaces();
   const resultMap = new Map(reference.results.map((result) => [`${result.race_key}-${result.year}`, result]));
-  const calendarDate = (race) => {
-    const datedEditions = race.editions.filter((edition) => edition.date);
-    if (!datedEditions.length) return "99-99";
-    const latestYear = Math.max(...datedEditions.map((edition) => edition.year));
-    return String(datedEditions.find((edition) => edition.year === latestYear).date).slice(5);
-  };
-  const races = state.reference.races
-    .filter((race) => race.editions.some((edition) => years.includes(edition.year)))
-    .sort((left, right) => calendarDate(left).localeCompare(calendarDate(right)) || left.label.localeCompare(right.label));
-  const currentSeason = [...reference.seasons].sort((a, b) => b.season - a.season)[0];
-  content.innerHTML = `<header class="rider-detail-header"><div><p class="eyebrow">RIDER PROFILE</p><h2>${flag(rider.nation)}${escapeHtml(rider.name)}</h2><p class="muted">${escapeHtml(profile.team || countryName(rider.nation))}${profile.wins_total === null || profile.wins_total === undefined ? "" : ` · ${profile.wins_total} career wins`}</p></div></header><section class="rider-stat-grid"><div><span>Age</span><strong>${profile.age ?? "—"}</strong></div><div><span>UCI now</span><strong>${displayPoints(rider.uci_points)}</strong><small>${displayRank(rider.uci_rank === 999999 ? null : rider.uci_rank)}</small></div><div><span>Season start</span><strong>${displayPoints(seasonStart?.uci_points)}</strong><small>${displayRank(seasonStart?.uci_rank)}</small></div><div class="ranking-trend ${trendClass}"><span>Ranking trend</span><strong>${trendText}</strong><small>${currentSeason ? `${currentSeason.season}: ${currentSeason.wins} wins · ${currentSeason.top10s} top 10s` : "Season totals unavailable"}</small></div></section><section class="rider-history"><div class="rider-history-heading"><div><p class="eyebrow">PAST RESULTS</p><h3>Tracked one-day races</h3></div></div><div class="rider-history-table-wrap"><table class="rider-history-table"><thead><tr><th scope="col">Race</th>${years.map((year) => `<th scope="col">${year}${state.reference.races.some((race) => race.editions.some((edition) => edition.year === year && edition.note)) ? "<small>upcoming</small>" : ""}</th>`).join("")}</tr></thead><tbody>${races.map((race) => `<tr><th scope="row">${escapeHtml(race.label)}</th>${years.map((year) => `<td>${resultCell(resultMap.get(`${race.key}-${year}`))}</td>`).join("")}</tr>`).join("")}</tbody></table></div></section>`;
+  const season = currentSeason(reference);
+  const careerWins = profile.wins_total === null || profile.wins_total === undefined ? "" : `<span class="rider-detail-wins">${profile.wins_total} career wins</span>`;
+  const team = `<span class="rider-detail-team-name">${rider.team ? `${teamIcon(rider.team)}${escapeHtml(rider.team)}` : escapeHtml(countryName(rider.nation))}</span>`;
+  const pcsLink = profile.profile_url ? `<a class="pcs-link" href="${escapeHtml(profile.profile_url)}" target="_blank" rel="noopener noreferrer">ProCyclingStats profile <span aria-hidden="true">↗</span></a>` : "";
+  content.innerHTML = `<header class="rider-detail-header"><div><p class="eyebrow">RIDER PROFILE</p><h2>${flag(rider.nation)}${escapeHtml(rider.name)}</h2><p class="rider-detail-team">${team}${careerWins}</p>${pcsLink}</div></header><section class="rider-stat-grid"><div><span>Age</span><strong>${profile.age ?? "—"}</strong></div><div><span>UCI now</span><strong>${displayPoints(rider.uci_points)}</strong><small>${displayRank(rider.uci_rank === 999999 ? null : rider.uci_rank)}</small></div><div><span>Season start</span><strong>${displayPoints(seasonStart?.uci_points)}</strong><small>${displayRank(seasonStart?.uci_rank)}</small></div><div class="ranking-trend ${trendClass}"><span>Ranking trend</span><strong>${trendText}</strong><small>${season ? `${season.season}: ${season.wins} wins · ${season.top10s} top 10s` : "Season totals unavailable"}</small></div></section><section class="rider-history"><div class="rider-history-heading"><div><p class="eyebrow">PAST RESULTS</p><h3>Tracked one-day races</h3></div></div><div class="rider-history-table-wrap"><table class="rider-history-table"><thead><tr><th scope="col">Race</th>${years.map((year) => `<th scope="col">${year}${races.some((race) => race.editions.some((edition) => edition.year === year && edition.note)) ? "<small>upcoming</small>" : ""}</th>`).join("")}</tr></thead><tbody>${races.map((race) => `<tr><th scope="row">${escapeHtml(race.label)}</th>${years.map((year) => `<td>${resultCell(resultMap.get(`${race.key}-${year}`))}</td>`).join("")}</tr>`).join("")}</tbody></table></div><p class="rider-history-legend"><span class="result-medal medal-1">1</span> podium <span class="result-top-ten">7</span> top 10 <span class="result-status">DNF</span> did not finish · blank: not on the startlist</p></section>`;
 }
 
 async function openRiderDetail(riderId) {
@@ -215,7 +371,7 @@ async function openRiderDetail(riderId) {
     window.requestAnimationFrame(positionModalAndPage);
   }
   try {
-    if (!state.reference) state.reference = await request("/api/riders/reference");
+    await loadReference();
     renderRiderDetail(riderId);
     window.requestAnimationFrame(positionModalAndPage);
   } catch (error) {
@@ -278,18 +434,19 @@ function rankFill(rider) {
   return Math.max(8, Math.round(100 * (1 - Math.min(rider.uci_rank - 1, 499) / 499)));
 }
 
-function matchesFilters(rider) {
-  const { search, countries, rankMin, rankMax, pointsMin, pointsMax } = state.filters;
-  const haystack = `${rider.name} ${countryName(rider.nation)} ${rider.nation}`.toLocaleLowerCase();
+function matchesFilters(rider, filters = state.filters) {
+  const { search, countries, teams, rankMin, rankMax, pointsMin, pointsMax } = filters;
+  const haystack = `${rider.name} ${countryName(rider.nation)} ${rider.nation} ${rider.team || ""}`.toLocaleLowerCase();
   const hasRank = rider.uci_rank !== 999999;
   const hasPoints = rider.uci_points !== null;
   return (!search || haystack.includes(search.toLocaleLowerCase()))
     && (!countries.length || countries.includes(rider.nation))
+    && (!teams.length || teams.includes(teamLabel(rider.team)))
     && (!rankMin || (hasRank && rider.uci_rank >= Number(rankMin)))
     && (!rankMax || (hasRank && rider.uci_rank <= Number(rankMax)))
     && (!pointsMin || (hasPoints && rider.uci_points >= Number(pointsMin)))
     && (!pointsMax || (hasPoints && rider.uci_points <= Number(pointsMax)))
-    && matchesAdvancedFilters(rider);
+    && matchesAdvancedFilters(rider, filters);
 }
 
 function ensurePickActions() {
@@ -392,8 +549,9 @@ function ensureRiderViewControls() {
     });
   }
   const arrow = state.riderSortDirection === "asc" ? "↑" : "↓";
-  const countryCountSort = state.riderView === "country" ? `<span class="view-divider">|</span><span role="button" tabindex="0" data-rider-sort="rider-count" class="${state.riderSort === "rider-count" ? "active" : ""}">No. riders ${state.riderSort === "rider-count" ? `<i>${arrow}</i>` : ""}</span>` : "";
-  controls.innerHTML = `<div class="view-toggle" role="group" aria-label="Rider list view"><span role="button" tabindex="0" data-rider-view="country" class="${state.riderView === "country" ? "active" : ""}">Group by Country</span><span class="view-divider">|</span><span role="button" tabindex="0" data-rider-view="plain" class="${state.riderView === "plain" ? "active" : ""}">Riders list</span></div><div class="rider-sort-label"><span>Sort:</span><span role="button" tabindex="0" data-rider-sort="alphabetical" class="${state.riderSort === "alphabetical" ? "active" : ""}">Alphabetical ${state.riderSort === "alphabetical" ? `<i>${arrow}</i>` : ""}</span><span class="view-divider">|</span><span role="button" tabindex="0" data-rider-sort="rank" class="${state.riderSort === "rank" ? `active` : ""}">UCI Rank ${state.riderSort === "rank" ? `<i>${arrow}</i>` : ""}</span>${countryCountSort}</div><div class="rider-selection-label" role="group" aria-label="Top 10 selection filter"><span>Riders:</span><span role="button" tabindex="0" data-rider-selection="all" class="${state.riderSelectionFilter === "all" ? "active" : ""}">All</span><span class="view-divider">|</span><span role="button" tabindex="0" data-rider-selection="selected" class="${state.riderSelectionFilter === "selected" ? "active" : ""}">Selected</span><span class="view-divider">|</span><span role="button" tabindex="0" data-rider-selection="unselected" class="${state.riderSelectionFilter === "unselected" ? "active" : ""}">Not selected</span></div>`;
+  const countryCountSort = state.riderView !== "plain" ? `<span class="view-divider">|</span><span role="button" tabindex="0" data-rider-sort="rider-count" class="${state.riderSort === "rider-count" ? "active" : ""}">No. riders ${state.riderSort === "rider-count" ? `<i>${arrow}</i>` : ""}</span>` : "";
+  const viewOption = (view, label) => `<span role="button" tabindex="0" data-rider-view="${view}" class="${state.riderView === view ? "active" : ""}">${label}</span>`;
+  controls.innerHTML = `<div class="view-toggle" role="group" aria-label="Rider list view">${viewOption("country", "Group by Country")}<span class="view-divider">|</span>${viewOption("team", "Group by Team")}<span class="view-divider">|</span>${viewOption("plain", "Riders list")}</div><div class="rider-sort-label"><span>Sort:</span><span role="button" tabindex="0" data-rider-sort="alphabetical" class="${state.riderSort === "alphabetical" ? "active" : ""}">Alphabetical ${state.riderSort === "alphabetical" ? `<i>${arrow}</i>` : ""}</span><span class="view-divider">|</span><span role="button" tabindex="0" data-rider-sort="rank" class="${state.riderSort === "rank" ? `active` : ""}">UCI Rank ${state.riderSort === "rank" ? `<i>${arrow}</i>` : ""}</span>${countryCountSort}</div><div class="rider-selection-label" role="group" aria-label="Top 10 selection filter"><span>Riders:</span><span role="button" tabindex="0" data-rider-selection="all" class="${state.riderSelectionFilter === "all" ? "active" : ""}">All</span><span class="view-divider">|</span><span role="button" tabindex="0" data-rider-selection="selected" class="${state.riderSelectionFilter === "selected" ? "active" : ""}">Selected</span><span class="view-divider">|</span><span role="button" tabindex="0" data-rider-selection="unselected" class="${state.riderSelectionFilter === "unselected" ? "active" : ""}">Not selected</span></div>`;
 }
 
 function sortRiders(riders) {
@@ -412,34 +570,39 @@ function render() {
   pickActions.redo.disabled = state.redoStack.length === 0;
   const riderById = new Map(state.event.riders.map((rider) => [rider.id, rider]));
   $("#picks").innerHTML = state.picks.map((riderId, index) => { const rider = riderById.get(riderId); return `<li data-position="${index}" class="${rider ? "pick-filled" : "pick-empty"}" ${rider ? `draggable="true" data-picked-rider="${rider.id}" title="Open rider details"` : ""}><span class="position">${index + 1}.</span>${rider ? `${flag(rider.nation)}${rider.name}<button class="remove" data-remove="${index}" aria-label="Remove ${rider.name}">×</button><span class="rank-scale pick-rank-scale" style="--rank-fill:${rankFill(rider)}%" aria-hidden="true"></span>` : "Drop rider here"}</li>`; }).join("");
-  const filteredRiders = state.event.riders.filter(matchesFilters);
+  const filteredRiders = state.event.riders.filter((rider) => matchesFilters(rider));
   const visibleRiders = filteredRiders.filter((rider) => state.riderSelectionFilter === "all"
     || (state.riderSelectionFilter === "selected" && state.picks.includes(rider.id))
     || (state.riderSelectionFilter === "unselected" && !state.picks.includes(rider.id)));
-  const countryStats = new Map();
+  // Country and team views share one grouping path; only the key and header differ.
+  const byTeam = state.riderView === "team";
+  const groupKey = (rider) => (byTeam ? teamLabel(rider.team) : rider.nation);
+  const groupLabel = (key) => (byTeam ? key : countryName(key));
+  const groupIcon = (key) => (byTeam ? teamIcon(key === NO_TEAM ? "" : key) : flag(key));
+  const groupStats = new Map();
   state.event.riders.forEach((rider) => {
-    const current = countryStats.get(rider.nation) || { count: 0, points: 0 };
-    countryStats.set(rider.nation, { count: current.count + 1, points: current.points + (rider.uci_points ?? 0) });
+    const key = groupKey(rider);
+    const current = groupStats.get(key) || { count: 0, points: 0, bestRank: Infinity };
+    groupStats.set(key, { count: current.count + 1, points: current.points + (rider.uci_points ?? 0), bestRank: Math.min(current.bestRank, rider.uci_rank) });
   });
-  const ridersByCountry = new Map(); visibleRiders.forEach((rider) => ridersByCountry.set(rider.nation, [...(ridersByCountry.get(rider.nation) || []), rider]));
-  $("#filter-summary").textContent = `${visibleRiders.length} of ${filteredRiders.length} filtered riders shown (${state.event.riders.length} total). The bar shows UCI rank strength (red = stronger).`;
+  const ridersByGroup = new Map(); visibleRiders.forEach((rider) => ridersByGroup.set(groupKey(rider), [...(ridersByGroup.get(groupKey(rider)) || []), rider]));
+  $("#filter-summary").textContent = `${visibleRiders.length} of ${filteredRiders.length} filtered riders shown (${state.event.riders.length} total). The bar shows UCI rank strength (red = stronger); the arrow shows the UCI points trend since the season start.`;
   ensureRiderViewControls();
-  const riderCard = (rider) => { const topTenPosition = state.picks.indexOf(rider.id); const riderFlag = state.riderView === "plain" ? flag(rider.nation) : ""; return `<article draggable="true" class="rider ${topTenPosition >= 0 ? "selected" : ""}" data-rider="${rider.id}" role="button" tabindex="0" title="${topTenPosition >= 0 ? `Top 10 position ${topTenPosition + 1}. Open rider details, or drag to move it.` : "Open rider details"}">${riderFlag}${rider.name}<button type="button" class="rider-add" data-rider-add="${rider.id}" aria-label="Add ${escapeHtml(rider.name)} to your Top 10">+</button>${topTenPosition >= 0 ? `<span class="pick-position"><strong>#${topTenPosition + 1}</strong><small>Top 10</small></span>` : ""}<br><span class="rank">${rankingLabel(rider)}</span><span class="rank-scale" style="--rank-fill:${rankFill(rider)}%" aria-hidden="true"></span></article>`; };
+  const riderCard = (rider) => { const topTenPosition = state.picks.indexOf(rider.id); const riderFlag = state.riderView === "country" ? "" : flag(rider.nation); return `<article draggable="true" class="rider ${topTenPosition >= 0 ? "selected" : ""}" data-rider="${rider.id}" role="button" tabindex="0" title="${topTenPosition >= 0 ? `Top 10 position ${topTenPosition + 1}. Open rider details, or drag to move it.` : "Open rider details"}">${riderFlag}${rider.name}<button type="button" class="rider-add" data-rider-add="${rider.id}" aria-label="Add ${escapeHtml(rider.name)} to your Top 10">+</button>${topTenPosition >= 0 ? `<span class="pick-position"><strong>#${topTenPosition + 1}</strong><small>Top 10</small></span>` : ""}<br><span class="rank">${rankingLabel(rider)}</span>${trendArrow(rider)}<span class="rank-scale" style="--rank-fill:${rankFill(rider)}%" aria-hidden="true"></span></article>`; };
   if (state.riderView === "plain") {
     $("#riders").innerHTML = `<div class="plain-riders">${sortRiders(visibleRiders).map(riderCard).join("")}</div>`;
   } else {
-    const sortedCountries = [...ridersByCountry.entries()].sort(([a], [b]) => {
-      const statsA = countryStats.get(a); const statsB = countryStats.get(b);
+    const sortedGroups = [...ridersByGroup.entries()].sort(([a], [b]) => {
+      // Riders without a trade team always close the team list.
+      if (byTeam && (a === NO_TEAM || b === NO_TEAM)) return (a === NO_TEAM) - (b === NO_TEAM);
+      const statsA = groupStats.get(a); const statsB = groupStats.get(b);
       const direction = state.riderSortDirection === "asc" ? 1 : -1;
-      if (state.riderSort === "rider-count") return direction * (statsA.count - statsB.count || countryName(a).localeCompare(countryName(b)));
-      if (state.riderSort === "rank") {
-        const bestRankA = Math.min(...state.event.riders.filter((rider) => rider.nation === a).map((rider) => rider.uci_rank));
-        const bestRankB = Math.min(...state.event.riders.filter((rider) => rider.nation === b).map((rider) => rider.uci_rank));
-        return direction * (bestRankA - bestRankB || countryName(a).localeCompare(countryName(b)));
-      }
-      return direction * countryName(a).localeCompare(countryName(b));
+      const byLabel = groupLabel(a).localeCompare(groupLabel(b));
+      if (state.riderSort === "rider-count") return direction * (statsA.count - statsB.count || byLabel);
+      if (state.riderSort === "rank") return direction * (statsA.bestRank - statsB.bestRank || byLabel);
+      return direction * byLabel;
     });
-    $("#riders").innerHTML = sortedCountries.map(([country, riders]) => { const stats = countryStats.get(country); return `<section class="country-group"><h3>${flag(country)}${countryName(country)} <span class="country-meta">${stats.count} riders · ${Math.round(stats.points).toLocaleString()} pts</span></h3><div class="country-riders">${sortRiders(riders).map(riderCard).join("")}</div></section>`; }).join("");
+    $("#riders").innerHTML = sortedGroups.map(([key, riders]) => { const stats = groupStats.get(key); return `<section class="country-group ${byTeam ? "team-group" : ""}"><h3>${groupIcon(key)}${escapeHtml(groupLabel(key))} <span class="country-meta">${stats.count} ${stats.count === 1 ? "rider" : "riders"} · ${Math.round(stats.points).toLocaleString()} pts</span></h3><div class="country-riders">${sortRiders(riders).map(riderCard).join("")}</div></section>`; }).join("");
   }
   document.querySelectorAll(".rider").forEach((node) => { node.addEventListener("click", (event) => { if (event.target.closest("[data-rider-add]")) return; openRiderDetail(Number(node.dataset.rider)); }); node.addEventListener("keydown", (event) => { if (event.target.closest("[data-rider-add]")) return; if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openRiderDetail(Number(node.dataset.rider)); } }); node.addEventListener("dragstart", (event) => { event.dataTransfer.setData("text/plain", node.dataset.rider); document.body.classList.add("mobile-dragging"); }); node.addEventListener("dragend", () => document.body.classList.remove("mobile-dragging")); });
   document.querySelectorAll("[data-rider-add]").forEach((button) => button.addEventListener("click", (event) => { event.stopPropagation(); addRiderToPicks(Number(button.dataset.riderAdd)); }));
@@ -448,61 +611,74 @@ function render() {
   document.querySelectorAll("[data-position]").forEach((slot) => { slot.addEventListener("click", (event) => { if (event.target.closest("[data-remove]")) return; if (state.mobilePendingRiderId) { const riderId = state.mobilePendingRiderId; state.mobilePendingRiderId = null; document.body.classList.remove("mobile-picking"); insertRider(riderId, Number(slot.dataset.position)); return; } const riderId = Number(slot.dataset.pickedRider); if (riderId) openRiderDetail(riderId); }); slot.addEventListener("dragover", (event) => { event.preventDefault(); slot.classList.add("drag-over"); }); slot.addEventListener("dragleave", () => slot.classList.remove("drag-over")); slot.addEventListener("drop", (event) => { event.preventDefault(); slot.classList.remove("drag-over"); document.body.classList.remove("mobile-dragging"); insertRider(Number(event.dataTransfer.getData("text/plain")), Number(slot.dataset.position)); }); });
 }
 
-function configureFilters() {
-  const countries = [...new Set(state.event.riders.map((rider) => rider.nation))]
-    .sort((a, b) => countryName(a).localeCompare(countryName(b)));
-  const countryPicker = $("#country-picker");
-  const countryQuery = $("#country-query");
-  const countryOptions = $("#country-options");
-  const selectedCountries = $("#selected-countries");
-  const updateCountryLabel = () => {
-    const selected = state.filters.countries;
-    $("#country-filter-label").textContent = selected.length === 0 ? "All countries" : selected.length === 1 ? countryName(selected[0]) : `${selected.length} countries`;
-    selectedCountries.classList.toggle("hidden", selected.length === 0);
-    selectedCountries.innerHTML = selected.map((country) => `<button type="button" class="country-chip" data-remove-country="${country}">${flag(country)}${countryName(country)} <span aria-hidden="true">×</span></button>`).join("");
+// A searchable multi-select: the country and team filters are two instances.
+function configureMultiPicker({ prefix, chipsId, filterKey, values, label, icon, code = () => "", allLabel, pluralLabel, emptyLabel }) {
+  const picker = $(`#${prefix}-picker`);
+  const query = $(`#${prefix}-query`);
+  const options = $(`#${prefix}-options`);
+  const chips = $(`#${chipsId}`);
+  const selected = () => state.filters[filterKey];
+  const updateLabel = () => {
+    const chosen = selected();
+    $(`#${prefix}-filter-label`).textContent = chosen.length === 0 ? allLabel : chosen.length === 1 ? label(chosen[0]) : `${chosen.length} ${pluralLabel}`;
+    chips.classList.toggle("hidden", chosen.length === 0);
+    chips.innerHTML = chosen.map((value) => `<button type="button" class="country-chip" data-remove-value="${escapeHtml(value)}">${icon(value)}${escapeHtml(label(value))} <span aria-hidden="true">×</span></button>`).join("");
   };
-  const renderCountryOptions = () => {
-    const query = countryQuery.value.trim().toLocaleLowerCase();
-    const matches = (country) => `${countryName(country)} ${country}`.toLocaleLowerCase().includes(query);
-    const exactCode = (country) => country.toLocaleLowerCase() === query;
-    const startsWith = (country) => countryName(country).toLocaleLowerCase().startsWith(query) || country.toLocaleLowerCase().startsWith(query);
-    const matchingCountries = [
-      ...countries.filter(exactCode),
-      ...countries.filter((country) => !exactCode(country) && startsWith(country)),
-      ...countries.filter((country) => !startsWith(country) && matches(country)),
+  const renderOptions = () => {
+    const text = query.value.trim().toLocaleLowerCase();
+    const matches = (value) => `${label(value)} ${code(value)}`.toLocaleLowerCase().includes(text);
+    const exactCode = (value) => code(value) !== "" && code(value).toLocaleLowerCase() === text;
+    const startsWith = (value) => label(value).toLocaleLowerCase().startsWith(text) || (code(value) !== "" && code(value).toLocaleLowerCase().startsWith(text));
+    const matching = [
+      ...values.filter(exactCode),
+      ...values.filter((value) => !exactCode(value) && startsWith(value)),
+      ...values.filter((value) => !startsWith(value) && matches(value)),
     ];
-    countryOptions.innerHTML = matchingCountries.length ? matchingCountries.map((country) => `<button type="button" class="country-option ${state.filters.countries.includes(country) ? "selected" : ""}" data-country="${country}" aria-pressed="${state.filters.countries.includes(country)}"><span class="country-check" aria-hidden="true">${state.filters.countries.includes(country) ? "✓" : ""}</span>${flag(country)}<span>${countryName(country)} <span class="muted">${country}</span></span></button>`).join("") : `<p class="muted country-option">No matching countries</p>`;
+    options.innerHTML = matching.length ? matching.map((value) => { const on = selected().includes(value); return `<button type="button" class="country-option ${on ? "selected" : ""}" data-value="${escapeHtml(value)}" aria-pressed="${on}"><span class="country-check" aria-hidden="true">${on ? "✓" : ""}</span>${icon(value)}<span>${escapeHtml(label(value))}${code(value) ? ` <span class="muted">${escapeHtml(code(value))}</span>` : ""}</span></button>`; }).join("") : `<p class="muted country-option">${emptyLabel}</p>`;
   };
-  const openCountryOptions = () => { renderCountryOptions(); countryOptions.classList.remove("hidden"); };
-  const closeCountryOptions = () => countryOptions.classList.add("hidden");
-  countryQuery.addEventListener("input", openCountryOptions);
-  countryQuery.addEventListener("focus", openCountryOptions);
-  countryPicker.addEventListener("click", (event) => { if (!event.target.closest("#country-options")) openCountryOptions(); });
-  // Picking a country re-renders the list, which used to drop the focused option
+  const open = () => { renderOptions(); options.classList.remove("hidden"); };
+  const close = () => options.classList.add("hidden");
+  const toggle = (value) => {
+    state.filters[filterKey] = selected().includes(value) ? selected().filter((item) => item !== value) : [...selected(), value];
+    updateLabel();
+    renderOptions();
+    render();
+  };
+  query.addEventListener("input", open);
+  query.addEventListener("focus", open);
+  picker.addEventListener("click", (event) => { if (!event.target.closest(`#${prefix}-options`)) open(); });
+  // Picking a value re-renders the list, which used to drop the focused option
   // and close it through focusout; keeping focus on the search box instead lets
   // you pick several in a row. A touch device never focuses the option at all,
   // so relying on focus to close the list lost the tap outright.
-  countryOptions.addEventListener("mousedown", (event) => event.preventDefault());
-  document.addEventListener("pointerdown", (event) => { if (!countryPicker.contains(event.target)) closeCountryOptions(); });
-  countryQuery.addEventListener("keydown", (event) => { if (event.key === "Escape") closeCountryOptions(); });
-  countryOptions.addEventListener("click", (event) => {
-    const option = event.target.closest("button[data-country]");
-    if (!option) return;
-    const country = option.dataset.country;
-    state.filters.countries = state.filters.countries.includes(country)
-      ? state.filters.countries.filter((selected) => selected !== country)
-      : [...state.filters.countries, country];
-    updateCountryLabel();
-    renderCountryOptions();
-    render();
+  options.addEventListener("mousedown", (event) => event.preventDefault());
+  document.addEventListener("pointerdown", (event) => { if (!picker.contains(event.target)) close(); });
+  query.addEventListener("keydown", (event) => { if (event.key === "Escape") close(); });
+  options.addEventListener("click", (event) => {
+    const option = event.target.closest("button[data-value]");
+    if (option) toggle(option.dataset.value);
   });
-  selectedCountries.addEventListener("click", (event) => {
-    const chip = event.target.closest("[data-remove-country]");
-    if (!chip) return;
-    state.filters.countries = state.filters.countries.filter((country) => country !== chip.dataset.removeCountry);
-    updateCountryLabel();
-    renderCountryOptions();
-    render();
+  chips.addEventListener("click", (event) => {
+    const chip = event.target.closest("[data-remove-value]");
+    if (chip) toggle(chip.dataset.removeValue);
+  });
+  return { reset: () => { query.value = ""; updateLabel(); renderOptions(); } };
+}
+
+function configureFilters() {
+  const countries = [...new Set(state.event.riders.map((rider) => rider.nation))]
+    .sort((a, b) => countryName(a).localeCompare(countryName(b)));
+  const teams = [...new Set(state.event.riders.map((rider) => teamLabel(rider.team)))]
+    .sort((a, b) => (a === NO_TEAM) - (b === NO_TEAM) || a.localeCompare(b));
+  const countryPicker = configureMultiPicker({
+    prefix: "country", chipsId: "selected-countries", filterKey: "countries", values: countries,
+    label: countryName, icon: flag, code: (country) => country,
+    allLabel: "All countries", pluralLabel: "countries", emptyLabel: "No matching countries",
+  });
+  const teamPicker = configureMultiPicker({
+    prefix: "team", chipsId: "selected-teams", filterKey: "teams", values: teams,
+    label: (team) => team, icon: (team) => teamIcon(team === NO_TEAM ? "" : team),
+    allLabel: "All teams", pluralLabel: "teams", emptyLabel: "No matching teams",
   });
 
   $("#rider-search").addEventListener("input", (event) => { state.filters.search = event.target.value.trim(); render(); });
@@ -548,11 +724,10 @@ function configureFilters() {
   syncPair(["#rank-min", "#rank-min-scale"], () => state.filters.rankMin, pointsControl, (control, value) => control.setMax(Math.max(...rankedRiders.filter((rider) => rider.uci_rank >= Number(value)).map((rider) => rider.uci_points))));
 
   $("#clear-filters").addEventListener("click", () => {
-    state.filters = { search: "", countries: [], rankMin: "", rankMax: "", pointsMin: "", pointsMax: "", ...emptyAdvancedFilters() };
+    state.filters = emptyFilters();
     $("#rider-search").value = "";
-    countryQuery.value = "";
-    updateCountryLabel();
-    renderCountryOptions();
+    countryPicker.reset();
+    teamPicker.reset();
     ["rank", "points"].forEach((prefix) => {
       $(`#${prefix}-min`).value = "";
       $(`#${prefix}-max`).value = "";
@@ -562,7 +737,8 @@ function configureFilters() {
       $(`#${prefix}-min-scale`).parentElement.style.setProperty("--range-end", "100%");
       $(`#${prefix}-range-value`).textContent = "Any";
     });
-    renderAdvancedFilters();
+    state.advancedDraft = null;
+    updateAdvancedFilterBadge();
     render();
   });
 }
@@ -651,17 +827,21 @@ function restoreSession() {
   if (!state.player) $("#identity").classList.remove("hidden");
   renderSessionControls();
 }
+// Trend arrows need the PCS reference set; fetch it behind the first render.
+const loadReferenceInBackground = () => loadReference().then(() => { if (state.player && state.event) render(); }).catch(() => {});
 async function boot() {
   restoreSession();
+  const teamIconsReady = loadTeamIcons();
   const awake = await whenApiReady();
   if (!awake) return;
   try {
-    await loadEvent();
+    await Promise.all([loadEvent(), teamIconsReady]);
     if (state.player) {
       $("#identity").classList.add("hidden");
       $("#prediction").classList.remove("hidden");
       renderSessionControls();
       await loadPrediction();
+      loadReferenceInBackground();
     } else {
       $("#identity").classList.remove("hidden");
     }
@@ -695,6 +875,7 @@ $("#join").addEventListener("click", async () => {
     $("#prediction").classList.remove("hidden");
     renderSessionControls();
     await loadPrediction();
+    loadReferenceInBackground();
   } catch (error) {
     showMessage("#identity-message", error.message);
   } finally {
@@ -709,14 +890,17 @@ $("#rider-detail-modal").addEventListener("click", (event) => { if (event.target
 $("#advanced-filter-button").addEventListener("click", openAdvancedFilters);
 $("#close-advanced-filters").addEventListener("click", () => $("#advanced-filter-modal").close());
 $("#advanced-filter-modal").addEventListener("click", (event) => { if (event.target === event.currentTarget) event.currentTarget.close(); });
+$("#advanced-filter-content").addEventListener("click", handleAdvancedFilterClick);
+$("#advanced-filter-content").addEventListener("input", handleAdvancedFilterInput);
 $("#apply-advanced-filters").addEventListener("click", () => {
-  readAdvancedFilterValues();
+  if (state.advancedDraft) Object.assign(state.filters, cloneAdvancedFilters(state.advancedDraft));
   $("#advanced-filter-modal").close();
-  renderAdvancedFilters();
+  updateAdvancedFilterBadge();
   render();
 });
 $("#reset-advanced-filters").addEventListener("click", () => {
   Object.assign(state.filters, emptyAdvancedFilters());
+  state.advancedDraft = cloneAdvancedFilters(state.filters);
   renderAdvancedFilters();
   render();
 });
@@ -725,6 +909,8 @@ $("#save").addEventListener("click", async () => { if (!savedPicks().length) ret
 window.addEventListener("beforeunload", (event) => { if (!state.player || !hasUnsavedPickChanges()) return; event.preventDefault(); event.returnValue = ""; });
 window.addEventListener("keydown", (event) => { if (!(event.ctrlKey || event.metaKey) || event.altKey || event.target instanceof HTMLElement && event.target.matches("input, textarea, select")) return; if (event.key.toLowerCase() === "z") { event.preventDefault(); if (event.shiftKey) restorePickState(state.redoStack, state.undoStack, "Redid last change."); else restorePickState(state.undoStack, state.redoStack, "Undid last change."); } else if (event.key.toLowerCase() === "y") { event.preventDefault(); restorePickState(state.redoStack, state.undoStack, "Redid last change."); } });
 $("#cancel-pick").addEventListener("click", cancelPendingPick);
+// The help popover is a <details>; close it on a tap anywhere else, as a phone user expects.
+document.addEventListener("pointerdown", (event) => { const help = $(".event-help[open]"); if (help && !help.contains(event.target)) help.open = false; });
 const backToTop = $("#back-to-top");
 backToTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
 window.addEventListener("scroll", () => backToTop.classList.toggle("hidden", window.scrollY < 400), { passive: true });
