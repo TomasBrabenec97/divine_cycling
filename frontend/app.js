@@ -55,7 +55,18 @@ const rankingLabel = (rider) => rider.uci_rank === 999999 ? "UCI unranked" : `UC
 let predictionMessageVersion = 0;
 
 const API_BASE_URL = (window.DIVINE_API_BASE_URL || "").replace(/\/$/, "");
-async function request(url, options = {}) { const response = await fetch(`${API_BASE_URL}${url}`, { headers: { "Content-Type": "application/json" }, ...options }); const body = await response.json(); if (!response.ok) throw new Error(body.detail || "Something went wrong"); return body; }
+async function request(url, options = {}) {
+  const response = await fetch(`${API_BASE_URL}${url}`, { headers: { "Content-Type": "application/json" }, ...options });
+  // A 204 (a deleted template) has no body at all.
+  const text = await response.text();
+  const body = text ? JSON.parse(text) : null;
+  if (!response.ok) {
+    // Validation errors arrive as a list; show their messages, not "[object Object]".
+    const detail = Array.isArray(body?.detail) ? body.detail.map((item) => String(item.msg).replace(/^Value error, /, "")).join(" ") : body?.detail;
+    throw new Error(detail || "Something went wrong");
+  }
+  return body;
+}
 
 const delay = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
 const API_WAKE_TIMEOUT_MS = 150000;
@@ -559,7 +570,9 @@ function ensurePickActions() {
 
 // -- lists: the final prediction plus named templates --------------------------
 const emptyList = () => ({ picks: Array(10).fill(null), wildcards: Array(WILDCARD_COUNT).fill(null) });
-function listFromPicks(selections, wildcards) {
+// Missing fields read as empty, so a response from an API one deploy behind
+// (no wildcards yet) still loads.
+function listFromPicks(selections = [], wildcards = []) {
   const list = emptyList();
   selections.forEach((item) => { list.picks[item.position - 1] = item.rider_id; });
   wildcards.slice(0, WILDCARD_COUNT).forEach((riderId, slot) => { list.wildcards[slot] = riderId; });
@@ -606,16 +619,25 @@ function openList(listId, { force = false } = {}) {
   render();
 }
 
+// Template writes run one at a time, in the order they were asked for, so a
+// rename and a save of the same template can never overtake each other.
+let templateWrites = Promise.resolve();
+const queueTemplateWrite = (task) => (templateWrites = templateWrites.catch(() => {}).then(task));
+
+// Each save records the list it sent, not whatever is on screen when the answer
+// arrives: the player may have switched lists or kept editing meanwhile.
 async function saveFinal() {
   if (!state.picks.some(Boolean)) return showMessage("#prediction-message", "Pick at least one Top 10 rider first.");
+  const list = workingList();
+  const listId = state.activeList;
   try {
-    await request(`/api/events/${state.event.id}/predictions`, { method: "PUT", body: JSON.stringify({ player_id: state.player.id, ...picksPayload() }) });
-    state.lists.final = workingList();
-    if (state.activeList === "final") {
-      markSaved(state.lists.final);
+    await request(`/api/events/${state.event.id}/predictions`, { method: "PUT", body: JSON.stringify({ player_id: state.player.id, ...picksPayload(list) }) });
+    state.lists.final = list;
+    if (listId === "final") {
+      if (state.activeList === "final") markSaved(list);
       showMessage("#prediction-message", "Final prediction saved. You can edit it until the deadline.", true);
     } else {
-      showMessage("#prediction-message", `Saved ${listName(state.activeList)} as your final prediction. It is the one that will be scored.`, true);
+      showMessage("#prediction-message", `Saved ${listName(listId)} as your final prediction. It is the one that will be scored.`, true);
     }
     render();
   } catch (error) {
@@ -627,64 +649,78 @@ async function putTemplate(template, name, list) {
   return request(`/api/events/${state.event.id}/templates/${template.id}`, { method: "PUT", body: JSON.stringify({ player_id: state.player.id, name, ...picksPayload(list) }) });
 }
 
-async function saveActiveTemplate() {
+function saveActiveTemplate() {
   const template = templateById(state.activeList);
   if (!template) return;
-  try {
-    await putTemplate(template, template.name, workingList());
-    Object.assign(template, workingList());
-    markSaved(template);
-    showMessage("#prediction-message", `Saved ${listName(template.id)}.`, true);
-    render();
-  } catch (error) {
-    showMessage("#prediction-message", error.message);
-  }
+  const list = workingList();
+  return queueTemplateWrite(async () => {
+    try {
+      // The name is read when the write runs, after any rename queued before it.
+      await putTemplate(template, template.name, list);
+      Object.assign(template, list);
+      if (state.activeList === template.id) markSaved(list);
+      showMessage("#prediction-message", `Saved ${listName(template.id)}.`, true);
+      render();
+    } catch (error) {
+      showMessage("#prediction-message", error.message);
+    }
+  });
 }
 
 async function saveAsNewTemplate() {
+  const list = workingList();
+  const listId = state.activeList;
   try {
-    const created = await request(`/api/events/${state.event.id}/templates`, { method: "POST", body: JSON.stringify({ player_id: state.player.id, name: uniqueTemplateName(), ...picksPayload() }) });
-    const template = { id: created.id, name: created.name, ...workingList() };
+    const created = await request(`/api/events/${state.event.id}/templates`, { method: "POST", body: JSON.stringify({ player_id: state.player.id, name: uniqueTemplateName(), ...picksPayload(list) }) });
+    const template = { id: created.id, name: created.name, ...list };
     state.lists.templates.push(template);
-    // Keep editing the same picks, now as the new template; its name opens for editing.
-    state.activeList = template.id;
-    markSaved(template);
-    state.renamingList = template.id;
-    showMessage("#prediction-message", `Saved as “${template.name}”. Type a name for it, or keep this one.`, true);
+    if (state.activeList === listId) {
+      // Keep editing the same picks, now as the new template; its name opens for editing.
+      state.activeList = template.id;
+      markSaved(list);
+      state.renamingList = template.id;
+      showMessage("#prediction-message", `Saved as “${template.name}”. Type a name for it, or keep this one.`, true);
+    } else {
+      showMessage("#prediction-message", `Saved as “${template.name}”.`, true);
+    }
     render();
   } catch (error) {
     showMessage("#prediction-message", error.message);
   }
 }
 
-async function renameTemplate(id, rawName) {
+function renameTemplate(id, rawName) {
   const template = templateById(id);
   const name = rawName.replace(/\s+/g, " ").trim();
   state.renamingList = null;
   if (!template || !name || name === template.name) return render();
-  try {
-    // A rename keeps the template's saved picks; unsaved edits stay unsaved.
-    await putTemplate(template, name, template);
-    template.name = name;
-    showMessage("#prediction-message", `Renamed to “${name}”.`, true);
-  } catch (error) {
-    showMessage("#prediction-message", error.message);
-  }
-  render();
+  return queueTemplateWrite(async () => {
+    try {
+      // A rename keeps the template's saved picks; unsaved edits stay unsaved.
+      await putTemplate(template, name, template);
+      template.name = name;
+      showMessage("#prediction-message", `Renamed to “${name}”.`, true);
+    } catch (error) {
+      showMessage("#prediction-message", error.message);
+    }
+    render();
+  });
 }
 
 async function deleteTemplate(id) {
   const template = templateById(id);
   if (!template || !window.confirm(`Delete the template “${template.name}”? This cannot be undone.`)) return;
-  try {
-    await request(`/api/events/${state.event.id}/templates/${id}?player_id=${state.player.id}`, { method: "DELETE" });
-    state.lists.templates = state.lists.templates.filter((item) => item.id !== id);
-    showMessage("#prediction-message", `Deleted “${template.name}”.`, true);
-    if (state.activeList === id) openList("final", { force: true });
-    else render();
-  } catch (error) {
-    showMessage("#prediction-message", error.message);
-  }
+  return queueTemplateWrite(async () => {
+    try {
+      await request(`/api/events/${state.event.id}/templates/${id}?player_id=${state.player.id}`, { method: "DELETE" });
+      state.lists.templates = state.lists.templates.filter((item) => item.id !== id);
+      showMessage("#prediction-message", `Deleted “${template.name}”.`, true);
+      if (state.activeList === id) openList("final", { force: true });
+      else render();
+    } catch (error) {
+      showMessage("#prediction-message", error.message);
+    }
+  });
 }
 
 function renderListSwitcher() {

@@ -188,6 +188,17 @@ def keep_a_template(page, base: str, username: str, picks: list[int], spare: int
     page.wait_for_selector('.list-tab.active:has-text("Plan A")')
     if shown_top_ten(page) != edited:
         raise AssertionError(f"Template tab shows {shown_top_ten(page)}, expected {edited}")
+
+    # A throwaway copy, deleted again: the list falls back to Final.
+    page.click("#save-new-template")
+    page.wait_for_selector("[data-rename]")
+    page.keyboard.press("Escape")
+    page.once("dialog", lambda dialog: dialog.accept())
+    page.click('[data-list-action="delete"]')
+    saved_message(page, "Deleted")
+    page.wait_for_selector(".list-tab.final.active")
+    if page.locator(".list-tab").count() != 2:
+        raise AssertionError("the deleted template is still listed")
     page.click("#logout")
     page.wait_for_selector("#identity:not(.hidden)")
     return edited
