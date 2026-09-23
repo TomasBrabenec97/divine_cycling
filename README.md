@@ -208,7 +208,7 @@ otherwise render wrong, and transformations worth showing.
 - **Database:** SQLite locally and managed PostgreSQL in the public deployment,
   using the same SQLAlchemy models.
 - **Data ingestion:** isolated PCS fetchers in `scripts/pcs/` normalize rider, ranking, and race data. Raw pages are cached on disk, and the imported reference tables stay separate from scoring, which reads only `event_riders` and `event_results`.
-- **Scoring:** deterministic, versioned server-side rules. The client displays scores but never calculates the authoritative result.
+- **Scoring:** deterministic, versioned server-side rules (model v2: placement, permutation bonuses and wildcards; see `docs/SCORING_MODEL_V2.md`). The client displays scores but never calculates the authoritative result. Published scores are stored with their rules snapshot and served unchanged. Players read `frontend/scoring.md` through `scoring.html`; after changing a rule, re-run `python -m scripts.render_scoring_figures` to redraw its curves.
 
 The mock seed remains available for isolated local testing; the public build
 loads the checked-in 2026 Road Worlds data instead.

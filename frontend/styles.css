@@ -159,3 +159,50 @@ button.matrix-cell.on { border-color:var(--sage); background:var(--sage); box-sh
 .rider-detail-team { flex-direction:column; align-items:flex-start; font-size:14px; }
 .rider-detail-wins::before { content:none; }
  }
+
+.wildcards-block { margin-top:18px; }
+.wildcards-heading { display:flex; flex-direction:column; gap:2px; padding:0 4px 8px; color:var(--muted); font-size:11px; line-height:1.35; }
+.wildcards-heading .eyebrow { color:var(--ink); }
+.picks.wildcards li { min-height:44px; }
+.wildcard-mark { color:var(--placeholder); font-size:13px; }
+.wildcard-slot.pick-filled .wildcard-mark { color:var(--sage); }
+.pick-filled { padding-right:78px !important; }
+.pick-multiplier { position:absolute; top:13px; right:32px; color:var(--muted); font-size:11px; font-variant-numeric:tabular-nums; line-height:20px; }
+.scoring-teaser { max-width:690px; margin:4px 0 0; color:var(--muted); font-size:14px; line-height:1.35; }
+.scoring-teaser a { color:var(--ink); text-decoration-color:var(--line); text-underline-offset:2px; }
+.scoring-teaser a:hover { text-decoration-color:var(--ink); }
+
+@media(max-width:650px) { .mobile-dragging .picks .pick-multiplier,.mobile-picking .picks .pick-multiplier { top:4px; right:26px; }
+.mobile-dragging .picks-column::before,.mobile-picking .picks-column::before { content:"Choose a Top 10 position or a wildcard slot"; }
+.mobile-dragging .wildcards-heading span:last-child,.mobile-picking .wildcards-heading span:last-child { display:none; }
+.mobile-dragging .wildcards-block,.mobile-picking .wildcards-block { margin-top:10px; }
+ }
+
+.score-summary { margin:4px 0 0; font-size:13px; }
+.score-section-title { margin:18px 0 0; font-size:12px; letter-spacing:.08em; text-transform:uppercase; }
+.score-section-title + .score-breakdown { margin-top:8px; }
+.placement-table .score-row { grid-template-columns:44px minmax(150px,1.5fr) 58px 44px 70px 70px 80px; }
+.bonus-table .score-row { grid-template-columns:96px minmax(150px,1.5fr) minmax(110px,1fr) 80px; }
+@media(max-width:650px) { .bonus-table .score-row { min-width:520px; } }
+
+.doc-page .shell { max-width:780px; }
+.doc { margin-top:10px; color:var(--ink); font-size:15px; line-height:1.55; }
+.doc h1 { margin:6px 0 14px; font-size:clamp(34px,6vw,52px); font-weight:600; line-height:1; letter-spacing:-.03em; }
+.doc h2 { margin:34px 0 10px; font-size:26px; letter-spacing:-.02em; }
+.doc h3 { margin:26px 0 8px; font-size:18px; letter-spacing:-.01em; }
+.doc p,.doc ul { margin:0 0 12px; }
+.doc ul { padding-left:20px; }
+.doc li { margin-bottom:5px; }
+.doc a { color:var(--ink); text-decoration-color:var(--line); text-underline-offset:2px; }
+.doc a:hover { text-decoration-color:var(--ink); }
+.doc hr { margin:34px 0 0; border:0; border-top:1px solid var(--line); }
+.doc code { background:var(--beige-tint); padding:1px 5px; font-size:13px; }
+.doc pre { overflow-x:auto; margin:0 0 14px; border-left:3px solid var(--sage); background:var(--surface); padding:12px 14px; }
+.doc pre code { background:transparent; padding:0; font-size:14px; }
+.doc-table { overflow-x:auto; margin:6px 0 16px; }
+.doc table { width:100%; border-collapse:collapse; font-size:13px; font-variant-numeric:tabular-nums; }
+.doc th,.doc td { border-bottom:1px solid var(--line); padding:7px 8px; }
+.doc th[style*="right"],.doc td[style*="right"] { white-space:nowrap; }
+.doc th { background:var(--beige-tint); font-size:12px; }
+.doc-figure { margin:8px 0 18px; border:1px solid var(--line); background:var(--surface); padding:10px 6px 4px; }
+.doc-figure svg,.doc-figure img { display:block; width:100%; height:auto; }

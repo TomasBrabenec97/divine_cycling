@@ -10,7 +10,7 @@ What it does, in order:
    event deadline a week ahead so the test still works after the real race.
 2. Starts uvicorn on a free port with a throwaway admin key.
 3. Drives the real UI in a browser: registers two players, fills each Top 10
-   through the rider list and saves it.
+   and three wildcards through the rider list and saves them.
 4. Opens the admin page, enters a finishing order and previews the scoring.
 5. Checks the previewed scores against the scoring module run independently,
    and that the leaderboard shows each player's total.
@@ -39,7 +39,7 @@ import httpx
 
 ADMIN_KEY = "e2e-admin-key"
 ROOT = Path(__file__).resolve().parent.parent
-RESULT_DEPTH = 20
+RESULT_DEPTH = 25
 
 
 def parse_args() -> argparse.Namespace:
@@ -100,13 +100,18 @@ def start_server(env: dict[str, str], port: int, log: Path) -> subprocess.Popen:
 
 
 def plan(riders: list[dict]) -> tuple[dict[str, list[int]], list[int]]:
-    """Two players' Top 10s and a finishing order that overlaps both."""
+    """Two players' picks (Top 10, then wildcards) and a finishing order.
+
+    The finish mixes favourites with a few low-ranked riders, so both rank
+    multipliers and the wildcard bonus take part in the check.
+    """
     ranked = sorted(riders, key=lambda rider: rider["uci_rank"])
+    ids = [rider["id"] for rider in ranked]
     picks = {
-        "e2e_alice": [rider["id"] for rider in ranked[:10]],
-        "e2e_bob": [rider["id"] for rider in reversed(ranked[3:13])],
+        "e2e_alice": ids[:10] + [ids[60], ids[150], ids[40]],
+        "e2e_bob": list(reversed(ids[3:13])) + [ids[61], ids[151], ids[15]],
     }
-    finish = [rider["id"] for rider in ranked[:30]]
+    finish = ids[:20] + ids[60:63] + ids[150:152]
     random.Random(2026).shuffle(finish)
     return picks, finish[:RESULT_DEPTH]
 
@@ -115,10 +120,9 @@ def expected_total(picks: list[int], finish: list[int], ranks: dict[int, int]) -
     from app.scoring import score_prediction
 
     result_positions = {rider_id: position for position, rider_id in enumerate(finish, start=1)}
-    total, _ = score_prediction(
-        list(enumerate(picks, start=1)), result_positions, ranks, boosted_rider_id=None
-    )
-    return total
+    top10, wildcards = picks[:10], picks[10:]
+    score = score_prediction(list(enumerate(top10, start=1)), wildcards, result_positions, ranks)
+    return score["total_points"]
 
 
 def fill_top_ten(page, base: str, username: str, picks: list[int], shots: Path) -> None:
@@ -191,7 +195,8 @@ def main() -> int:
                 fill_top_ten(page, base, username, rider_ids, shots)
                 player = httpx.get(f"{base}/api/players/by-username/{username}").json()
                 saved = httpx.get(f"{base}/api/events/{event['id']}/predictions/{player['id']}")
-                saved_ids = [item["rider_id"] for item in saved.json()["selections"]]
+                body = saved.json()
+                saved_ids = [item["rider_id"] for item in body["selections"]] + body["wildcards"]
                 if saved_ids != rider_ids:
                     failures.append(f"{username}: saved {saved_ids}, picked {rider_ids}")
 
