@@ -466,9 +466,18 @@ function configureFilters() {
     ];
     countryOptions.innerHTML = matchingCountries.length ? matchingCountries.map((country) => `<button type="button" class="country-option ${state.filters.countries.includes(country) ? "selected" : ""}" data-country="${country}" aria-pressed="${state.filters.countries.includes(country)}"><span class="country-check" aria-hidden="true">${state.filters.countries.includes(country) ? "✓" : ""}</span>${flag(country)}<span>${countryName(country)} <span class="muted">${country}</span></span></button>`).join("") : `<p class="muted country-option">No matching countries</p>`;
   };
-  countryQuery.addEventListener("input", () => { renderCountryOptions(); countryOptions.classList.remove("hidden"); });
-  countryQuery.addEventListener("focus", () => { renderCountryOptions(); countryOptions.classList.remove("hidden"); });
-  countryPicker.addEventListener("focusout", (event) => { if (!countryPicker.contains(event.relatedTarget)) countryOptions.classList.add("hidden"); });
+  const openCountryOptions = () => { renderCountryOptions(); countryOptions.classList.remove("hidden"); };
+  const closeCountryOptions = () => countryOptions.classList.add("hidden");
+  countryQuery.addEventListener("input", openCountryOptions);
+  countryQuery.addEventListener("focus", openCountryOptions);
+  countryPicker.addEventListener("click", (event) => { if (!event.target.closest("#country-options")) openCountryOptions(); });
+  // Picking a country re-renders the list, which used to drop the focused option
+  // and close it through focusout; keeping focus on the search box instead lets
+  // you pick several in a row. A touch device never focuses the option at all,
+  // so relying on focus to close the list lost the tap outright.
+  countryOptions.addEventListener("mousedown", (event) => event.preventDefault());
+  document.addEventListener("pointerdown", (event) => { if (!countryPicker.contains(event.target)) closeCountryOptions(); });
+  countryQuery.addEventListener("keydown", (event) => { if (event.key === "Escape") closeCountryOptions(); });
   countryOptions.addEventListener("click", (event) => {
     const option = event.target.closest("button[data-country]");
     if (!option) return;

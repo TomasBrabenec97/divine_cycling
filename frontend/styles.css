@@ -82,3 +82,6 @@ button:hover,button.selected { background:var(--ink); color:var(--paper); } butt
 .rider.selected { padding-right:82px; }
 @media(max-width:650px) { .rider-add { top:5px; right:5px; width:34px; height:34px; font:400 22px/1 inherit; }.rider { padding-right:48px; }.rider.selected { padding-right:100px; }.rider.selected .rider-add { right:56px; } }
 .advanced-filter-modal { position:fixed !important; top:16px; left:50%; margin:0; transform:translateX(-50%); }
+.country-option { touch-action:manipulation; }
+.country-picker { cursor:text; }
+@media(max-width:650px) { .country-options { max-height:min(320px,42vh); }.country-option { min-height:44px; gap:10px; padding:8px 6px; }.country-check { width:22px; height:22px; }.country-chip { min-height:34px; padding:6px 9px; } }
