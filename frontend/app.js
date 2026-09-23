@@ -251,12 +251,19 @@ function insertRider(riderId, position) {
 }
 
 const riderName = (riderId) => state.event.riders.find((rider) => rider.id === riderId)?.name || "this rider";
+function cancelPendingPick() {
+  if (!state.mobilePendingRiderId) return;
+  state.mobilePendingRiderId = null;
+  document.body.classList.remove("mobile-picking");
+  showMessage("#prediction-message", "Pick cancelled.", true);
+  render();
+}
 function addRiderToPicks(riderId) {
   if (isMobileLayout()) {
-    const isCancelling = state.mobilePendingRiderId === riderId;
-    state.mobilePendingRiderId = isCancelling ? null : riderId;
-    document.body.classList.toggle("mobile-picking", !isCancelling);
-    showMessage("#prediction-message", isCancelling ? "Pick cancelled." : `Tap a Top 10 position for ${riderName(riderId)}.`, !isCancelling);
+    if (state.mobilePendingRiderId === riderId) return cancelPendingPick();
+    state.mobilePendingRiderId = riderId;
+    document.body.classList.add("mobile-picking");
+    showMessage("#prediction-message", `Tap a Top 10 position for ${riderName(riderId)}.`, true);
     render();
     return;
   }
@@ -717,7 +724,9 @@ $("#logout").addEventListener("click", () => { if (hasUnsavedPickChanges() && !w
 $("#save").addEventListener("click", async () => { if (!savedPicks().length) return showMessage("#prediction-message", "Pick at least one rider first."); try { await request(`/api/events/${state.event.id}/predictions`, { method:"PUT", body: JSON.stringify({ player_id: state.player.id, selections: state.picks.flatMap((rider_id, index) => rider_id ? [{position:index+1, rider_id}] : []) }) }); state.savedPicks = [...state.picks]; showMessage("#prediction-message", "Prediction saved. You can edit it until the deadline.", true); render(); } catch (error) { showMessage("#prediction-message", error.message); } });
 window.addEventListener("beforeunload", (event) => { if (!state.player || !hasUnsavedPickChanges()) return; event.preventDefault(); event.returnValue = ""; });
 window.addEventListener("keydown", (event) => { if (!(event.ctrlKey || event.metaKey) || event.altKey || event.target instanceof HTMLElement && event.target.matches("input, textarea, select")) return; if (event.key.toLowerCase() === "z") { event.preventDefault(); if (event.shiftKey) restorePickState(state.redoStack, state.undoStack, "Redid last change."); else restorePickState(state.undoStack, state.redoStack, "Undid last change."); } else if (event.key.toLowerCase() === "y") { event.preventDefault(); restorePickState(state.redoStack, state.undoStack, "Redid last change."); } });
+$("#cancel-pick").addEventListener("click", cancelPendingPick);
 const backToTop = $("#back-to-top");
 backToTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
 window.addEventListener("scroll", () => backToTop.classList.toggle("hidden", window.scrollY < 400), { passive: true });
+window.addEventListener("keydown", (event) => { if (event.key === "Escape" && !$("dialog[open]")) cancelPendingPick(); });
 boot();
