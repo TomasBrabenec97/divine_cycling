@@ -81,5 +81,3 @@ button:hover,button.selected { background:var(--ink); color:var(--paper); } butt
 .rider { padding-right:38px; }
 .rider.selected { padding-right:82px; }
 @media(max-width:650px) { .rider-add { top:5px; right:5px; width:34px; height:34px; font:400 22px/1 inherit; }.rider { padding-right:48px; }.rider.selected { padding-right:100px; }.rider.selected .rider-add { right:56px; } }
-.pick-move { display:none; }
-@media(max-width:650px) { .pick-filled { padding-right:54px !important; }.pick-move { position:absolute; top:11px; right:26px; display:block; border:0; background:transparent; color:var(--muted); padding:0 6px; font:400 17px/20px inherit; }.pick-move:hover,.pick-move:focus-visible { background:transparent; color:var(--ink); }.mobile-picking .pick-move,.mobile-dragging .pick-move { display:none; }.mobile-picking .pick-filled,.mobile-dragging .pick-filled { padding-right:28px !important; } }
