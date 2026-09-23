@@ -233,6 +233,22 @@ function insertRider(riderId, position) {
   render();
 }
 
+const riderName = (riderId) => state.event.riders.find((rider) => rider.id === riderId)?.name || "this rider";
+function addRiderToPicks(riderId) {
+  if (isMobileLayout()) {
+    const isCancelling = state.mobilePendingRiderId === riderId;
+    state.mobilePendingRiderId = isCancelling ? null : riderId;
+    document.body.classList.toggle("mobile-picking", !isCancelling);
+    showMessage("#prediction-message", isCancelling ? "Pick cancelled." : `Tap a Top 10 position for ${riderName(riderId)}.`, !isCancelling);
+    render();
+    return;
+  }
+  if (state.picks.includes(riderId)) return showMessage("#prediction-message", `${riderName(riderId)} is already in your Top 10.`);
+  const firstEmpty = state.picks.indexOf(null);
+  if (firstEmpty < 0) return showMessage("#prediction-message", "Your top 10 is full. Drag a rider onto a position to insert them.");
+  insertRider(riderId, firstEmpty);
+}
+
 function rankFill(rider) {
   if (rider.uci_rank === 999999) return 0;
   return Math.max(8, Math.round(100 * (1 - Math.min(rider.uci_rank - 1, 499) / 499)));
@@ -371,7 +387,7 @@ function render() {
   pickActions.undo.disabled = state.undoStack.length === 0;
   pickActions.redo.disabled = state.redoStack.length === 0;
   const riderById = new Map(state.event.riders.map((rider) => [rider.id, rider]));
-  $("#picks").innerHTML = state.picks.map((riderId, index) => { const rider = riderById.get(riderId); return `<li data-position="${index}" class="${rider ? "pick-filled" : "pick-empty"}" ${rider ? `draggable="true" data-picked-rider="${rider.id}"` : ""}><span class="position">${index + 1}.</span>${rider ? `${flag(rider.nation)}${rider.name}<button class="remove" data-remove="${index}" aria-label="Remove ${rider.name}">×</button><span class="rank-scale pick-rank-scale" style="--rank-fill:${rankFill(rider)}%" aria-hidden="true"></span>` : "Drop rider here"}</li>`; }).join("");
+  $("#picks").innerHTML = state.picks.map((riderId, index) => { const rider = riderById.get(riderId); return `<li data-position="${index}" class="${rider ? "pick-filled" : "pick-empty"}" ${rider ? `draggable="true" data-picked-rider="${rider.id}" title="Open rider details"` : ""}><span class="position">${index + 1}.</span>${rider ? `${flag(rider.nation)}${rider.name}<button class="pick-move" type="button" data-move="${index}" aria-label="Move ${escapeHtml(rider.name)} to another position">⇅</button><button class="remove" data-remove="${index}" aria-label="Remove ${rider.name}">×</button><span class="rank-scale pick-rank-scale" style="--rank-fill:${rankFill(rider)}%" aria-hidden="true"></span>` : "Drop rider here"}</li>`; }).join("");
   const filteredRiders = state.event.riders.filter(matchesFilters);
   const visibleRiders = filteredRiders.filter((rider) => state.riderSelectionFilter === "all"
     || (state.riderSelectionFilter === "selected" && state.picks.includes(rider.id))
@@ -384,7 +400,7 @@ function render() {
   const ridersByCountry = new Map(); visibleRiders.forEach((rider) => ridersByCountry.set(rider.nation, [...(ridersByCountry.get(rider.nation) || []), rider]));
   $("#filter-summary").textContent = `${visibleRiders.length} of ${filteredRiders.length} filtered riders shown (${state.event.riders.length} total). The bar shows UCI rank strength (red = stronger).`;
   ensureRiderViewControls();
-  const riderCard = (rider) => { const topTenPosition = state.picks.indexOf(rider.id); const riderFlag = state.riderView === "plain" ? flag(rider.nation) : ""; return `<article draggable="true" class="rider ${topTenPosition >= 0 ? "selected" : ""}" data-rider="${rider.id}" role="button" tabindex="0" ${topTenPosition >= 0 ? `title="Top 10 position ${topTenPosition + 1}. Drag to move it."` : ""}>${riderFlag}${rider.name}<button type="button" class="rider-details" data-rider-detail="${rider.id}" aria-label="View statistics for ${escapeHtml(rider.name)}">i</button>${topTenPosition >= 0 ? `<span class="pick-position"><strong>#${topTenPosition + 1}</strong><small>Top 10</small></span>` : ""}<br><span class="rank">${rankingLabel(rider)}</span><span class="rank-scale" style="--rank-fill:${rankFill(rider)}%" aria-hidden="true"></span></article>`; };
+  const riderCard = (rider) => { const topTenPosition = state.picks.indexOf(rider.id); const riderFlag = state.riderView === "plain" ? flag(rider.nation) : ""; return `<article draggable="true" class="rider ${topTenPosition >= 0 ? "selected" : ""}" data-rider="${rider.id}" role="button" tabindex="0" title="${topTenPosition >= 0 ? `Top 10 position ${topTenPosition + 1}. Open rider details, or drag to move it.` : "Open rider details"}">${riderFlag}${rider.name}<button type="button" class="rider-add" data-rider-add="${rider.id}" aria-label="Add ${escapeHtml(rider.name)} to your Top 10">+</button>${topTenPosition >= 0 ? `<span class="pick-position"><strong>#${topTenPosition + 1}</strong><small>Top 10</small></span>` : ""}<br><span class="rank">${rankingLabel(rider)}</span><span class="rank-scale" style="--rank-fill:${rankFill(rider)}%" aria-hidden="true"></span></article>`; };
   if (state.riderView === "plain") {
     $("#riders").innerHTML = `<div class="plain-riders">${sortRiders(visibleRiders).map(riderCard).join("")}</div>`;
   } else {
@@ -401,11 +417,12 @@ function render() {
     });
     $("#riders").innerHTML = sortedCountries.map(([country, riders]) => { const stats = countryStats.get(country); return `<section class="country-group"><h3>${flag(country)}${countryName(country)} <span class="country-meta">${stats.count} riders · ${Math.round(stats.points).toLocaleString()} pts</span></h3><div class="country-riders">${sortRiders(riders).map(riderCard).join("")}</div></section>`; }).join("");
   }
-  document.querySelectorAll(".rider").forEach((node) => { node.addEventListener("click", () => { const riderId = Number(node.dataset.rider); if (isMobileLayout()) { const isCancelling = state.mobilePendingRiderId === riderId; state.mobilePendingRiderId = isCancelling ? null : riderId; document.body.classList.toggle("mobile-picking", !isCancelling); showMessage("#prediction-message", isCancelling ? "Pick cancelled." : `Tap a Top 10 position for ${node.textContent.trim().split("UCI")[0].trim()}.`, !isCancelling); render(); return; } if (state.picks.includes(riderId)) return; const firstEmpty = state.picks.indexOf(null); if (firstEmpty < 0) return showMessage("#prediction-message", "Your top 10 is full. Drag a rider onto a position to insert them."); insertRider(riderId, firstEmpty); }); node.addEventListener("keydown", (event) => { if (event.target.closest(".rider-details")) return; if (event.key === "Enter" || event.key === " ") { event.preventDefault(); node.click(); } }); node.addEventListener("dragstart", (event) => { event.dataTransfer.setData("text/plain", node.dataset.rider); document.body.classList.add("mobile-dragging"); }); node.addEventListener("dragend", () => document.body.classList.remove("mobile-dragging")); });
-  document.querySelectorAll("[data-rider-detail]").forEach((button) => button.addEventListener("click", (event) => { event.stopPropagation(); openRiderDetail(Number(button.dataset.riderDetail)); }));
+  document.querySelectorAll(".rider").forEach((node) => { node.addEventListener("click", (event) => { if (event.target.closest("[data-rider-add]")) return; openRiderDetail(Number(node.dataset.rider)); }); node.addEventListener("keydown", (event) => { if (event.target.closest("[data-rider-add]")) return; if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openRiderDetail(Number(node.dataset.rider)); } }); node.addEventListener("dragstart", (event) => { event.dataTransfer.setData("text/plain", node.dataset.rider); document.body.classList.add("mobile-dragging"); }); node.addEventListener("dragend", () => document.body.classList.remove("mobile-dragging")); });
+  document.querySelectorAll("[data-rider-add]").forEach((button) => button.addEventListener("click", (event) => { event.stopPropagation(); addRiderToPicks(Number(button.dataset.riderAdd)); }));
   document.querySelectorAll("[data-picked-rider]").forEach((node) => node.addEventListener("dragstart", (event) => event.dataTransfer.setData("text/plain", node.dataset.pickedRider)));
   document.querySelectorAll("[data-remove]").forEach((button) => button.addEventListener("click", (event) => { event.stopPropagation(); rememberPickState(); state.picks[Number(button.dataset.remove)] = null; render(); }));
-  document.querySelectorAll("[data-position]").forEach((slot) => { slot.addEventListener("click", () => { if (!isMobileLayout()) return; const position = Number(slot.dataset.position); if (state.mobilePendingRiderId) { const riderId = state.mobilePendingRiderId; state.mobilePendingRiderId = null; document.body.classList.remove("mobile-picking"); insertRider(riderId, position); return; } const riderId = Number(slot.dataset.pickedRider); if (riderId) { state.mobilePendingRiderId = riderId; document.body.classList.add("mobile-picking"); showMessage("#prediction-message", "Tap a new Top 10 position.", true); render(); } }); slot.addEventListener("dragover", (event) => { event.preventDefault(); slot.classList.add("drag-over"); }); slot.addEventListener("dragleave", () => slot.classList.remove("drag-over")); slot.addEventListener("drop", (event) => { event.preventDefault(); slot.classList.remove("drag-over"); document.body.classList.remove("mobile-dragging"); insertRider(Number(event.dataTransfer.getData("text/plain")), Number(slot.dataset.position)); }); });
+  document.querySelectorAll("[data-position]").forEach((slot) => { slot.addEventListener("click", (event) => { if (event.target.closest("[data-remove], [data-move]")) return; if (state.mobilePendingRiderId) { const riderId = state.mobilePendingRiderId; state.mobilePendingRiderId = null; document.body.classList.remove("mobile-picking"); insertRider(riderId, Number(slot.dataset.position)); return; } const riderId = Number(slot.dataset.pickedRider); if (riderId) openRiderDetail(riderId); }); slot.addEventListener("dragover", (event) => { event.preventDefault(); slot.classList.add("drag-over"); }); slot.addEventListener("dragleave", () => slot.classList.remove("drag-over")); slot.addEventListener("drop", (event) => { event.preventDefault(); slot.classList.remove("drag-over"); document.body.classList.remove("mobile-dragging"); insertRider(Number(event.dataTransfer.getData("text/plain")), Number(slot.dataset.position)); }); });
+  document.querySelectorAll("[data-move]").forEach((button) => button.addEventListener("click", (event) => { event.stopPropagation(); const riderId = state.picks[Number(button.dataset.move)]; const isCancelling = state.mobilePendingRiderId === riderId; state.mobilePendingRiderId = isCancelling ? null : riderId; document.body.classList.toggle("mobile-picking", !isCancelling); showMessage("#prediction-message", isCancelling ? "Move cancelled." : `Tap a new Top 10 position for ${riderName(riderId)}.`, !isCancelling); render(); }));
 }
 
 function configureFilters() {
