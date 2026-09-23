@@ -1,5 +1,5 @@
 const emptyAdvancedFilters = () => ({ raceSelections: [], yearSelections: [], resultMin: "", resultMax: "", trendMin: "", trendMax: "", ageMin: "", ageMax: "" });
-const state = { event: null, player: null, reference: null, picks: Array(10).fill(null), savedPicks: Array(10).fill(null), undoStack: [], redoStack: [], mobilePendingRiderId: null, riderView: "country", riderSort: "alphabetical", riderSortDirection: "asc", riderSelectionFilter: "all", filters: { search: "", countries: [], rankMin: "", rankMax: "", pointsMin: "", pointsMax: "", ...emptyAdvancedFilters() } };
+const state = { event: null, player: null, reference: null, apiStatus: "starting", apiReadyPromise: null, picks: Array(10).fill(null), savedPicks: Array(10).fill(null), undoStack: [], redoStack: [], mobilePendingRiderId: null, riderView: "country", riderSort: "alphabetical", riderSortDirection: "asc", riderSelectionFilter: "all", filters: { search: "", countries: [], rankMin: "", rankMax: "", pointsMin: "", pointsMax: "", ...emptyAdvancedFilters() } };
 const $ = (selector) => document.querySelector(selector);
 const isMobileLayout = () => window.matchMedia("(max-width: 650px)").matches;
 const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
@@ -17,6 +17,43 @@ let predictionMessageVersion = 0;
 
 const API_BASE_URL = (window.DIVINE_API_BASE_URL || "").replace(/\/$/, "");
 async function request(url, options = {}) { const response = await fetch(`${API_BASE_URL}${url}`, { headers: { "Content-Type": "application/json" }, ...options }); const body = await response.json(); if (!response.ok) throw new Error(body.detail || "Something went wrong"); return body; }
+
+const delay = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
+const API_WAKE_TIMEOUT_MS = 150000;
+let apiStatusTimer = 0;
+function setApiStatus(status, text) {
+  state.apiStatus = status;
+  const banner = $("#api-status");
+  banner.classList.remove("starting", "ready", "error", "hidden");
+  banner.classList.add(status);
+  $("#api-status-text").textContent = text;
+  window.clearTimeout(apiStatusTimer);
+  if (status === "ready") apiStatusTimer = window.setTimeout(() => banner.classList.add("hidden"), 2600);
+}
+async function wakeApi() {
+  // The free Render tier sleeps after about fifteen minutes idle, so the first
+  // call of a visit has to outwait a cold start instead of reporting a failure.
+  setApiStatus("starting", "Application is starting…");
+  const deadline = Date.now() + API_WAKE_TIMEOUT_MS;
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/health`, { cache: "no-store" });
+      if (!response.ok) throw new Error(`Health check returned ${response.status}`);
+      setApiStatus("ready", "Application ready");
+      return true;
+    } catch (_) {
+      if (Date.now() >= deadline) {
+        setApiStatus("error", "Application unavailable. Reload the page to try again.");
+        return false;
+      }
+      if (attempt === 1) setApiStatus("starting", "Application is starting… the free server sleeps when idle, so this takes up to a minute.");
+      await delay(Math.min(1200 + attempt * 600, 4000));
+    }
+  }
+}
+const whenApiReady = () => (state.apiReadyPromise = state.apiReadyPromise || wakeApi());
+function showWakeToast(text) { $("#wake-toast-text").textContent = text; $("#wake-toast").classList.remove("hidden"); }
+function hideWakeToast() { $("#wake-toast").classList.add("hidden"); }
 function showMessage(selector, text, ok = false, displayMs = ok ? 3000 : 8000) {
   const node = $(selector);
   node.textContent = text;
@@ -547,8 +584,76 @@ function configureRangeFilter({ prefix, min, max, format, toScale, fromScale, ro
 }
 
 async function loadPrediction() { try { const prediction = await request(`/api/events/${state.event.id}/predictions/${state.player.id}`); state.picks = Array(10).fill(null); prediction.selections.forEach((item) => state.picks[item.position - 1] = item.rider_id); } catch (_) { state.picks = Array(10).fill(null); } state.savedPicks = [...state.picks]; resetPickHistory(); render(); }
-async function boot() { try { state.event = await request("/api/events/active"); configureFilters(); const deadline = new Intl.DateTimeFormat(undefined, { weekday:"long", month:"long", day:"numeric", hour:"numeric", minute:"2-digit" }).format(new Date(state.event.prediction_deadline)); $("#event-title").textContent = state.event.name; $("#event-meta").textContent = `Submit your prediction by ${deadline}.`; const saved = localStorage.getItem("ten-up-player"); if (saved) { try { state.player = JSON.parse(saved); } catch (_) { localStorage.removeItem("ten-up-player"); } if (state.player) { $("#identity").classList.add("hidden"); $("#prediction").classList.remove("hidden"); renderSessionControls(); await loadPrediction(); } } } catch (error) { $("#event-title").textContent = "Event unavailable"; $("#event-meta").textContent = error.message; } }
-$("#join").addEventListener("click", async () => { const username = $("#username").value.trim(); if (!username) return showMessage("#identity-message", "Enter a username first."); try { try { state.player = await request(`/api/players/by-username/${encodeURIComponent(username)}`); } catch (error) { if (!error.message.includes("Username not found")) throw error; state.player = await request("/api/players", { method:"POST", body: JSON.stringify({username}) }); } localStorage.setItem("ten-up-player", JSON.stringify(state.player)); $("#identity").classList.add("hidden"); $("#prediction").classList.remove("hidden"); renderSessionControls(); await loadPrediction(); } catch (error) { showMessage("#identity-message", error.message); } });
+let filtersConfigured = false;
+async function loadEvent() {
+  state.event = await request("/api/events/active");
+  if (!filtersConfigured) { configureFilters(); filtersConfigured = true; }
+  const deadline = new Intl.DateTimeFormat(undefined, { weekday:"long", month:"long", day:"numeric", hour:"numeric", minute:"2-digit" }).format(new Date(state.event.prediction_deadline));
+  $("#event-title").textContent = state.event.name;
+  $("#event-meta").textContent = `Submit your prediction by ${deadline}.`;
+}
+function restoreSession() {
+  const saved = localStorage.getItem("ten-up-player");
+  if (saved) {
+    try { state.player = JSON.parse(saved); } catch (_) { localStorage.removeItem("ten-up-player"); state.player = null; }
+  }
+  // The sign-in card starts hidden so a returning player never sees it flash
+  // during the seconds the API spends waking up.
+  if (!state.player) $("#identity").classList.remove("hidden");
+  renderSessionControls();
+}
+async function boot() {
+  restoreSession();
+  const awake = await whenApiReady();
+  if (!awake) return;
+  try {
+    await loadEvent();
+    if (state.player) {
+      $("#identity").classList.add("hidden");
+      $("#prediction").classList.remove("hidden");
+      renderSessionControls();
+      await loadPrediction();
+    } else {
+      $("#identity").classList.remove("hidden");
+    }
+  } catch (error) {
+    $("#event-title").textContent = "Event unavailable";
+    $("#event-meta").textContent = error.message;
+    setApiStatus("error", error.message);
+    if (!state.player) $("#identity").classList.remove("hidden");
+  }
+}
+$("#join").addEventListener("click", async () => {
+  const username = $("#username").value.trim();
+  if (!username) return showMessage("#identity-message", "Enter a username first.");
+  const waking = "Waking the server… you will go straight to your Top 10 as soon as it answers.";
+  const slowRequest = window.setTimeout(() => showWakeToast(waking), 2500);
+  $("#join").disabled = true;
+  try {
+    if (state.apiStatus !== "ready") {
+      showWakeToast(waking);
+      if (!await whenApiReady()) return showMessage("#identity-message", "The server is still not answering. Give it a minute and try again.");
+    }
+    if (!state.event) await loadEvent();
+    try {
+      state.player = await request(`/api/players/by-username/${encodeURIComponent(username)}`);
+    } catch (error) {
+      if (!error.message.includes("Username not found")) throw error;
+      state.player = await request("/api/players", { method:"POST", body: JSON.stringify({username}) });
+    }
+    localStorage.setItem("ten-up-player", JSON.stringify(state.player));
+    $("#identity").classList.add("hidden");
+    $("#prediction").classList.remove("hidden");
+    renderSessionControls();
+    await loadPrediction();
+  } catch (error) {
+    showMessage("#identity-message", error.message);
+  } finally {
+    window.clearTimeout(slowRequest);
+    hideWakeToast();
+    $("#join").disabled = false;
+  }
+});
 $("#username").addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); $("#join").click(); } });
 $("#close-rider-detail").addEventListener("click", () => $("#rider-detail-modal").close());
 $("#rider-detail-modal").addEventListener("click", (event) => { if (event.target === event.currentTarget) event.currentTarget.close(); });
