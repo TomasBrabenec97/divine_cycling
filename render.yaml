@@ -3,6 +3,9 @@ services:
     name: divine-cycling-api
     runtime: python
     plan: free
+    # Neon lives in aws-eu-central-1; keeping the API in Frankfurt avoids a
+    # transatlantic round trip on every query.
+    region: frankfurt
     autoDeploy: true
     buildCommand: >-
       pip install . &&
@@ -12,6 +15,10 @@ services:
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /api/health
     envVars:
+      # Pin the interpreter the project is tested against rather than inheriting
+      # whatever Render currently defaults to.
+      - key: PYTHON_VERSION
+        value: "3.12.14"
       - key: APP_ENV
         value: production
       - key: DATABASE_URL

@@ -13,3 +13,6 @@ data/*.sqlite3-*
 *.egg-info/
 scripts/output.csv
 frontend/flags/*.ico
+.neon
+.env.local
+node_modules/
