@@ -26,7 +26,8 @@
         const result = alpha === 1
           ? riders.sort((a, b) => (b.uci_points || 0) - (a.uci_points || 0)).slice(0, RESULT_SLOTS)
           : weightedSample(riders, alpha);
-        [...slots.querySelectorAll('select')].forEach((select, index) => { select.value = String(result[index].id); });
+        // A startlist shorter than the slots leaves the last ones empty.
+        [...slots.querySelectorAll('select')].forEach((select, index) => { select.value = result[index] ? String(result[index].id) : ''; });
         document.querySelector('#simulation-output').textContent = '';
       };
       const weightedSample = (riders, alpha) => {
