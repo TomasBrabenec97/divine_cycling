@@ -84,6 +84,11 @@ class Prediction(Base):
     items: Mapped[list["PredictionItem"]] = relationship(
         back_populates="prediction", cascade="all, delete-orphan"
     )
+    wildcards: Mapped[list["PredictionWildcard"]] = relationship(
+        back_populates="prediction",
+        cascade="all, delete-orphan",
+        order_by="PredictionWildcard.slot",
+    )
 
 
 class PredictionItem(Base):
@@ -98,6 +103,27 @@ class PredictionItem(Base):
     rider_id: Mapped[int] = mapped_column(ForeignKey("riders.id"), index=True)
     position: Mapped[int] = mapped_column(Integer)
     prediction: Mapped[Prediction] = relationship(back_populates="items")
+    rider: Mapped[Rider] = relationship()
+
+
+class PredictionWildcard(Base):
+    """One of the unpositioned wildcard riders that go with a Top 10.
+
+    A wildcard never also appears in the same prediction's Top 10; the API
+    enforces that, since it spans two tables.
+    """
+
+    __tablename__ = "prediction_wildcards"
+    __table_args__ = (
+        UniqueConstraint("prediction_id", "slot", name="uq_prediction_wildcard_slot"),
+        UniqueConstraint("prediction_id", "rider_id", name="uq_prediction_wildcard_rider"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"), index=True)
+    rider_id: Mapped[int] = mapped_column(ForeignKey("riders.id"), index=True)
+    slot: Mapped[int] = mapped_column(Integer)
+    prediction: Mapped[Prediction] = relationship(back_populates="wildcards")
     rider: Mapped[Rider] = relationship()
 
 
