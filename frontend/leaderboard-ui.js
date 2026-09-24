@@ -433,10 +433,10 @@
     if (window.ResizeObserver) new ResizeObserver(draw).observe(stage);
   }
 
-  function lineage(entry, riderById, resultByPosition) {
+  function lineage(entry, riderById, resultByPosition, depth) {
     const section = element("section", "lineage");
     section.append(element("h3", "", "Prediction lineage"));
-    section.append(element("p", "muted", "Each line follows one of your riders from the position you gave them to where they actually finished. Wildcards (★) join in grey; the rule under 10th marks the last scoring place."));
+    section.append(element("p", "muted", `Each line follows one of your riders from the position you gave them to where they actually finished. Wildcards (★) join in grey. The rule under 10th closes the top 10 that bonuses and wildcards count; placement points reach down to ${ordinal(depth)}.`));
     const lastPosition = Math.max(10, ...resultByPosition.keys());
     const stage = element("div", "lineage-stage");
     const grid = element("div", "lineage-grid");
@@ -631,7 +631,7 @@
       const scroll = element("div", "viz-scroll");
       scroll.append(waterfall(entry, riderById));
       figure.append(scroll);
-      panel.append(figure, scoreDetails(entry, riderById, leaderboard.rules), lineage(entry, riderById, resultByPosition));
+      panel.append(figure, scoreDetails(entry, riderById, leaderboard.rules), lineage(entry, riderById, resultByPosition, depth));
     }
 
     function drawCompare() {
