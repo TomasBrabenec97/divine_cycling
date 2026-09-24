@@ -217,3 +217,66 @@ def test_published_scores_are_stored_and_served_unchanged() -> None:
     assert board.status_code == 200
     assert board.json()["entries"][0] == entry
     assert board.json()["rules"]["version"] == "v2.0"
+
+
+def test_templates_are_named_drafts_kept_apart_from_the_final_prediction() -> None:
+    client = TestClient(app)
+    event = client.get("/api/events/active").json()
+    ids = [rider["id"] for rider in event["riders"]]
+    player_id = client.post("/api/players", json={"username": "Drafter"}).json()["id"]
+    base = f"/api/events/{event['id']}/templates"
+
+    empty = client.post(base, json={"player_id": player_id, "name": "  Blank   list "})
+    assert empty.status_code == 201
+    assert empty.json()["name"] == "Blank list"
+    assert empty.json()["selections"] == []
+
+    picks = [{"position": 3, "rider_id": ids[0]}, {"position": 1, "rider_id": ids[1]}]
+    created = client.post(
+        base, json={"player_id": player_id, "name": "Sprint", "selections": picks, "wildcards": [ids[5]]}
+    )
+    assert created.status_code == 201
+    template = created.json()
+    assert [item["position"] for item in template["selections"]] == [1, 3]
+    assert template["wildcards"] == [ids[5]]
+
+    duplicate = client.post(base, json={"player_id": player_id, "name": "sprint"})
+    assert duplicate.status_code == 409
+    overlap = client.post(
+        base, json={"player_id": player_id, "name": "Bad", "selections": picks, "wildcards": [ids[0]]}
+    )
+    assert overlap.status_code == 422
+
+    renamed = client.put(
+        f"{base}/{template['id']}",
+        json={"player_id": player_id, "name": "Sprint finish", "selections": picks, "wildcards": []},
+    )
+    assert renamed.status_code == 200
+    assert renamed.json()["name"] == "Sprint finish"
+    assert renamed.json()["wildcards"] == []
+
+    stranger = client.post("/api/players", json={"username": "Stranger"}).json()["id"]
+    foreign = client.put(f"{base}/{template['id']}", json={"player_id": stranger, "name": "Mine"})
+    assert foreign.status_code == 404
+
+    listed = client.get(f"/api/events/{event['id']}/players/{player_id}/templates").json()
+    assert [item["name"] for item in listed] == ["Blank list", "Sprint finish"]
+    assert client.get(f"/api/events/{event['id']}/predictions/{player_id}").status_code == 404
+
+    assert client.delete(f"{base}/{template['id']}?player_id={stranger}").status_code == 404
+    assert client.delete(f"{base}/{template['id']}?player_id={player_id}").status_code == 204
+    remaining = client.get(f"/api/events/{event['id']}/players/{player_id}/templates").json()
+    assert [item["name"] for item in remaining] == ["Blank list"]
+
+
+def test_a_player_keeps_a_bounded_number_of_templates() -> None:
+    import app.main as main_module
+
+    client = TestClient(app)
+    event = client.get("/api/events/active").json()
+    player_id = client.post("/api/players", json={"username": "Hoarder"}).json()["id"]
+    base = f"/api/events/{event['id']}/templates"
+    for index in range(main_module.MAX_TEMPLATES):
+        created = client.post(base, json={"player_id": player_id, "name": f"List {index}"})
+        assert created.status_code == 201
+    assert client.post(base, json={"player_id": player_id, "name": "One more"}).status_code == 409

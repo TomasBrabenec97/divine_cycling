@@ -17,7 +17,7 @@ const PROFILE_FILTERS = [
 const emptyProfileFilters = () => Object.fromEntries(PROFILE_FILTERS.map((filter) => [filter.key, { min: "", max: "", mode: filter.modes?.[0].id }]));
 const emptyAdvancedFilters = () => ({ resultCells: [], resultMin: "", resultMax: "", profile: emptyProfileFilters() });
 const emptyFilters = () => ({ search: "", countries: [], teams: [], rankMin: "", rankMax: "", pointsMin: "", pointsMax: "", ...emptyAdvancedFilters() });
-const state = { event: null, player: null, reference: null, referencePromise: null, teamIcons: {}, apiStatus: "starting", apiReadyPromise: null, picks: Array(10).fill(null), savedPicks: Array(10).fill(null), wildcards: Array(WILDCARD_COUNT).fill(null), savedWildcards: Array(WILDCARD_COUNT).fill(null), undoStack: [], redoStack: [], mobilePendingRiderId: null, riderView: "country", riderSort: "alphabetical", riderSortDirection: "asc", riderSelectionFilter: "all", filters: emptyFilters(), advancedDraft: null };
+const state = { event: null, player: null, reference: null, referencePromise: null, teamIcons: {}, apiStatus: "starting", apiReadyPromise: null, picks: Array(10).fill(null), savedPicks: Array(10).fill(null), wildcards: Array(WILDCARD_COUNT).fill(null), savedWildcards: Array(WILDCARD_COUNT).fill(null), undoStack: [], redoStack: [], mobilePendingRiderId: null, riderView: "country", riderSort: "alphabetical", riderSortDirection: "asc", riderSelectionFilter: "all", filters: emptyFilters(), advancedDraft: null, lists: { final: null, templates: [] }, activeList: "final", renamingList: null };
 const $ = (selector) => document.querySelector(selector);
 const isMobileLayout = () => window.matchMedia("(max-width: 650px)").matches;
 const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
@@ -55,7 +55,18 @@ const rankingLabel = (rider) => rider.uci_rank === 999999 ? "UCI unranked" : `UC
 let predictionMessageVersion = 0;
 
 const API_BASE_URL = (window.DIVINE_API_BASE_URL || "").replace(/\/$/, "");
-async function request(url, options = {}) { const response = await fetch(`${API_BASE_URL}${url}`, { headers: { "Content-Type": "application/json" }, ...options }); const body = await response.json(); if (!response.ok) throw new Error(body.detail || "Something went wrong"); return body; }
+async function request(url, options = {}) {
+  const response = await fetch(`${API_BASE_URL}${url}`, { headers: { "Content-Type": "application/json" }, ...options });
+  // A 204 (a deleted template) has no body at all.
+  const text = await response.text();
+  const body = text ? JSON.parse(text) : null;
+  if (!response.ok) {
+    // Validation errors arrive as a list; show their messages, not "[object Object]".
+    const detail = Array.isArray(body?.detail) ? body.detail.map((item) => String(item.msg).replace(/^Value error, /, "")).join(" ") : body?.detail;
+    throw new Error(detail || "Something went wrong");
+  }
+  return body;
+}
 
 const delay = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
 const API_WAKE_TIMEOUT_MS = 150000;
@@ -522,7 +533,7 @@ function ensurePickActions() {
       state.wildcards = [...state.savedWildcards];
       state.mobilePendingRiderId = null;
       document.body.classList.remove("mobile-picking");
-      showMessage("#prediction-message", "Reverted to your last saved prediction.", true);
+      showMessage("#prediction-message", `Reverted to the last saved version of ${listName(state.activeList)}.`, true);
       render();
     });
     actions.append(revert);
@@ -539,12 +550,226 @@ function ensurePickActions() {
   const revert = $("#revert-picks");
   const save = $("#save");
   if (save && save.previousElementSibling !== actions) actions.insertAdjacentElement("afterend", save);
-  const message = $("#prediction-message");
-  if (message && message.previousElementSibling !== save) {
-    message.classList.add("top10-message");
-    save.insertAdjacentElement("afterend", message);
+  let templateActions = $("#template-actions");
+  if (!templateActions) {
+    templateActions = document.createElement("div");
+    templateActions.id = "template-actions";
+    templateActions.className = "template-actions";
+    templateActions.innerHTML = `<button id="save-template" type="button">Save template</button><button id="save-new-template" type="button">Save as new template</button>`;
+    save.insertAdjacentElement("afterend", templateActions);
+    $("#save-template").addEventListener("click", saveActiveTemplate);
+    $("#save-new-template").addEventListener("click", saveAsNewTemplate);
   }
-  return { clear, revert, undo: $("#undo-picks"), redo: $("#redo-picks") };
+  const message = $("#prediction-message");
+  if (message && message.previousElementSibling !== templateActions) {
+    message.classList.add("top10-message");
+    templateActions.insertAdjacentElement("afterend", message);
+  }
+  return { clear, revert, save, undo: $("#undo-picks"), redo: $("#redo-picks") };
+}
+
+// -- lists: the final prediction plus named templates --------------------------
+const emptyList = () => ({ picks: Array(10).fill(null), wildcards: Array(WILDCARD_COUNT).fill(null) });
+// Missing fields read as empty, so a response from an API one deploy behind
+// (no wildcards yet) still loads.
+function listFromPicks(selections = [], wildcards = []) {
+  const list = emptyList();
+  selections.forEach((item) => { list.picks[item.position - 1] = item.rider_id; });
+  wildcards.slice(0, WILDCARD_COUNT).forEach((riderId, slot) => { list.wildcards[slot] = riderId; });
+  return list;
+}
+const workingList = () => ({ picks: [...state.picks], wildcards: [...state.wildcards] });
+const picksPayload = (list = workingList()) => ({ selections: list.picks.flatMap((rider_id, index) => rider_id ? [{ position: index + 1, rider_id }] : []), wildcards: list.wildcards.filter(Boolean) });
+const templateById = (id) => state.lists.templates.find((template) => template.id === id);
+const listName = (id) => (id === "final" ? "your final prediction" : `“${templateById(id)?.name || "this list"}”`);
+const wildcardKey = (list) => list.wildcards.filter(Boolean).sort((a, b) => a - b).join(",");
+const sameList = (a, b) => Boolean(a && b) && a.picks.every((riderId, index) => riderId === b.picks[index]) && wildcardKey(a) === wildcardKey(b);
+function uniqueTemplateName() {
+  const taken = new Set(state.lists.templates.map((template) => template.name.toLocaleLowerCase()));
+  for (let number = 1; ; number += 1) if (!taken.has(`template ${number}`)) return `Template ${number}`;
+}
+function markSaved(list) {
+  state.savedPicks = [...list.picks];
+  state.savedWildcards = [...list.wildcards];
+}
+
+async function loadLists() {
+  const base = `/api/events/${state.event.id}`;
+  const [prediction, templates] = await Promise.all([
+    request(`${base}/predictions/${state.player.id}`).catch(() => null),
+    request(`${base}/players/${state.player.id}/templates`).catch(() => []),
+  ]);
+  state.lists.final = prediction ? listFromPicks(prediction.selections, prediction.wildcards) : null;
+  state.lists.templates = templates.map((template) => ({ id: template.id, name: template.name, ...listFromPicks(template.selections, template.wildcards) }));
+  openList("final", { force: true });
+}
+
+function openList(listId, { force = false } = {}) {
+  if (!force && listId === state.activeList) return;
+  if (!force && hasUnsavedPickChanges() && !window.confirm(`You have unsaved changes in ${listName(state.activeList)}. Switch lists and discard them?`)) return;
+  const source = (listId === "final" ? state.lists.final : templateById(listId)) || emptyList();
+  state.activeList = listId;
+  state.picks = [...source.picks];
+  state.wildcards = [...source.wildcards];
+  markSaved(source);
+  state.renamingList = null;
+  state.mobilePendingRiderId = null;
+  document.body.classList.remove("mobile-picking");
+  resetPickHistory();
+  render();
+}
+
+// Template writes run one at a time, in the order they were asked for, so a
+// rename and a save of the same template can never overtake each other.
+let templateWrites = Promise.resolve();
+const queueTemplateWrite = (task) => (templateWrites = templateWrites.catch(() => {}).then(task));
+
+// Each save records the list it sent, not whatever is on screen when the answer
+// arrives: the player may have switched lists or kept editing meanwhile.
+async function saveFinal() {
+  if (!state.picks.some(Boolean)) return showMessage("#prediction-message", "Pick at least one Top 10 rider first.");
+  const list = workingList();
+  const listId = state.activeList;
+  try {
+    await request(`/api/events/${state.event.id}/predictions`, { method: "PUT", body: JSON.stringify({ player_id: state.player.id, ...picksPayload(list) }) });
+    state.lists.final = list;
+    if (listId === "final") {
+      if (state.activeList === "final") markSaved(list);
+      showMessage("#prediction-message", "Final prediction saved. You can edit it until the deadline.", true);
+    } else {
+      showMessage("#prediction-message", `Saved ${listName(listId)} as your final prediction. It is the one that will be scored.`, true);
+    }
+    render();
+  } catch (error) {
+    showMessage("#prediction-message", error.message);
+  }
+}
+
+async function putTemplate(template, name, list) {
+  return request(`/api/events/${state.event.id}/templates/${template.id}`, { method: "PUT", body: JSON.stringify({ player_id: state.player.id, name, ...picksPayload(list) }) });
+}
+
+function saveActiveTemplate() {
+  const template = templateById(state.activeList);
+  if (!template) return;
+  const list = workingList();
+  return queueTemplateWrite(async () => {
+    try {
+      // The name is read when the write runs, after any rename queued before it.
+      await putTemplate(template, template.name, list);
+      Object.assign(template, list);
+      if (state.activeList === template.id) markSaved(list);
+      showMessage("#prediction-message", `Saved ${listName(template.id)}.`, true);
+      render();
+    } catch (error) {
+      showMessage("#prediction-message", error.message);
+    }
+  });
+}
+
+async function saveAsNewTemplate() {
+  const list = workingList();
+  const listId = state.activeList;
+  try {
+    const created = await request(`/api/events/${state.event.id}/templates`, { method: "POST", body: JSON.stringify({ player_id: state.player.id, name: uniqueTemplateName(), ...picksPayload(list) }) });
+    const template = { id: created.id, name: created.name, ...list };
+    state.lists.templates.push(template);
+    if (state.activeList === listId) {
+      // Keep editing the same picks, now as the new template; its name opens for editing.
+      state.activeList = template.id;
+      markSaved(list);
+      state.renamingList = template.id;
+      showMessage("#prediction-message", `Saved as “${template.name}”. Type a name for it, or keep this one.`, true);
+    } else {
+      showMessage("#prediction-message", `Saved as “${template.name}”.`, true);
+    }
+    render();
+  } catch (error) {
+    showMessage("#prediction-message", error.message);
+  }
+}
+
+function renameTemplate(id, rawName) {
+  const template = templateById(id);
+  const name = rawName.replace(/\s+/g, " ").trim();
+  state.renamingList = null;
+  if (!template || !name || name === template.name) return render();
+  return queueTemplateWrite(async () => {
+    try {
+      // A rename keeps the template's saved picks; unsaved edits stay unsaved.
+      await putTemplate(template, name, template);
+      template.name = name;
+      showMessage("#prediction-message", `Renamed to “${name}”.`, true);
+    } catch (error) {
+      showMessage("#prediction-message", error.message);
+    }
+    render();
+  });
+}
+
+async function deleteTemplate(id) {
+  const template = templateById(id);
+  if (!template || !window.confirm(`Delete the template “${template.name}”? This cannot be undone.`)) return;
+  return queueTemplateWrite(async () => {
+    try {
+      await request(`/api/events/${state.event.id}/templates/${id}?player_id=${state.player.id}`, { method: "DELETE" });
+      state.lists.templates = state.lists.templates.filter((item) => item.id !== id);
+      showMessage("#prediction-message", `Deleted “${template.name}”.`, true);
+      if (state.activeList === id) openList("final", { force: true });
+      else render();
+    } catch (error) {
+      showMessage("#prediction-message", error.message);
+    }
+  });
+}
+
+function renderListSwitcher() {
+  let switcher = $("#list-switcher");
+  if (!switcher) {
+    switcher = document.createElement("div");
+    switcher.id = "list-switcher";
+    switcher.className = "list-switcher";
+    $("#picks").insertAdjacentElement("beforebegin", switcher);
+    switcher.addEventListener("click", (event) => {
+      const tab = event.target.closest("[data-list]");
+      if (tab) return openList(tab.dataset.list === "final" ? "final" : Number(tab.dataset.list));
+      const action = event.target.closest("[data-list-action]")?.dataset.listAction;
+      if (action === "rename") { state.renamingList = state.activeList; render(); }
+      if (action === "delete") deleteTemplate(state.activeList);
+    });
+    switcher.addEventListener("keydown", (event) => {
+      const input = event.target.closest("[data-rename]");
+      if (!input) return;
+      if (event.key === "Enter") { event.preventDefault(); input.blur(); }
+      if (event.key === "Escape") { input.dataset.cancelled = "true"; state.renamingList = null; render(); }
+    });
+    switcher.addEventListener("focusout", (event) => {
+      const input = event.target.closest("[data-rename]");
+      if (input && !input.dataset.cancelled) renameTemplate(Number(input.dataset.rename), input.value);
+    });
+  }
+  // Leave a name the player is still typing alone when something else re-renders.
+  const editing = switcher.querySelector("[data-rename]");
+  if (editing && editing === document.activeElement && Number(editing.dataset.rename) === state.renamingList) return;
+  const dirty = hasUnsavedPickChanges();
+  const final = state.lists.final;
+  const tab = (id, label, extra = "") => {
+    const active = state.activeList === id;
+    const unsaved = active && dirty ? `<span class="list-unsaved" title="Unsaved changes" aria-label="unsaved changes">•</span>` : "";
+    return `<button type="button" role="tab" class="list-tab ${id === "final" ? "final" : ""} ${active ? "active" : ""}" data-list="${id}" aria-selected="${active}">${label}${extra}${unsaved}</button>`;
+  };
+  const tabs = [
+    tab("final", "Final", `<span class="list-tab-status">${final ? "scored" : "not saved"}</span>`),
+    ...state.lists.templates.map((template) => state.renamingList === template.id
+      ? `<input class="list-name-input" data-rename="${template.id}" value="${escapeHtml(template.name)}" maxlength="40" aria-label="Template name" />`
+      : tab(template.id, escapeHtml(template.name), sameList(template, final) ? `<span class="list-same" title="Same picks as your final prediction" aria-label="same as final"></span>` : "")),
+  ].join("");
+  const caption = state.activeList === "final"
+    ? `<strong>Final prediction</strong> — the one that is scored.${final ? "" : " Not saved yet."}`
+    : `<strong>Template</strong> — a private draft, never scored. <button type="button" class="text-button" data-list-action="rename">Rename</button><button type="button" class="text-button" data-list-action="delete">Delete</button>`;
+  switcher.innerHTML = `<div class="list-tabs" role="tablist" aria-label="Your lists">${tabs}</div><p class="list-caption">${caption}</p>`;
+  const input = switcher.querySelector("[data-rename]");
+  if (input) { input.focus(); input.select(); }
 }
 
 function ensureRiderViewControls() {
@@ -597,6 +822,11 @@ function sortRiders(riders) {
 
 function render() {
   const pickActions = ensurePickActions();
+  const editingTemplate = state.activeList !== "final";
+  pickActions.save.textContent = editingTemplate ? "Save as final prediction" : "Save final prediction";
+  $("#save-template").classList.toggle("hidden", !editingTemplate);
+  $("#template-actions").classList.toggle("single", !editingTemplate);
+  renderListSwitcher();
   pickActions.clear.disabled = savedPicks().length === 0;
   pickActions.revert.disabled = !hasUnsavedPickChanges();
   pickActions.undo.disabled = state.undoStack.length === 0;
@@ -862,21 +1092,7 @@ function configureRangeFilter({ prefix, min, max, format, toScale, fromScale, ro
   return { setMin: (value) => setBoundary(minInput, minScale, filterMinKey, value, roundMin), setMax: (value) => setBoundary(maxInput, maxScale, filterMaxKey, value, roundMax) };
 }
 
-async function loadPrediction() {
-  state.picks = Array(10).fill(null);
-  state.wildcards = Array(WILDCARD_COUNT).fill(null);
-  try {
-    const prediction = await request(`/api/events/${state.event.id}/predictions/${state.player.id}`);
-    prediction.selections.forEach((item) => { state.picks[item.position - 1] = item.rider_id; });
-    prediction.wildcards.slice(0, WILDCARD_COUNT).forEach((riderId, slot) => { state.wildcards[slot] = riderId; });
-  } catch (_) {
-    // No saved prediction yet: start from empty lists.
-  }
-  state.savedPicks = [...state.picks];
-  state.savedWildcards = [...state.wildcards];
-  resetPickHistory();
-  render();
-}
+const loadPrediction = loadLists;
 let filtersConfigured = false;
 async function loadEvent() {
   state.event = await request("/api/events/active");
@@ -972,19 +1188,8 @@ $("#reset-advanced-filters").addEventListener("click", () => {
   renderAdvancedFilters();
   render();
 });
-$("#logout").addEventListener("click", () => { if (hasUnsavedPickChanges() && !window.confirm("Did you forget to save your prediction?")) return; localStorage.removeItem("ten-up-player"); state.player = null; state.picks = Array(10).fill(null); state.savedPicks = Array(10).fill(null); state.wildcards = Array(WILDCARD_COUNT).fill(null); state.savedWildcards = Array(WILDCARD_COUNT).fill(null); resetPickHistory(); state.mobilePendingRiderId = null; document.body.classList.remove("mobile-picking", "mobile-dragging"); $("#prediction").classList.add("hidden"); $("#identity").classList.remove("hidden"); $("#username").value = ""; renderSessionControls(); showMessage("#identity-message", "You have logged out on this device.", true); $("#username").focus(); });
-$("#save").addEventListener("click", async () => {
-  if (!state.picks.some(Boolean)) return showMessage("#prediction-message", "Pick at least one Top 10 rider first.");
-  try {
-    await request(`/api/events/${state.event.id}/predictions`, { method: "PUT", body: JSON.stringify({ player_id: state.player.id, selections: state.picks.flatMap((rider_id, index) => rider_id ? [{ position: index + 1, rider_id }] : []), wildcards: state.wildcards.filter(Boolean) }) });
-    state.savedPicks = [...state.picks];
-    state.savedWildcards = [...state.wildcards];
-    showMessage("#prediction-message", "Prediction saved. You can edit it until the deadline.", true);
-    render();
-  } catch (error) {
-    showMessage("#prediction-message", error.message);
-  }
-});
+$("#logout").addEventListener("click", () => { if (hasUnsavedPickChanges() && !window.confirm("Did you forget to save your prediction?")) return; localStorage.removeItem("ten-up-player"); state.player = null; state.picks = Array(10).fill(null); state.savedPicks = Array(10).fill(null); state.wildcards = Array(WILDCARD_COUNT).fill(null); state.savedWildcards = Array(WILDCARD_COUNT).fill(null); state.lists = { final: null, templates: [] }; state.activeList = "final"; state.renamingList = null; resetPickHistory(); state.mobilePendingRiderId = null; document.body.classList.remove("mobile-picking", "mobile-dragging"); $("#prediction").classList.add("hidden"); $("#identity").classList.remove("hidden"); $("#username").value = ""; renderSessionControls(); showMessage("#identity-message", "You have logged out on this device.", true); $("#username").focus(); });
+$("#save").addEventListener("click", saveFinal);
 window.addEventListener("beforeunload", (event) => { if (!state.player || !hasUnsavedPickChanges()) return; event.preventDefault(); event.returnValue = ""; });
 window.addEventListener("keydown", (event) => { if (!(event.ctrlKey || event.metaKey) || event.altKey || event.target instanceof HTMLElement && event.target.matches("input, textarea, select")) return; if (event.key.toLowerCase() === "z") { event.preventDefault(); if (event.shiftKey) restorePickState(state.redoStack, state.undoStack, "Redid last change."); else restorePickState(state.undoStack, state.redoStack, "Undid last change."); } else if (event.key.toLowerCase() === "y") { event.preventDefault(); restorePickState(state.redoStack, state.undoStack, "Redid last change."); } });
 $("#cancel-pick").addEventListener("click", cancelPendingPick);

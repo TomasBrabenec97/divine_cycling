@@ -50,10 +50,10 @@ class PredictionSelection(BaseModel):
     rider_id: int
 
 
-class PredictionPicks(BaseModel):
+class PicksBase(BaseModel):
     """A positioned Top 10 plus up to three unpositioned wildcard riders."""
 
-    selections: list[PredictionSelection] = Field(min_length=1, max_length=10)
+    selections: list[PredictionSelection] = Field(default_factory=list, max_length=10)
     wildcards: list[int] = Field(default_factory=list, max_length=3)
 
     @field_validator("selections")
@@ -66,7 +66,7 @@ class PredictionPicks(BaseModel):
         return value
 
     @model_validator(mode="after")
-    def wildcards_stand_apart(self) -> "PredictionPicks":
+    def wildcards_stand_apart(self) -> "PicksBase":
         if len(set(self.wildcards)) != len(self.wildcards):
             raise ValueError("A wildcard may only be selected once")
         if set(self.wildcards) & {item.rider_id for item in self.selections}:
@@ -74,8 +74,38 @@ class PredictionPicks(BaseModel):
         return self
 
 
+class PredictionPicks(PicksBase):
+    """The final prediction: the one that is scored, so it needs a Top 10 pick."""
+
+    selections: list[PredictionSelection] = Field(min_length=1, max_length=10)
+
+
 class PredictionUpsert(PredictionPicks):
     player_id: int
+
+
+class TemplateUpsert(PicksBase):
+    """A named draft list; it may be empty or incomplete."""
+
+    player_id: int
+    name: str = Field(min_length=1, max_length=40)
+
+    @field_validator("name")
+    @classmethod
+    def name_is_trimmed(cls, value: str) -> str:
+        cleaned = " ".join(value.split())
+        if not cleaned:
+            raise ValueError("Give the list a name")
+        return cleaned
+
+
+class TemplateResponse(BaseModel):
+    id: int
+    name: str
+    selections: list[PredictionSelection]
+    wildcards: list[int]
+    created_at: datetime
+    updated_at: datetime
 
 
 class PredictionResponse(BaseModel):

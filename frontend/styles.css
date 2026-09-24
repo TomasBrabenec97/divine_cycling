@@ -207,6 +207,25 @@ button.matrix-cell.on { border-color:var(--sage); background:var(--sage); box-sh
 .doc-figure { margin:8px 0 18px; border:1px solid var(--line); background:var(--surface); padding:10px 6px 4px; }
 .doc-figure svg,.doc-figure img { display:block; width:100%; height:auto; }
 
+.list-switcher { margin-bottom:12px; }
+.list-tabs { display:flex; gap:4px; overflow-x:auto; padding-bottom:2px; border-bottom:1px solid var(--line); scrollbar-width:thin; }
+.list-tab { position:relative; display:inline-flex; flex:none; align-items:baseline; gap:5px; max-width:180px; margin-bottom:-1px; border:1px solid transparent; border-bottom:0; background:transparent; padding:7px 10px 6px; color:var(--muted); font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.list-tab:hover { background:var(--beige-tint); color:var(--ink); }
+.list-tab.active { border-color:var(--line); background:var(--paper); color:var(--ink); box-shadow:inset 0 2px 0 var(--ink); }
+.list-tab.final.active { box-shadow:inset 0 2px 0 var(--sage); }
+.list-tab-status { color:var(--muted); font-size:10px; font-weight:400; letter-spacing:.04em; text-transform:uppercase; }
+.list-unsaved { color:var(--terracotta); font-size:16px; line-height:0; }
+.list-same { display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--sage); }
+.list-name-input { flex:none; width:150px; margin:2px 0 3px; padding:5px 8px; border:1px solid var(--ink); background:var(--surface); font-size:13px; }
+.list-caption { margin:7px 2px 0; color:var(--muted); font-size:11px; line-height:1.4; }
+.list-caption strong { color:var(--ink); }
+.list-caption .text-button { margin-left:8px; font-size:11px; }
+.template-actions { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:6px; }
+.template-actions.single { grid-template-columns:1fr; }
+.template-actions button { border-color:var(--line); padding:8px 10px; color:var(--muted); font-size:12px; }
+.template-actions button:hover { border-color:var(--ink); background:transparent; color:var(--ink); }
+.template-actions .hidden { display:none; }
+.mobile-dragging .list-switcher,.mobile-picking .list-switcher { display:none; }
 /* A wildcard pick is tinted terracotta, apart from the sage Top 10 picks. */
 .rider.selected.wildcard { border-color:#d7a98c; background:linear-gradient(135deg,#fbf3ec 0%,#f6e6da 56%,#f0d6c4 100%); }
 .rider.selected.wildcard:hover { background:linear-gradient(135deg,#f8ece2 0%,#f0dac9 100%); }
