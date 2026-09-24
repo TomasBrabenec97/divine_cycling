@@ -150,3 +150,8 @@ python -m scripts.load_pcs_data             # exports -> database
 All three are idempotent and cache their HTTP requests, so re-running is cheap.
 `load_pcs_data --dry-run` reports what would change without writing. Full detail
 in the README under "ProCyclingStats data fetchers".
+
+A running API keeps the reference set in memory for five minutes and tells
+browsers to keep it for five more, so after a loader run against a live server
+the new data shows up within ten minutes, or at once after a restart. A deploy
+restarts the server anyway.
