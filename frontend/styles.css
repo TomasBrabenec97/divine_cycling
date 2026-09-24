@@ -349,7 +349,7 @@ button.matrix-cell.on { border-color:var(--sage); background:var(--sage); box-sh
 
 /* Favourites: a heart on every rider cell, left of the + button. */
 .rider-fav { position:absolute; top:7px; right:34px; display:grid; width:23px; height:23px; min-width:0; place-items:center; border:0; background:transparent; padding:0; color:var(--placeholder); }
-.rider-fav svg,.detail-fav svg,.favourites-filter svg { fill:none; stroke:currentColor; stroke-width:1.8; stroke-linejoin:round; }
+.rider-fav svg,.detail-fav svg,.favourites-toggle svg { fill:none; stroke:currentColor; stroke-width:1.8; stroke-linejoin:round; }
 .rider-fav svg { width:16px; height:16px; }
 .rider:hover .rider-fav { color:var(--muted); }
 .rider-fav:hover,.rider:hover .rider-fav:hover { background:transparent; color:var(--terracotta); }
@@ -359,8 +359,6 @@ button.matrix-cell.on { border-color:var(--sage); background:var(--sage); box-sh
 .rider { padding-right:62px; }
 .rider.selected { padding-right:106px; }
 .rider.selected .rider-fav { right:79px; }
-.favourites-filter svg { width:12px; height:12px; margin-right:4px; vertical-align:-1px; color:var(--terracotta); fill:var(--terracotta); }
-.favourites-filter i { color:var(--muted); font-style:normal; font-weight:400; }
 .rider-detail-links { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; margin-top:10px; }
 .rider-detail-links .pcs-link { margin-top:0; }
 .detail-fav { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); background:transparent; padding:3px 9px; color:var(--muted); font:700 12px inherit; }
@@ -377,3 +375,23 @@ button.matrix-cell.on { border-color:var(--sage); background:var(--sage); box-sh
 .rider.selected .rider-fav { right:93px; }
  }
 .rider-selection-label { flex-wrap:wrap; row-gap:2px; }
+
+/* Favourites are pink: the heart, the toggle, and a highlight on the cell. A
+   picked favourite keeps its pick colour and gains a pink edge. */
+:root { --pink:#c9467a; --pink-line:#e8b3c7; --pink-tint:#f7e1e9; }
+.rider-fav:hover,.rider:hover .rider-fav:hover,.rider-fav.on,.rider:hover .rider-fav.on { color:var(--pink); }
+.rider-fav:focus-visible { outline-color:var(--pink); }
+.detail-fav svg { color:var(--pink); }
+.detail-fav.on { border-color:var(--pink-line); }
+.detail-fav:hover { border-color:var(--pink); }
+.rider.favourite:not(.selected) { border-color:var(--pink-line); background:linear-gradient(135deg,#fdf4f7 0%,#faeaf0 56%,var(--pink-tint) 100%); }
+.rider.favourite:not(.selected):hover { background:linear-gradient(135deg,#fbedf2 0%,#f5dbe5 100%); }
+.rider.favourite:not(.selected) .rank-scale::after { background:#f9e9ef; }
+.rider.favourite.selected { box-shadow:inset 3px 0 0 var(--pink); }
+.favourites-toggle { display:inline-flex; align-items:center; gap:5px; margin-left:6px; border:1px solid var(--line); border-radius:999px; background:transparent; padding:2px 10px; color:var(--muted); font:600 13px inherit; }
+.favourites-toggle svg { width:12px; height:12px; color:var(--pink); }
+.favourites-toggle i { color:var(--muted); font-style:normal; font-weight:400; }
+.favourites-toggle:hover { border-color:var(--pink); background:transparent; color:var(--ink); }
+.favourites-toggle.on { border-color:var(--pink); background:var(--pink-tint); color:var(--ink); }
+.favourites-toggle.on svg { fill:var(--pink); }
+.favourites-toggle:focus-visible { outline:1px solid var(--pink); outline-offset:2px; }

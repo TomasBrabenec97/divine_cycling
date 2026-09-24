@@ -153,14 +153,20 @@ def sign_in_and_pick(page, base: str, username: str, picks: list[int], favourite
         # Heart a pool first, then build the lists from the favourites view only.
         for rider_id in favourites:
             page.click(f'#riders [data-rider-fav="{rider_id}"]')
-        page.click('[data-rider-selection="favourites"]')
+        page.click("[data-favourites-only]")
         shown = page.locator("#riders .rider").count()
         if shown != len(favourites):
             raise AssertionError(f"Favourites view shows {shown} riders, hearted {len(favourites)}")
     for rider_id in picks:
         page.click(f'[data-rider-add="{rider_id}"]')
     if favourites:
+        # The toggle combines with the selection filter: favourites not picked yet.
+        page.click('[data-rider-selection="unselected"]')
+        left = page.locator("#riders .rider").count()
+        if left != len(set(favourites) - set(picks)):
+            raise AssertionError(f"Unpicked favourites view shows {left} riders")
         page.click('[data-rider-selection="all"]')
+        page.click("[data-favourites-only]")
 
 
 def fill_top_ten(page, base: str, username: str, picks: list[int], shots: Path) -> None:
