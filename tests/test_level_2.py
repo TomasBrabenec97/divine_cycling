@@ -301,3 +301,19 @@ def test_favourites_are_kept_per_player_and_toggle_idempotently() -> None:
 
     assert client.put(f"{base}/{player_id}/favourites/999999").status_code == 422
     assert client.put(f"{base}/999999/favourites/{ids[0]}").status_code == 404
+
+
+def test_favourites_can_be_cleared_in_one_call() -> None:
+    client = TestClient(app)
+    event = client.get("/api/events/active").json()
+    ids = [rider["id"] for rider in event["riders"]]
+    player_id = client.post("/api/players", json={"username": "Clearer"}).json()["id"]
+    other_id = client.post("/api/players", json={"username": "Keeper"}).json()["id"]
+    base = f"/api/events/{event['id']}/players"
+    for rider_id in ids[:3]:
+        client.put(f"{base}/{player_id}/favourites/{rider_id}")
+    client.put(f"{base}/{other_id}/favourites/{ids[0]}")
+
+    assert client.delete(f"{base}/{player_id}/favourites").status_code == 204
+    assert client.get(f"{base}/{player_id}/favourites").json() == []
+    assert client.get(f"{base}/{other_id}/favourites").json() == [ids[0]]

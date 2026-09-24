@@ -388,10 +388,15 @@ button.matrix-cell.on { border-color:var(--sage); background:var(--sage); box-sh
 .rider.favourite:not(.selected):hover { background:linear-gradient(135deg,#fbedf2 0%,#f5dbe5 100%); }
 .rider.favourite:not(.selected) .rank-scale::after { background:#f9e9ef; }
 .rider.favourite.selected { box-shadow:inset 3px 0 0 var(--pink); }
-.favourites-toggle { display:inline-flex; align-items:center; gap:5px; margin-left:6px; border:1px solid var(--line); border-radius:999px; background:transparent; padding:2px 10px; color:var(--muted); font:600 13px inherit; }
+.favourites-toggle { display:inline-flex; align-items:center; gap:5px; margin-left:6px; border:1px solid var(--line); border-radius:0; background:transparent; padding:2px 10px; color:var(--muted); font:600 13px inherit; }
 .favourites-toggle svg { width:12px; height:12px; color:var(--pink); }
 .favourites-toggle i { color:var(--muted); font-style:normal; font-weight:400; }
 .favourites-toggle:hover { border-color:var(--pink); background:transparent; color:var(--ink); }
 .favourites-toggle.on { border-color:var(--pink); background:var(--pink-tint); color:var(--ink); }
 .favourites-toggle.on svg { fill:var(--pink); }
 .favourites-toggle:focus-visible { outline:1px solid var(--pink); outline-offset:2px; }
+.favourites-clear { display:inline-grid; width:26px; height:26px; min-width:0; margin-left:2px; place-items:center; border:0; border-radius:50%; background:transparent; padding:0; color:var(--placeholder); vertical-align:middle; }
+.favourites-clear svg { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+.favourites-clear:hover { background:var(--pink-tint); color:var(--pink); }
+.favourites-clear:focus-visible { outline:1px solid var(--pink); outline-offset:1px; }
+@media(max-width:650px) { .favourites-clear { width:34px; height:34px; } .favourites-clear svg { width:18px; height:18px; } }

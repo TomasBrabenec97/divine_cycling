@@ -525,6 +525,19 @@ def add_favourite(
 
 
 @app.delete(
+    "/api/events/{event_id}/players/{player_id}/favourites",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def clear_favourites(event_id: int, player_id: int, db: Session = Depends(get_db)) -> None:
+    db.execute(
+        delete(FavouriteRider).where(
+            FavouriteRider.event_id == event_id, FavouriteRider.player_id == player_id
+        )
+    )
+    db.commit()
+
+
+@app.delete(
     "/api/events/{event_id}/players/{player_id}/favourites/{rider_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )

@@ -169,8 +169,20 @@ def sign_in_and_pick(page, base: str, username: str, picks: list[int], favourite
         page.click("[data-favourites-only]")
 
 
+def clear_favourites(page, rider_ids: list[int]) -> None:
+    """Heart a few riders, then empty the list with the broken-heart button."""
+    for rider_id in rider_ids:
+        page.click(f'#riders [data-rider-fav="{rider_id}"]')
+    page.once("dialog", lambda dialog: dialog.accept())
+    page.click("[data-favourites-clear]")
+    page.wait_for_selector("[data-favourites-clear]", state="detached")
+    if page.locator("#riders .rider-fav.on").count():
+        raise AssertionError("hearts are still on after clearing favourites")
+
+
 def fill_top_ten(page, base: str, username: str, picks: list[int], shots: Path) -> None:
     sign_in_and_pick(page, base, username, picks)
+    clear_favourites(page, picks[:2])
     page.click("#save")
     saved_message(page, "Final prediction saved")
     page.screenshot(path=shots / f"{username}-top10.png", full_page=True)
@@ -320,12 +332,13 @@ def main() -> int:
                 saved_ids = [item["rider_id"] for item in body["selections"]] + body["wildcards"]
                 if saved_ids != rider_ids:
                     failures.append(f"{username}: saved {saved_ids}, picked {rider_ids}")
-                if index == 0:
-                    stored = httpx.get(
-                        f"{base}/api/events/{event['id']}/players/{player['id']}/favourites"
-                    ).json()
-                    if sorted(stored) != sorted(favourites):
-                        failures.append(f"{username}: favourites stored as {stored}")
+                stored = httpx.get(
+                    f"{base}/api/events/{event['id']}/players/{player['id']}/favourites"
+                ).json()
+                # The first player kept a pool; the second hearted two and cleared them.
+                expected = sorted(favourites) if index == 0 else []
+                if sorted(stored) != expected:
+                    failures.append(f"{username}: favourites stored as {stored}")
                 if username in template_edits:
                     lists = httpx.get(
                         f"{base}/api/events/{event['id']}/players/{player['id']}/templates"

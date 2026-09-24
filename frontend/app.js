@@ -51,6 +51,8 @@ const rememberPickState = () => { state.undoStack.push(pickSnapshot()); if (stat
 const resetPickHistory = () => { state.undoStack = []; state.redoStack = []; };
 function restorePickState(from, to, message) { const next = from.pop(); if (!next) return; to.push(pickSnapshot()); if (to.length > 50) to.shift(); state.picks = next.picks; state.wildcards = next.wildcards; state.mobilePendingRiderId = null; document.body.classList.remove("mobile-picking"); showMessage("#prediction-message", message, true); render(); }
 const formatMultiplier = (value) => `×${Number(value ?? 1).toFixed(2)}`;
+// A broken heart: the same outline, split by a zigzag crack.
+const CRACK_PATH = "M12.4 7.4 10.6 11l2.6 2-1.8 3.8";
 const HEART_PATH = "M12 20.5s-7.5-4.6-9.3-9.2C1.5 8.2 3.3 4.8 6.6 4.5c2-.2 3.7.9 5.4 3 1.7-2.1 3.4-3.2 5.4-3 3.3.3 5.1 3.7 3.9 6.8-1.8 4.6-9.3 9.2-9.3 9.2Z";
 function heartButton(rider, className) {
   const on = state.favourites.has(rider.id);
@@ -67,6 +69,23 @@ async function toggleFavourite(riderId) {
     await request(`/api/events/${state.event.id}/players/${state.player.id}/favourites/${riderId}`, { method: on ? "PUT" : "DELETE" });
   } catch (error) {
     if (on) state.favourites.delete(riderId); else state.favourites.add(riderId);
+    refreshFavouriteViews();
+    showMessage("#prediction-message", error.message);
+  }
+}
+async function clearFavourites() {
+  const count = state.favourites.size;
+  if (!count || !window.confirm(`Clear all ${count} favourites?`)) return;
+  const previous = new Set(state.favourites);
+  state.favourites = new Set();
+  // An empty favourites-only view would look like a broken filter.
+  state.favouritesOnly = false;
+  refreshFavouriteViews();
+  try {
+    await request(`/api/events/${state.event.id}/players/${state.player.id}/favourites`, { method: "DELETE" });
+    showMessage("#prediction-message", "Favourites cleared.", true);
+  } catch (error) {
+    state.favourites = previous;
     refreshFavouriteViews();
     showMessage("#prediction-message", error.message);
   }
@@ -837,6 +856,7 @@ function ensureRiderViewControls() {
       render();
     });
     controls.addEventListener("click", (event) => {
+      if (event.target.closest("[data-favourites-clear]")) return clearFavourites();
       if (!event.target.closest("[data-favourites-only]")) return;
       state.favouritesOnly = !state.favouritesOnly;
       render();
@@ -845,7 +865,7 @@ function ensureRiderViewControls() {
   const arrow = state.riderSortDirection === "asc" ? "↑" : "↓";
   const countryCountSort = state.riderView !== "plain" ? `<span class="view-divider">|</span><span role="button" tabindex="0" data-rider-sort="rider-count" class="${state.riderSort === "rider-count" ? "active" : ""}">No. riders ${state.riderSort === "rider-count" ? `<i>${arrow}</i>` : ""}</span>` : "";
   const viewOption = (view, label) => `<span role="button" tabindex="0" data-rider-view="${view}" class="${state.riderView === view ? "active" : ""}">${label}</span>`;
-  controls.innerHTML = `<div class="view-toggle" role="group" aria-label="Rider list view">${viewOption("country", "Group by Country")}<span class="view-divider">|</span>${viewOption("team", "Group by Team")}<span class="view-divider">|</span>${viewOption("plain", "Riders list")}</div><div class="rider-sort-label"><span>Sort:</span><span role="button" tabindex="0" data-rider-sort="alphabetical" class="${state.riderSort === "alphabetical" ? "active" : ""}">Alphabetical ${state.riderSort === "alphabetical" ? `<i>${arrow}</i>` : ""}</span><span class="view-divider">|</span><span role="button" tabindex="0" data-rider-sort="rank" class="${state.riderSort === "rank" ? `active` : ""}" title="${state.riderView === "plain" ? "Riders by UCI rank" : "Groups by their riders' combined UCI points; riders inside a group are always in UCI rank order"}">UCI Rank ${state.riderSort === "rank" ? `<i>${arrow}</i>` : ""}</span>${countryCountSort}</div><div class="rider-selection-label" role="group" aria-label="Top 10 selection filter"><span>Riders:</span><span role="button" tabindex="0" data-rider-selection="all" class="${state.riderSelectionFilter === "all" ? "active" : ""}">All</span><span class="view-divider">|</span><span role="button" tabindex="0" data-rider-selection="selected" class="${state.riderSelectionFilter === "selected" ? "active" : ""}">Selected</span><span class="view-divider">|</span><span role="button" tabindex="0" data-rider-selection="unselected" class="${state.riderSelectionFilter === "unselected" ? "active" : ""}">Not selected</span><button type="button" class="favourites-toggle ${state.favouritesOnly ? "on" : ""}" data-favourites-only aria-pressed="${state.favouritesOnly}" title="Show only your favourites; combines with All, Selected and Not selected"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${HEART_PATH}" /></svg>Favourites <i>${state.favourites.size}</i></button></div>`;
+  controls.innerHTML = `<div class="view-toggle" role="group" aria-label="Rider list view">${viewOption("country", "Group by Country")}<span class="view-divider">|</span>${viewOption("team", "Group by Team")}<span class="view-divider">|</span>${viewOption("plain", "Riders list")}</div><div class="rider-sort-label"><span>Sort:</span><span role="button" tabindex="0" data-rider-sort="alphabetical" class="${state.riderSort === "alphabetical" ? "active" : ""}">Alphabetical ${state.riderSort === "alphabetical" ? `<i>${arrow}</i>` : ""}</span><span class="view-divider">|</span><span role="button" tabindex="0" data-rider-sort="rank" class="${state.riderSort === "rank" ? `active` : ""}" title="${state.riderView === "plain" ? "Riders by UCI rank" : "Groups by their riders' combined UCI points; riders inside a group are always in UCI rank order"}">UCI Rank ${state.riderSort === "rank" ? `<i>${arrow}</i>` : ""}</span>${countryCountSort}</div><div class="rider-selection-label" role="group" aria-label="Top 10 selection filter"><span>Riders:</span><span role="button" tabindex="0" data-rider-selection="all" class="${state.riderSelectionFilter === "all" ? "active" : ""}">All</span><span class="view-divider">|</span><span role="button" tabindex="0" data-rider-selection="selected" class="${state.riderSelectionFilter === "selected" ? "active" : ""}">Selected</span><span class="view-divider">|</span><span role="button" tabindex="0" data-rider-selection="unselected" class="${state.riderSelectionFilter === "unselected" ? "active" : ""}">Not selected</span><button type="button" class="favourites-toggle ${state.favouritesOnly ? "on" : ""}" data-favourites-only aria-pressed="${state.favouritesOnly}" title="Show only your favourites; combines with All, Selected and Not selected"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${HEART_PATH}" /></svg>Favourites <i>${state.favourites.size}</i></button>${state.favourites.size ? `<button type="button" class="favourites-clear" data-favourites-clear aria-label="Clear all favourites" title="Clear all favourites"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${HEART_PATH}" /><path d="${CRACK_PATH}" /></svg></button>` : ""}</div>`;
 }
 
 // Inside a country or team group riders always read in UCI rank order; the
