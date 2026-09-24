@@ -206,3 +206,10 @@ button.matrix-cell.on { border-color:var(--sage); background:var(--sage); box-sh
 .doc th { background:var(--beige-tint); font-size:12px; }
 .doc-figure { margin:8px 0 18px; border:1px solid var(--line); background:var(--surface); padding:10px 6px 4px; }
 .doc-figure svg,.doc-figure img { display:block; width:100%; height:auto; }
+
+/* A wildcard pick is tinted terracotta, apart from the sage Top 10 picks. */
+.rider.selected.wildcard { border-color:#d7a98c; background:linear-gradient(135deg,#fbf3ec 0%,#f6e6da 56%,#f0d6c4 100%); }
+.rider.selected.wildcard:hover { background:linear-gradient(135deg,#f8ece2 0%,#f0dac9 100%); }
+.rider.selected.wildcard .rank,.rider.selected.wildcard .pick-position { color:#8c4a28; }
+.rider.selected.wildcard .rank-scale::after,.rider.selected.wildcard:hover .rank-scale::after { background:#f3dccd; }
+.wildcard-slot.pick-filled .wildcard-mark { color:var(--terracotta); }
