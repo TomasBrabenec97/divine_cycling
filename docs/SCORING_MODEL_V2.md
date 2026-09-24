@@ -300,7 +300,7 @@ The model is implemented in `app/scoring.py`; every number below lives in `Scori
 
 | Question | Implemented | Where to change it |
 |---|---|---|
-| Which finishes earn placement points | Actual top 10 only, as the placement section and invariants state. The backlog's "position 24 is the last that can score" reading is one setting away. | `placement_depth` (10; set 24 for the deep reading) |
+| Which finishes earn placement points | Any finish within 14 places of the guess, down to 24th — a near miss outside the top 10 still scores (guessed 10th, finished 11th earns ×0.80). Decided on review, replacing this document's "outside the actual top 10 → zero" rule and invariant. | `placement_depth` (24; 10 scores the top 10 only) |
 | Distance factors | The anchor table: 1.00, 0.80, then exponential to 0.10 at 14, zero from 15: `1.0, 0.8, 0.68, 0.58, 0.5, 0.42, 0.36, 0.31, 0.26, 0.22, 0.19, 0.16, 0.14, 0.12, 0.1`. This differs from the illustrative suggested configuration (0.62, 0.47, … 0.0 at 10) and from the example's 0.64 at two places. | `distance_factors` |
 | Wildcard finish bands | 10 / 7 / 5 / 0, per the wildcard table, the 30-point podium example and the suggested configuration. The 15 / 10 / 5 / 1 candidates of the deprecated section are not used. | `wildcards.bonuses` |
 | Wildcard low-rank curve | `(e^(kx) − 1) / (e^k − 1)` with `x = (rank − 1) / 99` and `k = 2 ln(1 / low_target − 1)`, so `low_target` (0.10) is the multiplier halfway up the ramp: ×0.03 at rank 30, ×0.10 at 50, ×0.32 at 75, ×1.00 at 100. | `position_boost.low_target` |
@@ -310,6 +310,6 @@ The model is implemented in `app/scoring.py`; every number below lives in `Scori
 | Rounding | Components keep six decimals; only the total is rounded, to two. | — |
 | Incomplete predictions | Allowed; an empty slot scores nothing. | — |
 | v1 conviction boost | Not part of v2; no longer offered or scored. | — |
-| Results entry | Admin can enter finishes through 25th (lineage view, and room for a placement depth up to 24). | `MAX_RESULT_POSITION` |
+| Results entry | Admin enters finishes through 25th: the lineage view, and every finish that can earn placement points. | `MAX_RESULT_POSITION` |
 
 The player-facing explanation is `frontend/scoring.md`, served as `scoring.html`; `tests/test_scoring_guide.py` fails if its numbers drift from the rules. The curves in this document and in the guide are drawn from the live rules by `python -m scripts.render_scoring_figures`.

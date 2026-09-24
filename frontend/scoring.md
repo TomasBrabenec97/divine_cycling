@@ -6,7 +6,7 @@ Your score for the race has three parts, added together:
 
 | Part | What earns it | Most it can give |
 |---|---|---:|
-| **Placement** | each of your ten riders who finishes in the actual top 10, more the closer you placed them | 142 pts |
+| **Placement** | each of your ten riders who finishes close to where you placed them — up to 14 places off, even outside the top 10 | 142 pts |
 | **Permutations** | naming the right riders in the top 3, top 5 and top 10, in any order | 30 pts |
 | **Wildcards** | three extra riders who finish in the top 10 | 90 pts |
 
@@ -20,7 +20,7 @@ The rest of this page explains every rule, with the exact numbers the game uses 
 
 ## 1. Placement points
 
-Each rider in your Top 10 is scored on their own. A rider earns placement points only if they finish in the **actual top 10**. Three things decide how many:
+Each rider in your Top 10 is scored on their own, by how close they finished to the position you gave them — **even outside the top 10**: put a rider 10th, see them finish 11th, and it counts as one place off. Three things decide how many points:
 
 ```
 placement points = base points × distance factor × rank multiplier
@@ -38,15 +38,15 @@ The base is set by the position **you** guessed, not by where the rider finished
 
 The distance is how many places your guess was off. An exact call keeps all the base points; every place further away keeps less.
 
-| Places off | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| **Factor** | ×1.00 | ×0.80 | ×0.68 | ×0.58 | ×0.50 | ×0.42 | ×0.36 | ×0.31 | ×0.26 | ×0.22 |
+| Places off | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| **Factor** | ×1.00 | ×0.80 | ×0.68 | ×0.58 | ×0.50 | ×0.42 | ×0.36 | ×0.31 | ×0.26 | ×0.22 | ×0.19 | ×0.16 | ×0.14 | ×0.12 | ×0.10 |
 
 ![Distance factor: 1.00 for an exact call, 0.80 one place off, falling to 0.10 at fourteen places](scoring/distance-factors.svg)
 
-Because only riders inside the actual top 10 score, the furthest a scoring guess can be off is nine places (guessed 1st, finished 10th, or the other way round). The curve itself continues to ×0.10 at fourteen places and zero from fifteen; those deeper values would only matter if the game ever scored finishes below 10th.
+Fifteen or more places off earns nothing. So your 10th pick can still score with a finish as low as 24th, and your 1st pick down to 15th.
 
-A rider who finishes 11th or lower, does not finish (DNF), or does not start earns **no placement points**, however obscure they are.
+A rider who finishes 15 or more places from your guess, does not finish (DNF), or does not start earns **no placement points**, however obscure they are.
 
 ### Rank multiplier: how hard the pick was
 
@@ -133,19 +133,19 @@ Your Top 10, and how the race went. Ranks are UCI ranks.
 | 3rd | 12 | 3rd | 8 | ×1.00 | ×1.07 | 8.54 |
 | 4th | 30 | 6th | 7 | ×0.68 | ×1.39 | 6.60 |
 | 5th | 8 | 4th | 6 | ×0.80 | ×1.03 | 4.93 |
-| 6th | 45 | 14th | 5 | — | ×1.62 | 0 |
+| 6th | 45 | 14th | 5 | ×0.26 | ×1.62 | 2.11 |
 | 7th | 75 | DNF | 5 | — | ×1.92 | 0 |
 | 8th | 140 | 9th | 5 | ×0.80 | ×2.00 | 8.00 |
-| 9th | 22 | 18th | 5 | — | ×1.24 | 0 |
+| 9th | 22 | 18th | 5 | ×0.22 | ×1.24 | 1.36 |
 | 10th | 5 | 7th | 5 | ×0.58 | ×1.01 | 2.93 |
 
-**Placement: 51.01 points.** The rows are shown rounded; the total adds the unrounded values.
+**Placement: 54.49 points.** Your 6th and 9th picks finished outside the top 10 but within 14 places of your guess, so they still score. The rows are shown rounded; the total adds the unrounded values.
 
 **Permutations: 25 points.** Your top 3 is the actual top 3 in a different order (10). Four of your top 5 finished in the top 5 — your 4th pick finished 6th (5). Seven of your ten finished in the top 10 (10).
 
 **Wildcards: 21 points.** One wildcard, ranked 520th, finished 5th: 7 × 3.00 = 21. The other two, ranked 160th and 35th, finished 11th and did not finish, so they earn nothing.
 
-**Total: 51.01 + 25 + 21 = 97.01 points.**
+**Total: 54.49 + 25 + 21 = 100.49 points.**
 
 ---
 
@@ -154,8 +154,8 @@ Your Top 10, and how the race went. Ranks are UCI ranks.
 - **Which UCI rank counts.** The rank shown in the game when predictions close — the ranking imported with the startlist — is the one used. It is frozen with the published scores, so a later ranking update never changes a result.
 - **Unranked riders** count as the hardest possible pick: ×2.00 in your Top 10, ×3.00 as a wildcard.
 - **Incomplete predictions** are allowed. An empty Top 10 position or wildcard slot simply scores nothing.
-- **Did not finish, did not start, disqualified**: the rider has no top 10 finish, so they score as if they finished outside it.
-- **Results below 10th** are entered so you can see where everyone ended up, but they earn nothing.
+- **Did not finish, did not start, disqualified**: the rider has no classified finish, so they earn no placement points and no wildcard bonus.
+- **Finishes below 10th** earn placement points when they are within 14 places of your guess; results are entered down to 25th. The permutation bonuses and wildcards look at the top 10 only.
 - **Rounding.** Every part keeps its fractions; only the final score is rounded, to two decimals. That is why rounded rows can add up to a cent more or less than the total.
 - **Ties** are not broken: players on equal points are simply listed alphabetically.
 - **Your final prediction** — the one you saved before the deadline — is the one scored.
