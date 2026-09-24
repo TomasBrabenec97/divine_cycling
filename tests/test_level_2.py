@@ -220,7 +220,7 @@ def test_published_scores_are_stored_and_served_unchanged() -> None:
         main_module.score_event = original
     assert board.status_code == 200
     assert board.json()["entries"][0] == entry
-    assert board.json()["rules"]["version"] == "v2.0"
+    assert board.json()["rules"]["version"] == "v3.0"
 
 
 def test_templates_are_named_drafts_kept_apart_from_the_final_prediction() -> None:

@@ -1,5 +1,6 @@
 """The player-facing scoring guide quotes the rules; keep the two in step."""
 
+from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 
 from app.scoring import DEFAULT_RULES, position_multiplier, wildcard_multiplier
@@ -17,7 +18,9 @@ def test_the_guide_quotes_the_current_rules() -> None:
     rules = DEFAULT_RULES
     assert f"rules version **{rules.version}**" in GUIDE
 
-    factors = [f"×{factor:.2f}" for factor in rules.distance_factors]
+    # Half up, as the page's toFixed rounds: 0.5625 reads ×0.563.
+    factors = [f"×{Decimal(factor).quantize(Decimal('0.001'), ROUND_HALF_UP)}" for factor in rules.distance_factors]
+    factors.append("×0")
     assert rules.placement_depth == 10 + len(rules.distance_factors) - 1
     assert table_row("Factor", factors) in GUIDE
 
