@@ -13,7 +13,8 @@ What it does, in order:
    10 and three wildcards through the rider list. The first player hearts a
    pool of favourites and picks from that view only, keeps a named template,
    saves it as final, then edits the template and switches between the lists;
-   the second saves a final prediction directly.
+   the second uses the UCI and country filters and saves a final prediction
+   directly.
 4. Opens the admin page, enters a finishing order and previews the scoring.
 5. Checks the previewed scores against the scoring module run independently,
    that the leaderboard shows each player's total, and that the compare chart
@@ -198,9 +199,42 @@ def bulk_favourites(page) -> None:
         raise AssertionError("hearts are still on after clearing favourites")
 
 
+def use_filters(page) -> None:
+    """The one UCI filter read in points, then in rank; a country cleared with its ×."""
+    riders = page.locator("#riders .rider")
+    total = riders.count()
+    page.fill("#points-min", "1000")
+    by_points = riders.count()
+    if not 0 < by_points < total:
+        raise AssertionError(f"a 1000-point floor shows {by_points} of {total} riders")
+    page.click('[data-uci-unit="rank"]')
+    page.wait_for_selector("#rank-max:visible")
+    if not page.input_value("#rank-max") or page.input_value("#points-min"):
+        raise AssertionError("switching to rank did not carry the points floor over")
+    if not 0 < riders.count() < total:
+        raise AssertionError(f"the carried-over rank range shows {riders.count()} riders")
+    page.click('[data-uci-unit="points"]')
+    page.click("#clear-filters")
+    if riders.count() != total:
+        raise AssertionError("clearing the filters did not bring every rider back")
+
+    page.click("#country-query")
+    page.locator("#country-options button[data-value]").first.click()
+    page.wait_for_selector("#selected-countries .icon-chip")
+    if page.inner_text("#selected-countries").strip():
+        raise AssertionError("a chosen country shows its name, not only its flag")
+    if riders.count() >= total:
+        raise AssertionError("the country filter did not narrow the riders")
+    page.click("#country-clear")
+    page.wait_for_selector("#selected-countries", state="hidden")
+    if riders.count() != total:
+        raise AssertionError("the country × did not clear the filter")
+
+
 def fill_top_ten(page, base: str, username: str, picks: list[int], shots: Path) -> None:
     sign_in_and_pick(page, base, username, picks)
     bulk_favourites(page)
+    use_filters(page)
     page.click("#save")
     saved_message(page, "Final prediction saved")
     page.screenshot(path=shots / f"{username}-top10.png", full_page=True)

@@ -16,7 +16,8 @@ const PROFILE_FILTERS = [
 ];
 const emptyProfileFilters = () => Object.fromEntries(PROFILE_FILTERS.map((filter) => [filter.key, { min: "", max: "", mode: filter.modes?.[0].id }]));
 const emptyAdvancedFilters = () => ({ resultCells: [], resultMin: "", resultMax: "", profile: emptyProfileFilters() });
-const emptyFilters = () => ({ search: "", countries: [], teams: [], rankMin: "", rankMax: "", pointsMin: "", pointsMax: "", ...emptyAdvancedFilters() });
+// One UCI range filter, read in points or in rank: only the unit shown applies.
+const emptyFilters = (uciUnit = "points") => ({ search: "", countries: [], teams: [], uciUnit, rankMin: "", rankMax: "", pointsMin: "", pointsMax: "", ...emptyAdvancedFilters() });
 const state = { event: null, player: null, reference: null, referencePromise: null, teamIcons: {}, apiStatus: "starting", apiReadyPromise: null, picks: Array(10).fill(null), savedPicks: Array(10).fill(null), wildcards: Array(WILDCARD_COUNT).fill(null), savedWildcards: Array(WILDCARD_COUNT).fill(null), undoStack: [], redoStack: [], mobilePendingRiderId: null, riderView: "country", riderSort: "alphabetical", riderSortDirection: "asc", riderSelectionFilter: "all", filters: emptyFilters(), advancedDraft: null, lists: { final: null, templates: [] }, activeList: "final", renamingList: null, favourites: new Set(), favouritesOnly: false };
 const $ = (selector) => document.querySelector(selector);
 const isMobileLayout = () => window.matchMedia("(max-width: 650px)").matches;
@@ -561,17 +562,18 @@ function rankFill(rider) {
 }
 
 function matchesFilters(rider, filters = state.filters) {
-  const { search, countries, teams, rankMin, rankMax, pointsMin, pointsMax } = filters;
+  const { search, countries, teams, uciUnit, rankMin, rankMax, pointsMin, pointsMax } = filters;
   const haystack = `${rider.name} ${countryName(rider.nation)} ${rider.nation} ${rider.team || ""}`.toLocaleLowerCase();
   const hasRank = rider.uci_rank !== 999999;
   const hasPoints = rider.uci_points !== null;
+  const byRank = uciUnit === "rank";
   return (!search || haystack.includes(search.toLocaleLowerCase()))
     && (!countries.length || countries.includes(rider.nation))
     && (!teams.length || teams.includes(teamLabel(rider.team)))
-    && (!rankMin || (hasRank && rider.uci_rank >= Number(rankMin)))
-    && (!rankMax || (hasRank && rider.uci_rank <= Number(rankMax)))
-    && (!pointsMin || (hasPoints && rider.uci_points >= Number(pointsMin)))
-    && (!pointsMax || (hasPoints && rider.uci_points <= Number(pointsMax)))
+    && (!byRank || !rankMin || (hasRank && rider.uci_rank >= Number(rankMin)))
+    && (!byRank || !rankMax || (hasRank && rider.uci_rank <= Number(rankMax)))
+    && (byRank || !pointsMin || (hasPoints && rider.uci_points >= Number(pointsMin)))
+    && (byRank || !pointsMax || (hasPoints && rider.uci_points <= Number(pointsMax)))
     && matchesAdvancedFilters(rider, filters);
 }
 
@@ -1001,17 +1003,20 @@ function render() {
 }
 
 // A searchable multi-select: the country and team filters are two instances.
-function configureMultiPicker({ prefix, chipsId, filterKey, values, label, icon, code = () => "", allLabel, pluralLabel, emptyLabel }) {
+function configureMultiPicker({ prefix, chipsId, filterKey, values, label, icon, code = () => "", emptyLabel }) {
   const picker = $(`#${prefix}-picker`);
   const query = $(`#${prefix}-query`);
   const options = $(`#${prefix}-options`);
   const chips = $(`#${chipsId}`);
+  const clear = $(`#${prefix}-clear`);
   const selected = () => state.filters[filterKey];
+  // A chosen value shows as its flag or jersey alone; its name is the tooltip.
   const updateLabel = () => {
     const chosen = selected();
-    $(`#${prefix}-filter-label`).textContent = chosen.length === 0 ? allLabel : chosen.length === 1 ? label(chosen[0]) : `${chosen.length} ${pluralLabel}`;
+    $(`#${prefix}-filter-label`).classList.toggle("hidden", chosen.length > 0);
+    clear.classList.toggle("hidden", chosen.length === 0);
     chips.classList.toggle("hidden", chosen.length === 0);
-    chips.innerHTML = chosen.map((value) => `<button type="button" class="country-chip" data-remove-value="${escapeHtml(value)}">${icon(value)}${escapeHtml(label(value))} <span aria-hidden="true">×</span></button>`).join("");
+    chips.innerHTML = chosen.map((value) => `<button type="button" class="country-chip icon-chip" data-remove-value="${escapeHtml(value)}" title="${escapeHtml(label(value))}: tap to remove" aria-label="Remove ${escapeHtml(label(value))}">${icon(value)}</button>`).join("");
   };
   const renderOptions = () => {
     const text = query.value.trim().toLocaleLowerCase();
@@ -1035,7 +1040,13 @@ function configureMultiPicker({ prefix, chipsId, filterKey, values, label, icon,
   };
   query.addEventListener("input", open);
   query.addEventListener("focus", open);
-  picker.addEventListener("click", (event) => { if (!event.target.closest(`#${prefix}-options`)) open(); });
+  picker.addEventListener("click", (event) => { if (!event.target.closest(`#${prefix}-options, #${prefix}-clear`)) open(); });
+  clear.addEventListener("click", () => {
+    state.filters[filterKey] = [];
+    close();
+    updateLabel();
+    render();
+  });
   // Picking a value re-renders the list, which used to drop the focused option
   // and close it through focusout; keeping focus on the search box instead lets
   // you pick several in a row. A touch device never focuses the option at all,
@@ -1061,13 +1072,11 @@ function configureFilters() {
     .sort((a, b) => (a === NO_TEAM) - (b === NO_TEAM) || a.localeCompare(b));
   const countryPicker = configureMultiPicker({
     prefix: "country", chipsId: "selected-countries", filterKey: "countries", values: countries,
-    label: countryName, icon: flag, code: (country) => country,
-    allLabel: "All countries", pluralLabel: "countries", emptyLabel: "No matching countries",
+    label: countryName, icon: flag, code: (country) => country, emptyLabel: "No matching countries",
   });
   const teamPicker = configureMultiPicker({
     prefix: "team", chipsId: "selected-teams", filterKey: "teams", values: teams,
-    label: (team) => team, icon: (team) => teamIcon(team === NO_TEAM ? "" : team),
-    allLabel: "All teams", pluralLabel: "teams", emptyLabel: "No matching teams",
+    label: (team) => team, icon: (team) => teamIcon(team === NO_TEAM ? "" : team), emptyLabel: "No matching teams",
   });
 
   $("#rider-search").addEventListener("input", (event) => { state.filters.search = event.target.value.trim(); render(); });
@@ -1077,13 +1086,13 @@ function configureFilters() {
   const maxPoints = Math.max(1, Math.ceil(Math.max(0, ...points)));
   const pointsScaleKnee = 100;
   const rankControl = configureRangeFilter({
-    prefix: "rank", min: 1, max: maxRank, format: (value) => `#${value}`,
+    prefix: "rank", min: 1, max: maxRank,
     toScale: (value) => maxRank === 1 ? 0 : 1000 * Math.log(value) / Math.log(maxRank),
     fromScale: (value) => maxRank === 1 ? 1 : Math.exp((value / 1000) * Math.log(maxRank)),
     roundMin: Math.round, roundMax: Math.round,
   });
   const pointsControl = configureRangeFilter({
-    prefix: "points", min: 0, max: maxPoints, format: (value) => `${Number(value).toLocaleString()} pts`,
+    prefix: "points", min: 0, max: maxPoints,
     toScale: (value) => 1000 * Math.asinh(value / pointsScaleKnee) / Math.asinh(maxPoints / pointsScaleKnee),
     fromScale: (value) => pointsScaleKnee * Math.sinh((value / 1000) * Math.asinh(maxPoints / pointsScaleKnee)),
     roundMin: Math.floor, roundMax: Math.ceil,
@@ -1099,45 +1108,68 @@ function configureFilters() {
     const eligible = rankedRiders.filter((rider) => rider.uci_rank <= rankValue);
     return eligible.length ? Math.min(...eligible.map((rider) => rider.uci_points)) : maxPoints;
   };
-  const syncPair = (sourceSelectors, getSourceValue, targetControl, setTargetValue) => sourceSelectors.forEach((selector) => {
-    $(selector).addEventListener("input", () => {
-      const value = getSourceValue();
-      if (value === "") return;
-      setTargetValue(targetControl, value);
-      render();
-    });
-  });
-  syncPair(["#points-min", "#points-min-scale"], () => state.filters.pointsMin, rankControl, (control, value) => control.setMax(rankForPoints(Number(value))));
-  syncPair(["#rank-max", "#rank-max-scale"], () => state.filters.rankMax, pointsControl, (control, value) => control.setMin(pointsForRank(Number(value))));
-  syncPair(["#points-max", "#points-max-scale"], () => state.filters.pointsMax, rankControl, (control, value) => control.setMin(Math.min(...rankedRiders.filter((rider) => rider.uci_points <= Number(value)).map((rider) => rider.uci_rank))));
-  syncPair(["#rank-min", "#rank-min-scale"], () => state.filters.rankMin, pointsControl, (control, value) => control.setMax(Math.max(...rankedRiders.filter((rider) => rider.uci_rank >= Number(value)).map((rider) => rider.uci_points))));
+  const rankForMaxPoints = (pointsValue) => {
+    const eligible = rankedRiders.filter((rider) => rider.uci_points <= pointsValue);
+    return eligible.length ? Math.min(...eligible.map((rider) => rider.uci_rank)) : maxRank;
+  };
+  const pointsForMinRank = (rankValue) => {
+    const eligible = rankedRiders.filter((rider) => rider.uci_rank >= rankValue);
+    return eligible.length ? Math.max(...eligible.map((rider) => rider.uci_points)) : 0;
+  };
+  // Switching the unit carries the range over, so the same riders stay shown:
+  // a points floor becomes a rank ceiling and the other way round.
+  const setUciUnit = (unit) => {
+    if (unit === state.filters.uciUnit) return;
+    const { pointsMin, pointsMax, rankMin, rankMax } = state.filters;
+    if (unit === "rank") {
+      rankControl.clear();
+      if (pointsMin !== "") rankControl.setMax(rankForPoints(Number(pointsMin)));
+      if (pointsMax !== "") rankControl.setMin(rankForMaxPoints(Number(pointsMax)));
+      pointsControl.clear();
+    } else {
+      pointsControl.clear();
+      if (rankMax !== "") pointsControl.setMin(pointsForRank(Number(rankMax)));
+      if (rankMin !== "") pointsControl.setMax(pointsForMinRank(Number(rankMin)));
+      rankControl.clear();
+    }
+    state.filters.uciUnit = unit;
+    showUciUnit();
+    render();
+  };
+  document.querySelectorAll("[data-uci-unit]").forEach((button) => button.addEventListener("click", () => setUciUnit(button.dataset.uciUnit)));
 
   $("#clear-filters").addEventListener("click", () => {
-    state.filters = emptyFilters();
+    // The unit is how you read the filter, not a filter: it stays as chosen.
+    state.filters = emptyFilters(state.filters.uciUnit);
     $("#rider-search").value = "";
     countryPicker.reset();
     teamPicker.reset();
-    ["rank", "points"].forEach((prefix) => {
-      $(`#${prefix}-min`).value = "";
-      $(`#${prefix}-max`).value = "";
-      $(`#${prefix}-min-scale`).value = $(`#${prefix}-min-scale`).min;
-      $(`#${prefix}-max-scale`).value = $(`#${prefix}-max-scale`).max;
-      $(`#${prefix}-min-scale`).parentElement.style.setProperty("--range-start", "0%");
-      $(`#${prefix}-min-scale`).parentElement.style.setProperty("--range-end", "100%");
-      $(`#${prefix}-range-value`).textContent = "Any";
-    });
+    rankControl.clear();
+    pointsControl.clear();
     state.advancedDraft = null;
     updateAdvancedFilterBadge();
     render();
   });
 }
 
-function configureRangeFilter({ prefix, min, max, format, toScale, fromScale, roundMin, roundMax }) {
+function showUciUnit() {
+  const unit = state.filters.uciUnit;
+  document.querySelectorAll("[data-uci-panel]").forEach((node) => node.classList.toggle("hidden", node.dataset.uciPanel !== unit));
+  document.querySelectorAll("[data-uci-unit]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.uciUnit === unit);
+    button.setAttribute("aria-pressed", String(button.dataset.uciUnit === unit));
+  });
+}
+
+// The bounds are edited in place, in the line that reads them out; when empty,
+// they show the full range in placeholder grey.
+function configureRangeFilter({ prefix, min, max, toScale, fromScale, roundMin, roundMax }) {
   const minInput = $(`#${prefix}-min`);
   const maxInput = $(`#${prefix}-max`);
   const minScale = $(`#${prefix}-min-scale`);
   const maxScale = $(`#${prefix}-max-scale`);
-  const valueLabel = $(`#${prefix}-range-value`);
+  minInput.placeholder = String(min);
+  maxInput.placeholder = String(max);
   const filterMinKey = `${prefix}Min`;
   const filterMaxKey = `${prefix}Max`;
   const rawValue = (scale) => (scale === minScale ? roundMin : roundMax)(fromScale(Number(scale.value)));
@@ -1151,11 +1183,10 @@ function configureRangeFilter({ prefix, min, max, format, toScale, fromScale, ro
   maxScale.value = 1000;
   updateTrack();
 
-  const updateLabel = () => {
-    const low = state.filters[filterMinKey];
-    const high = state.filters[filterMaxKey];
-    valueLabel.textContent = low || high ? `${low ? format(low) : "Any"} – ${high ? format(high) : "Any"}` : "Any";
-  };
+  const updateLabel = () => [minInput, maxInput].forEach((input) => {
+    input.style.width = `${Math.max(1, (input.value || input.placeholder).length) + 0.4}ch`;
+  });
+  updateLabel();
   const setFromText = (input, scale, key) => {
     const value = input.value.trim();
     state.filters[key] = value;
@@ -1166,26 +1197,24 @@ function configureRangeFilter({ prefix, min, max, format, toScale, fromScale, ro
   };
   minInput.addEventListener("input", () => setFromText(minInput, minScale, filterMinKey));
   maxInput.addEventListener("input", () => setFromText(maxInput, maxScale, filterMaxKey));
-  minScale.addEventListener("input", () => {
-    if (Number(minScale.value) > Number(maxScale.value)) maxScale.value = minScale.value;
+  // Dragging a thumb sets only its own side; the other side moves only when the
+  // thumbs are pushed together. A thumb at its end of the track means no limit.
+  const readScale = (scale, input, key) => {
+    const atEnd = scale === minScale ? Number(scale.value) <= 0 : Number(scale.value) >= 1000;
+    input.value = atEnd ? "" : rawValue(scale);
+    state.filters[key] = String(input.value);
+  };
+  const onScale = (moved, other, pushed) => {
+    if (pushed) other.value = moved.value;
+    [[minScale, minInput, filterMinKey], [maxScale, maxInput, filterMaxKey]]
+      .filter(([scale]) => scale === moved || pushed)
+      .forEach(([scale, input, key]) => readScale(scale, input, key));
     updateTrack();
-    minInput.value = rawValue(minScale);
-    maxInput.value = rawValue(maxScale);
-    state.filters[filterMinKey] = minInput.value;
-    state.filters[filterMaxKey] = maxInput.value;
     updateLabel();
     render();
-  });
-  maxScale.addEventListener("input", () => {
-    if (Number(maxScale.value) < Number(minScale.value)) minScale.value = maxScale.value;
-    updateTrack();
-    minInput.value = rawValue(minScale);
-    maxInput.value = rawValue(maxScale);
-    state.filters[filterMinKey] = minInput.value;
-    state.filters[filterMaxKey] = maxInput.value;
-    updateLabel();
-    render();
-  });
+  };
+  minScale.addEventListener("input", () => onScale(minScale, maxScale, Number(minScale.value) > Number(maxScale.value)));
+  maxScale.addEventListener("input", () => onScale(maxScale, minScale, Number(maxScale.value) < Number(minScale.value)));
   const setBoundary = (input, scale, key, value, round) => {
     const numeric = Math.max(min, Math.min(max, round(value)));
     input.value = numeric;
@@ -1194,7 +1223,17 @@ function configureRangeFilter({ prefix, min, max, format, toScale, fromScale, ro
     updateTrack();
     updateLabel();
   };
-  return { setMin: (value) => setBoundary(minInput, minScale, filterMinKey, value, roundMin), setMax: (value) => setBoundary(maxInput, maxScale, filterMaxKey, value, roundMax) };
+  const clear = () => {
+    minInput.value = "";
+    maxInput.value = "";
+    minScale.value = 0;
+    maxScale.value = 1000;
+    state.filters[filterMinKey] = "";
+    state.filters[filterMaxKey] = "";
+    updateTrack();
+    updateLabel();
+  };
+  return { clear, setMin: (value) => setBoundary(minInput, minScale, filterMinKey, value, roundMin), setMax: (value) => setBoundary(maxInput, maxScale, filterMaxKey, value, roundMax) };
 }
 
 const loadPrediction = loadLists;
