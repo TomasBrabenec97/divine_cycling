@@ -21,6 +21,7 @@ from app.models import (
     Player,
     Prediction,
     PredictionItem,
+    PredictionWildcard,
     Race,
     RaceEdition,
     RaceResult,
@@ -34,12 +35,19 @@ from app.schemas import (
     LeaderboardResponse,
     PlayerCreate,
     PlayerResponse,
+    PredictionPicks,
     PredictionResponse,
     PredictionUpsert,
     ResultUpsert,
     RiderResponse,
 )
-from app.scoring import DEFAULT_RULES, rules_snapshot, score_prediction
+from app.scoring import (
+    DEFAULT_RULES,
+    position_multiplier,
+    rules_snapshot,
+    score_prediction,
+    wildcard_multiplier,
+)
 
 app = FastAPI(title="divine. cycling API", version="0.1.0")
 app.add_middleware(
@@ -113,6 +121,8 @@ def event_response(event: Event, db: Session) -> EventResponse:
                 uci_rank=row.uci_rank,
                 uci_points=row.uci_points,
                 team=rider_team(row.rider),
+                position_multiplier=round(position_multiplier(row.uci_rank), 3),
+                wildcard_multiplier=round(wildcard_multiplier(row.uci_rank), 3),
             )
             for row in rows
         ],
@@ -126,11 +136,11 @@ def prediction_response(prediction: Prediction) -> PredictionResponse:
         event_id=prediction.event_id,
         submitted_at=prediction.submitted_at,
         updated_at=prediction.updated_at,
-        boosted_rider_id=prediction.boosted_rider_id,
         selections=[
             {"position": item.position, "rider_id": item.rider_id}
             for item in sorted(prediction.items, key=lambda item: item.position)
         ],
+        wildcards=[wildcard.rider_id for wildcard in prediction.wildcards],
     )
 
 
@@ -247,6 +257,21 @@ def rider_reference_data(db: Session = Depends(get_db)) -> dict:
     }
 
 
+def require_startlist_picks(event: Event, picks: PredictionPicks, db: Session) -> None:
+    eligible_ids = set(
+        db.scalars(
+            select(EventRider.rider_id).where(
+                EventRider.event_id == event.id, EventRider.is_starter.is_(True)
+            )
+        ).all()
+    )
+    requested_ids = {item.rider_id for item in picks.selections} | set(picks.wildcards)
+    if not requested_ids.issubset(eligible_ids):
+        raise HTTPException(
+            status_code=422, detail="All selections must be riders on the startlist"
+        )
+
+
 @app.put("/api/events/{event_id}/predictions", response_model=PredictionResponse)
 def upsert_prediction(
     event_id: int, payload: PredictionUpsert, db: Session = Depends(get_db)
@@ -259,24 +284,11 @@ def upsert_prediction(
     if db.get(Player, payload.player_id) is None:
         raise HTTPException(status_code=404, detail="Player not found")
 
-    eligible_ids = set(
-        db.scalars(
-            select(EventRider.rider_id).where(
-                EventRider.event_id == event.id, EventRider.is_starter.is_(True)
-            )
-        ).all()
-    )
-    requested_ids = {item.rider_id for item in payload.selections}
-    if not requested_ids.issubset(eligible_ids):
-        raise HTTPException(
-            status_code=422, detail="All selections must be riders on the startlist"
-        )
-    if payload.boosted_rider_id is not None and payload.boosted_rider_id not in requested_ids:
-        raise HTTPException(status_code=422, detail="Your boost must be assigned to a selected rider")
+    require_startlist_picks(event, payload, db)
 
     prediction = db.scalar(
         select(Prediction)
-        .options(joinedload(Prediction.items))
+        .options(joinedload(Prediction.items), selectinload(Prediction.wildcards))
         .where(Prediction.player_id == payload.player_id, Prediction.event_id == event.id)
     )
     now = datetime.utcnow()
@@ -288,6 +300,7 @@ def upsert_prediction(
         db.flush()
     else:
         prediction.items.clear()
+        prediction.wildcards.clear()
         prediction.updated_at = now
         db.flush()
 
@@ -295,7 +308,12 @@ def upsert_prediction(
         PredictionItem(position=item.position, rider_id=item.rider_id)
         for item in payload.selections
     )
-    prediction.boosted_rider_id = payload.boosted_rider_id
+    prediction.wildcards.extend(
+        PredictionWildcard(slot=slot, rider_id=rider_id)
+        for slot, rider_id in enumerate(payload.wildcards, start=1)
+    )
+    # The v1 conviction boost is not part of scoring v2.
+    prediction.boosted_rider_id = None
     db.commit()
     db.refresh(prediction)
     return prediction_response(prediction)
@@ -307,7 +325,7 @@ def get_prediction(
 ) -> PredictionResponse:
     prediction = db.scalar(
         select(Prediction)
-        .options(joinedload(Prediction.items))
+        .options(joinedload(Prediction.items), selectinload(Prediction.wildcards))
         .where(Prediction.event_id == event_id, Prediction.player_id == player_id)
     )
     if prediction is None:
@@ -324,22 +342,27 @@ def score_event(event: Event, db: Session, is_simulation: bool) -> LeaderboardRe
     }
     predictions = db.execute(
         select(Prediction)
-        .options(joinedload(Prediction.player), joinedload(Prediction.items))
+        .options(
+            joinedload(Prediction.player),
+            joinedload(Prediction.items),
+            selectinload(Prediction.wildcards),
+        )
         .where(Prediction.event_id == event.id)
     ).unique().scalars().all()
     entries = []
     for prediction in predictions:
-        total, breakdown = score_prediction(
+        breakdown = score_prediction(
             [(item.position, item.rider_id) for item in prediction.items],
+            [wildcard.rider_id for wildcard in prediction.wildcards],
             result_positions,
             ranks,
-            prediction.boosted_rider_id,
         )
-        entries.append(LeaderboardEntry(username=prediction.player.username, total_points=total, breakdown=breakdown))
+        entries.append(LeaderboardEntry(username=prediction.player.username, **breakdown))
     entries.sort(key=lambda entry: (-entry.total_points, entry.username.lower()))
     return LeaderboardResponse(
         event_id=event.id,
         rules_version=DEFAULT_RULES.version,
+        rules=rules_snapshot(),
         is_simulation=is_simulation,
         results=[
             {"position": row.position, "rider_id": row.rider_id}
@@ -428,9 +451,45 @@ def publish_results(event_id: int, payload: ResultUpsert, db: Session = Depends(
     }
     for entry in response.entries:
         prediction = predictions_by_username[entry.username]
-        db.add(ScoreLine(score_run_id=run.id, prediction_id=prediction.id, total_points=entry.total_points, breakdown_json=json.dumps([line.model_dump() for line in entry.breakdown])))
+        db.add(
+            ScoreLine(
+                score_run_id=run.id,
+                prediction_id=prediction.id,
+                total_points=entry.total_points,
+                breakdown_json=entry.model_dump_json(),
+            )
+        )
     db.commit()
     return response
+
+
+def persisted_leaderboard(event: Event, db: Session) -> LeaderboardResponse | None:
+    """The scores stored when the result was published, if they use this model.
+
+    Serving the stored run keeps a finished leaderboard stable when the rules
+    or the UCI ranking change later.
+    """
+    run = db.scalar(
+        select(ScoreRun)
+        .where(ScoreRun.event_id == event.id, ScoreRun.is_simulation.is_(False))
+        .order_by(ScoreRun.created_at.desc(), ScoreRun.id.desc())
+    )
+    if run is None or not run.rules_version.startswith("v2"):
+        return None
+    lines = db.scalars(select(ScoreLine).where(ScoreLine.score_run_id == run.id)).all()
+    entries = [LeaderboardEntry.model_validate_json(line.breakdown_json) for line in lines]
+    entries.sort(key=lambda entry: (-entry.total_points, entry.username.lower()))
+    results = db.scalars(
+        select(EventResult).where(EventResult.event_id == event.id).order_by(EventResult.position)
+    ).all()
+    return LeaderboardResponse(
+        event_id=event.id,
+        rules_version=run.rules_version,
+        rules=json.loads(run.rules_json),
+        is_simulation=False,
+        results=[{"position": row.position, "rider_id": row.rider_id} for row in results],
+        entries=entries,
+    )
 
 
 @app.get("/api/events/{event_id}/leaderboard", response_model=LeaderboardResponse)
@@ -440,7 +499,7 @@ def leaderboard(event_id: int, db: Session = Depends(get_db)) -> LeaderboardResp
         raise HTTPException(status_code=404, detail="Event not found")
     if event.status != "finished":
         raise HTTPException(status_code=409, detail="Leaderboard is available after the race is finalized")
-    return score_event(event, db, is_simulation=False)
+    return persisted_leaderboard(event, db) or score_event(event, db, is_simulation=False)
 
 
 frontend_dir = Path(__file__).resolve().parent.parent / "frontend"

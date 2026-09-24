@@ -17,15 +17,17 @@
       const alphaRange = document.querySelector('#simulation-alpha-range');
       const alphaValue = document.querySelector('#simulation-alpha-value');
       let event;
-      const renderSlots = () => { slots.innerHTML = Array.from({length:20}, (_, index) => `<label>${index + 1}. <select data-position="${index + 1}"><option value="">No result entered</option>${event.riders.map(r => `<option value="${r.id}">${r.name} — UCI #${r.uci_rank}</option>`).join('')}</select></label>`).join(''); };
+      const RESULT_SLOTS = 25;
+      const renderSlots = () => { slots.innerHTML = Array.from({length:RESULT_SLOTS}, (_, index) => `<label>${index + 1}. <select data-position="${index + 1}"><option value="">No result entered</option>${event.riders.map(r => `<option value="${r.id}">${r.name} — UCI #${r.uci_rank}</option>`).join('')}</select></label>`).join(''); };
       const setAlpha = value => { const alpha = Math.max(0, Math.min(1, Number(value) || 0)); const formatted = alpha.toFixed(2); alphaInput.value = formatted; alphaRange.value = formatted; alphaValue.textContent = formatted; };
       const rollFinish = () => {
         const alpha = Number(alphaInput.value);
         const riders = [...event.riders];
         const result = alpha === 1
-          ? riders.sort((a, b) => (b.uci_points || 0) - (a.uci_points || 0)).slice(0, 20)
+          ? riders.sort((a, b) => (b.uci_points || 0) - (a.uci_points || 0)).slice(0, RESULT_SLOTS)
           : weightedSample(riders, alpha);
-        [...slots.querySelectorAll('select')].forEach((select, index) => { select.value = String(result[index].id); });
+        // A startlist shorter than the slots leaves the last ones empty.
+        [...slots.querySelectorAll('select')].forEach((select, index) => { select.value = result[index] ? String(result[index].id) : ''; });
         document.querySelector('#simulation-output').textContent = '';
       };
       const weightedSample = (riders, alpha) => {
@@ -33,7 +35,7 @@
         // A power curve gives uniform selection at 0, increasingly UCI-point-led draws
         // through the middle, and hands the exact deterministic case to alpha === 1 above.
         const exponent = alpha / (1 - alpha);
-        while (picked.length < 20 && available.length) {
+        while (picked.length < RESULT_SLOTS && available.length) {
           const logWeights = available.map(rider => exponent * Math.log((rider.uci_points || 0) + 1));
           const largestLogWeight = Math.max(...logWeights);
           const weights = logWeights.map(weight => Math.exp(weight - largestLogWeight));
@@ -45,7 +47,7 @@
         return picked;
       };
       const run = async () => { const results = [...slots.querySelectorAll('select')].filter(s => s.value).map(s => ({position:Number(s.dataset.position), rider_id:Number(s.value)})); const preview = await request(`/api/admin/events/${event.id}/simulate`, {method:'POST', body:JSON.stringify({results})}); window.renderLeaderboard(document.querySelector('#simulation-output'), event, preview); };
-      (async () => { try { const overview = await request('/api/admin/overview'); document.querySelector('#overview').innerHTML = `<p><strong>Rules:</strong> exact ${overview.rules.exact_points}, ±1 ${overview.rules.one_away_points}, ±2 ${overview.rules.two_away_points}, appearance ${overview.rules.appearance_points}; one ${overview.rules.boost_multiplier}× boost; rank margin capped at ${overview.rules.rank_margin_cap}×.</p>${overview.events.map(e => `<p><strong>${e.name}</strong><br>${e.players_joined} joined · ${e.submitted} submitted · ${e.results_entered} results entered · ${e.status}</p>`).join('')}`; if (!overview.events.length) return; event = await request(`/api/admin/events/${overview.events[0].id}`); document.querySelector('#simulation').classList.remove('hidden'); renderSlots(); setAlpha(alphaInput.value); alphaInput.addEventListener('input', event => setAlpha(event.target.value)); alphaRange.addEventListener('input', event => setAlpha(event.target.value)); document.querySelector('#roll-dice').addEventListener('click', rollFinish); document.querySelector('#simulate').addEventListener('click', run); } catch (error) { document.querySelector('#overview').textContent = error.message; } })();
+      (async () => { try { const overview = await request('/api/admin/overview'); const rules = overview.rules; document.querySelector('#overview').innerHTML = `<p><strong>Rules ${rules.version}:</strong> position points ${rules.top10_points.join('/')}, distance factor down to ×${rules.distance_factors[rules.distance_factors.length - 1]} at ${rules.distance_factors.length - 1} places, placement scored through ${rules.placement_depth}th; rank multiplier up to ×${1 + rules.position_boost.max}; permutations ${rules.permutation_bonuses.top3_exact}/${rules.permutation_bonuses.top5_exact}/${rules.permutation_bonuses.top10_six_or_more}; ${rules.wildcards.count} wildcards worth ${rules.wildcards.bonuses.top3}/${rules.wildcards.bonuses.top5}/${rules.wildcards.bonuses.top10} up to ×${rules.position_boost.wildcard_max}. <a href="scoring.html">Scoring guide</a></p>${overview.events.map(e => `<p><strong>${e.name}</strong><br>${e.players_joined} joined · ${e.submitted} submitted · ${e.results_entered} results entered · ${e.status}</p>`).join('')}`; if (!overview.events.length) return; event = await request(`/api/admin/events/${overview.events[0].id}`); document.querySelector('#simulation').classList.remove('hidden'); renderSlots(); setAlpha(alphaInput.value); alphaInput.addEventListener('input', event => setAlpha(event.target.value)); alphaRange.addEventListener('input', event => setAlpha(event.target.value)); document.querySelector('#roll-dice').addEventListener('click', rollFinish); document.querySelector('#simulate').addEventListener('click', run); } catch (error) { document.querySelector('#overview').textContent = error.message; } })();
     </script>
   </body>
 </html>

@@ -144,3 +144,76 @@ def test_event_riders_carry_their_trade_team() -> None:
     reference = client.get("/api/riders/reference").json()
     profile = next(rider for rider in reference["riders"] if rider["id"] == profiled)["profile"]
     assert profile["profile_url"] == "https://pcs/x"
+
+
+def save_prediction(client: TestClient, event: dict, username: str, top10: list[int], wildcards=()):
+    player_id = client.post("/api/players", json={"username": username}).json()["id"]
+    return player_id, client.put(
+        f"/api/events/{event['id']}/predictions",
+        json={
+            "player_id": player_id,
+            "selections": [
+                {"position": position, "rider_id": rider_id}
+                for position, rider_id in enumerate(top10, start=1)
+            ],
+            "wildcards": list(wildcards),
+        },
+    )
+
+
+def test_wildcards_are_saved_and_must_stand_apart_from_the_top_ten() -> None:
+    client = TestClient(app)
+    event = client.get("/api/events/active").json()
+    ids = [rider["id"] for rider in event["riders"]]
+
+    player_id, saved = save_prediction(client, event, "Wild", ids[:10], ids[10:13])
+    assert saved.status_code == 200
+    assert saved.json()["wildcards"] == ids[10:13]
+    loaded = client.get(f"/api/events/{event['id']}/predictions/{player_id}").json()
+    assert loaded["wildcards"] == ids[10:13]
+
+    _, overlap = save_prediction(client, event, "Overlap", ids[:10], [ids[0]])
+    assert overlap.status_code == 422
+    _, twice = save_prediction(client, event, "Twice", ids[:10], [ids[10], ids[10]])
+    assert twice.status_code == 422
+    _, too_many = save_prediction(client, event, "Many", ids[:10], ids[10:14])
+    assert too_many.status_code == 422
+    _, unknown = save_prediction(client, event, "Unknown", ids[:10], [999_999])
+    assert unknown.status_code == 422
+
+
+def test_published_scores_are_stored_and_served_unchanged() -> None:
+    import app.main as main_module
+
+    client = TestClient(app)
+    event = client.get("/api/events/active").json()
+    ids = [rider["id"] for rider in event["riders"]]
+    save_prediction(client, event, "Keeper", ids[:10], ids[15:18])
+    results = {
+        "results": [
+            {"position": position, "rider_id": rider_id}
+            for position, rider_id in enumerate([ids[1], ids[0], ids[15], *ids[2:9]], start=1)
+        ]
+    }
+
+    published = client.post(f"/api/admin/events/{event['id']}/results", json=results)
+    assert published.status_code == 200
+    entry = published.json()["entries"][0]
+    assert entry["wildcards"][0]["actual_position"] == 3
+    assert entry["total_points"] == pytest.approx(
+        entry["placement_points"] + entry["permutation_points"] + entry["wildcard_points"], abs=0.01
+    )
+
+    # A later ranking refresh must not move a finished leaderboard.
+    def fail(*args, **kwargs):
+        raise AssertionError("a finished leaderboard was recomputed")
+
+    original = main_module.score_event
+    main_module.score_event = fail
+    try:
+        board = client.get(f"/api/events/{event['id']}/leaderboard")
+    finally:
+        main_module.score_event = original
+    assert board.status_code == 200
+    assert board.json()["entries"][0] == entry
+    assert board.json()["rules"]["version"] == "v2.0"

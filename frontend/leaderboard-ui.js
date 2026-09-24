@@ -8,6 +8,8 @@
 
   const riderName = (riderById, id) => riderById.get(id)?.name || "Unknown rider";
   const points = value => `${Number(value).toFixed(2).replace(/\.00$/, "")} pts`;
+  const factor = value => `×${Number(value).toFixed(2)}`;
+  const SCOPE_LABELS = { top3: "Top 3", top5: "Top 5", top10: "Top 10" };
   const movementClass = line => {
     if (!line.actual_position || line.actual_position === line.predicted_position) return "exact";
     return line.actual_position < line.predicted_position ? "better" : "worse";
@@ -53,40 +55,70 @@
     if (window.ResizeObserver) new ResizeObserver(draw).observe(stage);
   }
 
-  function renderDetail(container, entry, riderById, resultByPosition) {
+  function scoreTable(className, labels, rows) {
+    const table = element("div", `score-breakdown ${className}`);
+    const header = element("div", "score-row score-header");
+    labels.forEach(label => header.append(element("span", "", label)));
+    table.append(header);
+    rows.forEach(cells => {
+      const row = element("div", "score-row");
+      cells.forEach(([tag, cls, text]) => row.append(element(tag, cls, text)));
+      table.append(row);
+    });
+    return table;
+  }
+
+  function renderDetail(container, entry, riderById, resultByPosition, rules) {
     container.replaceChildren();
     const heading = element("div", "detail-heading");
     heading.append(element("h3", "", `${entry.username}'s prediction`));
     heading.append(element("strong", "detail-total", points(entry.total_points)));
     container.append(heading);
+    const summary = element("p", "score-summary muted");
+    summary.textContent = `Placement ${points(entry.placement_points)} · permutations ${points(entry.permutation_points)} · wildcards ${points(entry.wildcard_points)}`;
+    container.append(summary);
 
-    const table = element("div", "score-breakdown");
-    const header = element("div", "score-row score-header");
-    ["Pick", "Rider", "Finish", "Base", "Boost", "Rank margin", "Earned"].forEach(label => header.append(element("span", "", label)));
-    table.append(header);
-    [...entry.breakdown].sort((a, b) => a.predicted_position - b.predicted_position).forEach(line => {
-      const row = element("div", "score-row");
-      row.append(element("span", "", `#${line.predicted_position}`));
-      row.append(element("span", "score-rider", riderName(riderById, line.rider_id)));
-      row.append(element("span", "", line.actual_position ? `#${line.actual_position}` : "Out"));
-      row.append(element("span", "", String(line.base_points)));
-      row.append(element("span", "", line.boost_multiplier > 1 ? `${line.boost_multiplier}×` : "—"));
-      row.append(element("span", "", line.difficulty_multiplier > 1 ? `${line.difficulty_multiplier}×` : "—"));
-      row.append(element("strong", "", points(line.final_points)));
-      table.append(row);
-    });
-    container.append(table);
+    const depth = rules?.placement_depth ?? 10;
+    const placements = [...entry.placements].sort((a, b) => a.predicted_position - b.predicted_position);
+    container.append(element("h4", "score-section-title", "Placement"));
+    container.append(scoreTable("placement-table", ["Pick", "Rider", "Finish", "Base", "Distance", "UCI rank", "Earned"], placements.map(line => [
+      ["span", "", `#${line.predicted_position}`],
+      ["span", "score-rider", riderName(riderById, line.rider_id)],
+      ["span", "", line.actual_position ? `#${line.actual_position}` : "Out"],
+      ["span", "", String(line.base_points)],
+      ["span", "", line.actual_position && line.actual_position <= depth ? factor(line.distance_factor) : "—"],
+      ["span", "", `${factor(line.multiplier)}`],
+      ["strong", "", points(line.points)],
+    ])));
+
+    container.append(element("h4", "score-section-title", "Bonuses"));
+    const bonusRows = [
+      ...entry.permutations.map(line => [
+        ["span", "", SCOPE_LABELS[line.scope] || line.scope],
+        ["span", "score-rider", `${line.matched} of ${line.size} riders named`],
+        ["span", "", ""],
+        ["strong", "", points(line.points)],
+      ]),
+      ...entry.wildcards.map(line => [
+        ["span", "", `★ Wildcard`],
+        ["span", "score-rider", riderName(riderById, line.rider_id)],
+        ["span", "", `${line.actual_position ? `#${line.actual_position}` : "Out"} · ${line.base_points} ${factor(line.multiplier)}`],
+        ["strong", "", points(line.points)],
+      ]),
+    ];
+    container.append(scoreTable("bonus-table", ["Bonus", "Detail", "", "Earned"], bonusRows));
 
     const lineage = element("section", "lineage");
     lineage.append(element("h3", "", "Prediction lineage"));
     lineage.append(element("p", "muted", "Each line follows one predicted rider from the chosen position to the actual result."));
+    const lastPosition = Math.max(10, ...resultByPosition.keys());
     const stage = element("div", "lineage-stage");
     const grid = element("div", "lineage-grid");
     const predictedRows = new Map();
     const actualRows = new Map();
     const predicted = element("div", "lineage-column");
     predicted.append(element("h4", "", "Prediction"));
-    const predictionLines = [...entry.breakdown].sort((a, b) => a.predicted_position - b.predicted_position);
+    const predictionLines = placements;
     predictionLines.forEach(line => {
       const row = element("div", "lineage-row");
       row.append(element("span", "lineage-position", `#${line.predicted_position}`));
@@ -97,7 +129,7 @@
     });
     const actual = element("div", "lineage-column");
     actual.append(element("h4", "", "Actual result"));
-    for (let position = 1; position <= 20; position += 1) {
+    for (let position = 1; position <= lastPosition; position += 1) {
       const riderId = resultByPosition.get(position);
       const row = element("div", "lineage-row");
       row.append(element("span", "lineage-position", `#${position}`));
@@ -130,12 +162,12 @@
       button.append(element("span", "", points(entry.total_points)));
       button.addEventListener("click", () => {
         ranking.querySelectorAll("button").forEach(node => node.classList.toggle("selected", node === button));
-        renderDetail(detail, entry, riderById, resultByPosition);
+        renderDetail(detail, entry, riderById, resultByPosition, leaderboard.rules);
       });
       ranking.append(button);
       if (index === 0) {
         button.classList.add("selected");
-        renderDetail(detail, entry, riderById, resultByPosition);
+        renderDetail(detail, entry, riderById, resultByPosition, leaderboard.rules);
       }
     });
     container.append(ranking, detail);
