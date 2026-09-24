@@ -16,7 +16,7 @@ Keep `riders` stable across events. Put ranking and startlist status in `event_r
 
 ## Scoring direction
 
-Use a transparent baseline first: exact position earns the most points, near-position earns fewer, and a rider outside the predicted top 10 earns zero. A conviction boost multiplies only the selected rider's points and has a strict per-prediction limit. A difficulty multiplier can be derived from a frozen UCI rank percentile, with a narrow cap so the game does not reward obscure picks more than correctness.
+Scoring model v2 is specified in `SCORING_MODEL_V2.md`: placement points (base points by guessed position × distance factor × a capped UCI-rank multiplier), flat permutation bonuses for the top 3, top 5 and top 10, and three unpositioned wildcards with their own steeper rank multiplier. The earlier conviction boost is retired.
 
 All scoring inputs and the ruleset version must be stored in `score_runs`; never recompute historical leaderboards from today's UCI ranking.
 

@@ -3,8 +3,9 @@ import secrets
 from datetime import datetime
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, Header, HTTPException, status
+from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import delete, select
@@ -17,9 +18,12 @@ from app.models import (
     Event,
     EventResult,
     EventRider,
+    FavouriteRider,
     Player,
     Prediction,
     PredictionItem,
+    PredictionTemplate,
+    PredictionWildcard,
     Race,
     RaceEdition,
     RaceResult,
@@ -27,27 +31,53 @@ from app.models import (
     ScoreLine,
     ScoreRun,
 )
+from app.response_cache import ResponseCache
 from app.schemas import (
     EventResponse,
+    FavouritesUpdate,
     LeaderboardEntry,
     LeaderboardResponse,
+    PicksBase,
     PlayerCreate,
     PlayerResponse,
     PredictionResponse,
     PredictionUpsert,
     ResultUpsert,
     RiderResponse,
+    TemplateOrder,
+    TemplateResponse,
+    TemplateUpsert,
 )
-from app.scoring import DEFAULT_RULES, rules_snapshot, score_prediction
+from app.scoring import (
+    DEFAULT_RULES,
+    STORED_BREAKDOWN_VERSIONS,
+    position_multiplier,
+    rules_snapshot,
+    score_prediction,
+    wildcard_multiplier,
+)
 
 app = FastAPI(title="divine. cycling API", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
     allow_credentials=False,
-    allow_methods=["GET", "POST", "PUT", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "X-Admin-Key"],
 )
+# The startlist is tens of KB of JSON on every visit; compressed it is a fifth
+# of that. The cached payloads below arrive already compressed and pass through.
+app.add_middleware(GZipMiddleware, minimum_size=1024)
+
+# The reference set only changes when scripts.load_pcs_data runs, normally as
+# part of a deploy; the lifetime also bounds how stale it is after a loader run
+# against a server that keeps running.
+REFERENCE_TTL_SECONDS = 300
+reference_cache = ResponseCache(ttl_seconds=REFERENCE_TTL_SECONDS)
+# A published score run never changes, so its leaderboard is kept until a newer
+# run replaces it; browsers recheck it every minute in case the result is re-published.
+LEADERBOARD_MAX_AGE_SECONDS = 60
+leaderboard_cache = ResponseCache()
 
 
 @app.on_event("startup")
@@ -74,10 +104,21 @@ def active_event_or_404(db: Session) -> Event:
     return event
 
 
+def rider_team(rider: Rider) -> str | None:
+    """The trade team from the PCS profile, else from the latest ranking snapshot."""
+    if rider.profile is not None and rider.profile.team:
+        return rider.profile.team
+    latest = max(rider.rankings, key=lambda ranking: ranking.ranking_date, default=None)
+    return latest.team if latest is not None and latest.team else None
+
+
 def event_response(event: Event, db: Session) -> EventResponse:
     rows = db.scalars(
         select(EventRider)
-        .options(joinedload(EventRider.rider))
+        .options(
+            joinedload(EventRider.rider).selectinload(Rider.profile),
+            joinedload(EventRider.rider).selectinload(Rider.rankings),
+        )
         .where(EventRider.event_id == event.id, EventRider.is_starter.is_(True))
         .order_by(EventRider.uci_rank)
     ).all()
@@ -97,6 +138,9 @@ def event_response(event: Event, db: Session) -> EventResponse:
                 nation=row.rider.nation,
                 uci_rank=row.uci_rank,
                 uci_points=row.uci_points,
+                team=rider_team(row.rider),
+                position_multiplier=round(position_multiplier(row.uci_rank), 3),
+                wildcard_multiplier=round(wildcard_multiplier(row.uci_rank), 3),
             )
             for row in rows
         ],
@@ -110,11 +154,11 @@ def prediction_response(prediction: Prediction) -> PredictionResponse:
         event_id=prediction.event_id,
         submitted_at=prediction.submitted_at,
         updated_at=prediction.updated_at,
-        boosted_rider_id=prediction.boosted_rider_id,
         selections=[
             {"position": item.position, "rider_id": item.rider_id}
             for item in sorted(prediction.items, key=lambda item: item.position)
         ],
+        wildcards=[wildcard.rider_id for wildcard in prediction.wildcards],
     )
 
 
@@ -153,8 +197,13 @@ def get_latest_finished_event(db: Session = Depends(get_db)) -> EventResponse:
 
 
 @app.get("/api/riders/reference")
-def rider_reference_data(db: Session = Depends(get_db)) -> dict:
+def rider_reference_data(request: Request, db: Session = Depends(get_db)) -> Response:
     """Read-only PCS background data, delivered once for the rider detail UI."""
+    payload = reference_cache.get("riders", None, lambda: rider_reference_payload(db))
+    return payload.response(request, max_age=REFERENCE_TTL_SECONDS)
+
+
+def rider_reference_payload(db: Session) -> dict:
     riders = db.scalars(
         select(Rider)
         .options(
@@ -193,6 +242,7 @@ def rider_reference_data(db: Session = Depends(get_db)) -> dict:
                     "age": rider.profile.age,
                     "date_of_birth": rider.profile.date_of_birth,
                     "wins_total": rider.profile.wins_total,
+                    "profile_url": rider.profile.profile_url,
                 },
                 "seasons": [
                     {
@@ -230,18 +280,16 @@ def rider_reference_data(db: Session = Depends(get_db)) -> dict:
     }
 
 
-@app.put("/api/events/{event_id}/predictions", response_model=PredictionResponse)
-def upsert_prediction(
-    event_id: int, payload: PredictionUpsert, db: Session = Depends(get_db)
-) -> PredictionResponse:
+def require_open_event(event_id: int, db: Session) -> Event:
     event = db.get(Event, event_id)
     if event is None:
         raise HTTPException(status_code=404, detail="Event not found")
     if event.status != "open" or datetime.utcnow() >= event.prediction_deadline:
         raise HTTPException(status_code=409, detail="Predictions are locked for this event")
-    if db.get(Player, payload.player_id) is None:
-        raise HTTPException(status_code=404, detail="Player not found")
+    return event
 
+
+def require_startlist_picks(event: Event, picks: PicksBase, db: Session) -> None:
     eligible_ids = set(
         db.scalars(
             select(EventRider.rider_id).where(
@@ -249,17 +297,26 @@ def upsert_prediction(
             )
         ).all()
     )
-    requested_ids = {item.rider_id for item in payload.selections}
+    requested_ids = {item.rider_id for item in picks.selections} | set(picks.wildcards)
     if not requested_ids.issubset(eligible_ids):
         raise HTTPException(
             status_code=422, detail="All selections must be riders on the startlist"
         )
-    if payload.boosted_rider_id is not None and payload.boosted_rider_id not in requested_ids:
-        raise HTTPException(status_code=422, detail="Your boost must be assigned to a selected rider")
+
+
+@app.put("/api/events/{event_id}/predictions", response_model=PredictionResponse)
+def upsert_prediction(
+    event_id: int, payload: PredictionUpsert, db: Session = Depends(get_db)
+) -> PredictionResponse:
+    event = require_open_event(event_id, db)
+    if db.get(Player, payload.player_id) is None:
+        raise HTTPException(status_code=404, detail="Player not found")
+
+    require_startlist_picks(event, payload, db)
 
     prediction = db.scalar(
         select(Prediction)
-        .options(joinedload(Prediction.items))
+        .options(joinedload(Prediction.items), selectinload(Prediction.wildcards))
         .where(Prediction.player_id == payload.player_id, Prediction.event_id == event.id)
     )
     now = datetime.utcnow()
@@ -271,6 +328,7 @@ def upsert_prediction(
         db.flush()
     else:
         prediction.items.clear()
+        prediction.wildcards.clear()
         prediction.updated_at = now
         db.flush()
 
@@ -278,7 +336,12 @@ def upsert_prediction(
         PredictionItem(position=item.position, rider_id=item.rider_id)
         for item in payload.selections
     )
-    prediction.boosted_rider_id = payload.boosted_rider_id
+    prediction.wildcards.extend(
+        PredictionWildcard(slot=slot, rider_id=rider_id)
+        for slot, rider_id in enumerate(payload.wildcards, start=1)
+    )
+    # The v1 conviction boost is not part of scoring v2.
+    prediction.boosted_rider_id = None
     db.commit()
     db.refresh(prediction)
     return prediction_response(prediction)
@@ -290,12 +353,290 @@ def get_prediction(
 ) -> PredictionResponse:
     prediction = db.scalar(
         select(Prediction)
-        .options(joinedload(Prediction.items))
+        .options(joinedload(Prediction.items), selectinload(Prediction.wildcards))
         .where(Prediction.event_id == event_id, Prediction.player_id == player_id)
     )
     if prediction is None:
         raise HTTPException(status_code=404, detail="Prediction not found")
     return prediction_response(prediction)
+
+
+# -- templates: named draft lists next to the final prediction -------------
+
+MAX_TEMPLATES = 12
+
+
+def template_response(template: PredictionTemplate) -> TemplateResponse:
+    picks = json.loads(template.picks_json)
+    return TemplateResponse(
+        id=template.id,
+        name=template.name,
+        selections=picks.get("selections", []),
+        wildcards=picks.get("wildcards", []),
+        created_at=template.created_at,
+        updated_at=template.updated_at,
+    )
+
+
+def template_picks_json(payload: TemplateUpsert) -> str:
+    return json.dumps(
+        {
+            "selections": [
+                item.model_dump() for item in sorted(payload.selections, key=lambda i: i.position)
+            ],
+            "wildcards": payload.wildcards,
+        }
+    )
+
+
+def require_unique_template_name(
+    db: Session, event_id: int, player_id: int, name: str, template_id: int | None = None
+) -> None:
+    names = db.execute(
+        select(PredictionTemplate.id, PredictionTemplate.name).where(
+            PredictionTemplate.event_id == event_id, PredictionTemplate.player_id == player_id
+        )
+    ).all()
+    if any(row.name.casefold() == name.casefold() and row.id != template_id for row in names):
+        raise HTTPException(status_code=409, detail=f"You already have a list called {name}")
+
+
+def owned_template(
+    db: Session, event_id: int, template_id: int, player_id: int
+) -> PredictionTemplate:
+    template = db.get(PredictionTemplate, template_id)
+    if template is None or template.event_id != event_id or template.player_id != player_id:
+        raise HTTPException(status_code=404, detail="List not found")
+    return template
+
+
+@app.get(
+    "/api/events/{event_id}/players/{player_id}/templates", response_model=list[TemplateResponse]
+)
+def list_templates(
+    event_id: int, player_id: int, db: Session = Depends(get_db)
+) -> list[TemplateResponse]:
+    templates = db.scalars(
+        select(PredictionTemplate)
+        .where(PredictionTemplate.event_id == event_id, PredictionTemplate.player_id == player_id)
+        .order_by(PredictionTemplate.sort_order, PredictionTemplate.created_at, PredictionTemplate.id)
+    ).all()
+    return [template_response(template) for template in templates]
+
+
+@app.put(
+    "/api/events/{event_id}/players/{player_id}/templates/order",
+    response_model=list[TemplateResponse],
+)
+def reorder_templates(
+    event_id: int, player_id: int, payload: TemplateOrder, db: Session = Depends(get_db)
+) -> list[TemplateResponse]:
+    # The order carries no picks, so like favourites it is not bound to the deadline.
+    if db.get(Event, event_id) is None:
+        raise HTTPException(status_code=404, detail="Event not found")
+    templates = {
+        template.id: template
+        for template in db.scalars(
+            select(PredictionTemplate).where(
+                PredictionTemplate.event_id == event_id, PredictionTemplate.player_id == player_id
+            )
+        )
+    }
+    if sorted(payload.template_ids) != sorted(templates):
+        raise HTTPException(status_code=409, detail="Your lists changed meanwhile; reload the page")
+    for sort_order, template_id in enumerate(payload.template_ids):
+        templates[template_id].sort_order = sort_order
+    db.commit()
+    return [template_response(templates[template_id]) for template_id in payload.template_ids]
+
+
+@app.post(
+    "/api/events/{event_id}/templates",
+    response_model=TemplateResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_template(
+    event_id: int, payload: TemplateUpsert, db: Session = Depends(get_db)
+) -> TemplateResponse:
+    event = require_open_event(event_id, db)
+    if db.get(Player, payload.player_id) is None:
+        raise HTTPException(status_code=404, detail="Player not found")
+    require_startlist_picks(event, payload, db)
+    existing = db.scalars(
+        select(PredictionTemplate.sort_order).where(
+            PredictionTemplate.event_id == event_id,
+            PredictionTemplate.player_id == payload.player_id,
+        )
+    ).all()
+    if len(existing) >= MAX_TEMPLATES:
+        raise HTTPException(status_code=409, detail=f"You can keep up to {MAX_TEMPLATES} lists")
+    require_unique_template_name(db, event_id, payload.player_id, payload.name)
+    now = datetime.utcnow()
+    template = PredictionTemplate(
+        player_id=payload.player_id,
+        event_id=event_id,
+        name=payload.name,
+        picks_json=template_picks_json(payload),
+        # A new list opens as the last tab.
+        sort_order=max(existing, default=-1) + 1,
+        created_at=now,
+        updated_at=now,
+    )
+    db.add(template)
+    db.commit()
+    db.refresh(template)
+    return template_response(template)
+
+
+@app.put("/api/events/{event_id}/templates/{template_id}", response_model=TemplateResponse)
+def update_template(
+    event_id: int, template_id: int, payload: TemplateUpsert, db: Session = Depends(get_db)
+) -> TemplateResponse:
+    event = require_open_event(event_id, db)
+    template = owned_template(db, event_id, template_id, payload.player_id)
+    require_startlist_picks(event, payload, db)
+    require_unique_template_name(db, event_id, payload.player_id, payload.name, template_id)
+    template.name = payload.name
+    template.picks_json = template_picks_json(payload)
+    template.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(template)
+    return template_response(template)
+
+
+@app.delete(
+    "/api/events/{event_id}/templates/{template_id}", status_code=status.HTTP_204_NO_CONTENT
+)
+def delete_template(
+    event_id: int, template_id: int, player_id: int, db: Session = Depends(get_db)
+) -> None:
+    require_open_event(event_id, db)
+    db.delete(owned_template(db, event_id, template_id, player_id))
+    db.commit()
+
+
+# -- favourites: riders a player hearts to narrow the pool ---------------------
+
+
+def require_player_and_starters(
+    db: Session, event_id: int, player_id: int, rider_ids: set[int]
+) -> None:
+    if db.get(Event, event_id) is None:
+        raise HTTPException(status_code=404, detail="Event not found")
+    if db.get(Player, player_id) is None:
+        raise HTTPException(status_code=404, detail="Player not found")
+    if not rider_ids:
+        return
+    starters = set(
+        db.scalars(
+            select(EventRider.rider_id).where(
+                EventRider.event_id == event_id,
+                EventRider.rider_id.in_(rider_ids),
+                EventRider.is_starter.is_(True),
+            )
+        ).all()
+    )
+    if starters != rider_ids:
+        raise HTTPException(status_code=422, detail="Favourites must be riders on the startlist")
+
+
+def require_player_and_starter(db: Session, event_id: int, player_id: int, rider_id: int) -> None:
+    require_player_and_starters(db, event_id, player_id, {rider_id})
+
+
+@app.get("/api/events/{event_id}/players/{player_id}/favourites", response_model=list[int])
+def list_favourites(
+    event_id: int, player_id: int, db: Session = Depends(get_db)
+) -> list[int]:
+    return list(
+        db.scalars(
+            select(FavouriteRider.rider_id)
+            .where(FavouriteRider.event_id == event_id, FavouriteRider.player_id == player_id)
+            .order_by(FavouriteRider.created_at, FavouriteRider.id)
+        ).all()
+    )
+
+
+@app.put(
+    "/api/events/{event_id}/players/{player_id}/favourites/{rider_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def add_favourite(
+    event_id: int, player_id: int, rider_id: int, db: Session = Depends(get_db)
+) -> None:
+    require_player_and_starter(db, event_id, player_id, rider_id)
+    exists = db.scalar(
+        select(FavouriteRider.id).where(
+            FavouriteRider.event_id == event_id,
+            FavouriteRider.player_id == player_id,
+            FavouriteRider.rider_id == rider_id,
+        )
+    )
+    if exists is None:
+        db.add(FavouriteRider(event_id=event_id, player_id=player_id, rider_id=rider_id))
+        try:
+            db.commit()
+        except IntegrityError:
+            # A double tap raced itself; the favourite is there either way.
+            db.rollback()
+
+
+@app.patch("/api/events/{event_id}/players/{player_id}/favourites", response_model=list[int])
+def update_favourites(
+    event_id: int, player_id: int, payload: FavouritesUpdate, db: Session = Depends(get_db)
+) -> list[int]:
+    """Heart and un-heart many riders at once; returns the whole list afterwards."""
+    require_player_and_starters(db, event_id, player_id, set(payload.add))
+    if payload.remove:
+        db.execute(
+            delete(FavouriteRider).where(
+                FavouriteRider.event_id == event_id,
+                FavouriteRider.player_id == player_id,
+                FavouriteRider.rider_id.in_(payload.remove),
+            )
+        )
+    existing = set(list_favourites(event_id, player_id, db))
+    db.add_all(
+        FavouriteRider(event_id=event_id, player_id=player_id, rider_id=rider_id)
+        for rider_id in dict.fromkeys(payload.add)
+        if rider_id not in existing
+    )
+    try:
+        db.commit()
+    except IntegrityError:
+        # A concurrent request hearted some of them first; they are there either way.
+        db.rollback()
+    return list_favourites(event_id, player_id, db)
+
+
+@app.delete(
+    "/api/events/{event_id}/players/{player_id}/favourites",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def clear_favourites(event_id: int, player_id: int, db: Session = Depends(get_db)) -> None:
+    db.execute(
+        delete(FavouriteRider).where(
+            FavouriteRider.event_id == event_id, FavouriteRider.player_id == player_id
+        )
+    )
+    db.commit()
+
+
+@app.delete(
+    "/api/events/{event_id}/players/{player_id}/favourites/{rider_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def remove_favourite(
+    event_id: int, player_id: int, rider_id: int, db: Session = Depends(get_db)
+) -> None:
+    db.execute(
+        delete(FavouriteRider).where(
+            FavouriteRider.event_id == event_id,
+            FavouriteRider.player_id == player_id,
+            FavouriteRider.rider_id == rider_id,
+        )
+    )
+    db.commit()
 
 
 def score_event(event: Event, db: Session, is_simulation: bool) -> LeaderboardResponse:
@@ -307,22 +648,27 @@ def score_event(event: Event, db: Session, is_simulation: bool) -> LeaderboardRe
     }
     predictions = db.execute(
         select(Prediction)
-        .options(joinedload(Prediction.player), joinedload(Prediction.items))
+        .options(
+            joinedload(Prediction.player),
+            joinedload(Prediction.items),
+            selectinload(Prediction.wildcards),
+        )
         .where(Prediction.event_id == event.id)
     ).unique().scalars().all()
     entries = []
     for prediction in predictions:
-        total, breakdown = score_prediction(
+        breakdown = score_prediction(
             [(item.position, item.rider_id) for item in prediction.items],
+            [wildcard.rider_id for wildcard in prediction.wildcards],
             result_positions,
             ranks,
-            prediction.boosted_rider_id,
         )
-        entries.append(LeaderboardEntry(username=prediction.player.username, total_points=total, breakdown=breakdown))
+        entries.append(LeaderboardEntry(username=prediction.player.username, **breakdown))
     entries.sort(key=lambda entry: (-entry.total_points, entry.username.lower()))
     return LeaderboardResponse(
         event_id=event.id,
         rules_version=DEFAULT_RULES.version,
+        rules=rules_snapshot(),
         is_simulation=is_simulation,
         results=[
             {"position": row.position, "rider_id": row.rider_id}
@@ -411,19 +757,66 @@ def publish_results(event_id: int, payload: ResultUpsert, db: Session = Depends(
     }
     for entry in response.entries:
         prediction = predictions_by_username[entry.username]
-        db.add(ScoreLine(score_run_id=run.id, prediction_id=prediction.id, total_points=entry.total_points, breakdown_json=json.dumps([line.model_dump() for line in entry.breakdown])))
+        db.add(
+            ScoreLine(
+                score_run_id=run.id,
+                prediction_id=prediction.id,
+                total_points=entry.total_points,
+                breakdown_json=entry.model_dump_json(),
+            )
+        )
     db.commit()
     return response
 
 
+def latest_published_run(event: Event, db: Session) -> ScoreRun | None:
+    return db.scalar(
+        select(ScoreRun)
+        .where(ScoreRun.event_id == event.id, ScoreRun.is_simulation.is_(False))
+        .order_by(ScoreRun.created_at.desc(), ScoreRun.id.desc())
+    )
+
+
+def persisted_leaderboard(event: Event, run: ScoreRun, db: Session) -> LeaderboardResponse:
+    """The scores stored when the result was published.
+
+    Serving the stored run keeps a finished leaderboard stable when the rules
+    or the UCI ranking change later.
+    """
+    lines = db.scalars(select(ScoreLine).where(ScoreLine.score_run_id == run.id)).all()
+    entries = [LeaderboardEntry.model_validate_json(line.breakdown_json) for line in lines]
+    entries.sort(key=lambda entry: (-entry.total_points, entry.username.lower()))
+    results = db.scalars(
+        select(EventResult).where(EventResult.event_id == event.id).order_by(EventResult.position)
+    ).all()
+    return LeaderboardResponse(
+        event_id=event.id,
+        rules_version=run.rules_version,
+        rules=json.loads(run.rules_json),
+        is_simulation=False,
+        results=[{"position": row.position, "rider_id": row.rider_id} for row in results],
+        entries=entries,
+    )
+
+
 @app.get("/api/events/{event_id}/leaderboard", response_model=LeaderboardResponse)
-def leaderboard(event_id: int, db: Session = Depends(get_db)) -> LeaderboardResponse:
+def leaderboard(
+    event_id: int, request: Request, db: Session = Depends(get_db)
+) -> Response | LeaderboardResponse:
     event = db.get(Event, event_id)
     if event is None:
         raise HTTPException(status_code=404, detail="Event not found")
     if event.status != "finished":
         raise HTTPException(status_code=409, detail="Leaderboard is available after the race is finalized")
-    return score_event(event, db, is_simulation=False)
+    run = latest_published_run(event, db)
+    if run is None or not run.rules_version.startswith(STORED_BREAKDOWN_VERSIONS):
+        return score_event(event, db, is_simulation=False)
+    # The timestamp keeps a rebuilt database that reuses a run id from being
+    # served the board of the run it replaced.
+    payload = leaderboard_cache.get(
+        event.id, (run.id, run.created_at), lambda: persisted_leaderboard(event, run, db)
+    )
+    return payload.response(request, max_age=LEADERBOARD_MAX_AGE_SECONDS)
 
 
 frontend_dir = Path(__file__).resolve().parent.parent / "frontend"

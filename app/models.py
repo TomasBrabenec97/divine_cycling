@@ -84,6 +84,52 @@ class Prediction(Base):
     items: Mapped[list["PredictionItem"]] = relationship(
         back_populates="prediction", cascade="all, delete-orphan"
     )
+    wildcards: Mapped[list["PredictionWildcard"]] = relationship(
+        back_populates="prediction",
+        cascade="all, delete-orphan",
+        order_by="PredictionWildcard.slot",
+    )
+
+
+class PredictionTemplate(Base):
+    """A named draft list a player keeps next to the final prediction.
+
+    Templates are never scored; saving one as final copies its picks into the
+    player's `Prediction`. The picks are stored as JSON because a draft may be
+    incomplete and is always read and written whole.
+    """
+
+    __tablename__ = "prediction_templates"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    player_id: Mapped[int] = mapped_column(ForeignKey("players.id"), index=True)
+    event_id: Mapped[int] = mapped_column(ForeignKey("events.id"), index=True)
+    name: Mapped[str] = mapped_column(String(40))
+    picks_json: Mapped[str] = mapped_column(Text, default='{"selections": [], "wildcards": []}')
+    # The player's own tab order; ties (templates from before ordering) fall
+    # back to creation order.
+    sort_order: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class FavouriteRider(Base):
+    """A rider a player has hearted to narrow the pool while building lists.
+
+    Favourites are a browsing aid only: they never affect a prediction or its
+    score, so they stay editable after the deadline.
+    """
+
+    __tablename__ = "favourite_riders"
+    __table_args__ = (
+        UniqueConstraint("player_id", "event_id", "rider_id", name="uq_favourite_rider"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    player_id: Mapped[int] = mapped_column(ForeignKey("players.id"), index=True)
+    event_id: Mapped[int] = mapped_column(ForeignKey("events.id"), index=True)
+    rider_id: Mapped[int] = mapped_column(ForeignKey("riders.id"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
 class PredictionItem(Base):
@@ -98,6 +144,27 @@ class PredictionItem(Base):
     rider_id: Mapped[int] = mapped_column(ForeignKey("riders.id"), index=True)
     position: Mapped[int] = mapped_column(Integer)
     prediction: Mapped[Prediction] = relationship(back_populates="items")
+    rider: Mapped[Rider] = relationship()
+
+
+class PredictionWildcard(Base):
+    """One of the unpositioned wildcard riders that go with a Top 10.
+
+    A wildcard never also appears in the same prediction's Top 10; the API
+    enforces that, since it spans two tables.
+    """
+
+    __tablename__ = "prediction_wildcards"
+    __table_args__ = (
+        UniqueConstraint("prediction_id", "slot", name="uq_prediction_wildcard_slot"),
+        UniqueConstraint("prediction_id", "rider_id", name="uq_prediction_wildcard_rider"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"), index=True)
+    rider_id: Mapped[int] = mapped_column(ForeignKey("riders.id"), index=True)
+    slot: Mapped[int] = mapped_column(Integer)
+    prediction: Mapped[Prediction] = relationship(back_populates="wildcards")
     rider: Mapped[Rider] = relationship()
 
 

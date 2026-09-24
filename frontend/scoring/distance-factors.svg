@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 300" width="640" height="300" role="img" aria-label="Distance factor by places off" font-family="'Bricolage Grotesque', Arial, sans-serif">
+  <line x1="52" x2="570" y1="256.0" y2="256.0" stroke="#e6dccb" stroke-width="1"/>
+  <text x="44.0" y="260.0" text-anchor="end" fill="#746e66" font-size="11" font-weight="400">×0.00</text>
+  <line x1="52" x2="570" y1="202.0" y2="202.0" stroke="#e6dccb" stroke-width="1"/>
+  <text x="44.0" y="206.0" text-anchor="end" fill="#746e66" font-size="11" font-weight="400">×0.25</text>
+  <line x1="52" x2="570" y1="148.0" y2="148.0" stroke="#e6dccb" stroke-width="1"/>
+  <text x="44.0" y="152.0" text-anchor="end" fill="#746e66" font-size="11" font-weight="400">×0.50</text>
+  <line x1="52" x2="570" y1="94.0" y2="94.0" stroke="#e6dccb" stroke-width="1"/>
+  <text x="44.0" y="98.0" text-anchor="end" fill="#746e66" font-size="11" font-weight="400">×0.75</text>
+  <line x1="52" x2="570" y1="40.0" y2="40.0" stroke="#e6dccb" stroke-width="1"/>
+  <text x="44.0" y="44.0" text-anchor="end" fill="#746e66" font-size="11" font-weight="400">×1.00</text>
+  <path d="M72.5,256.0 L72.5,44.0 Q72.5,40.0 76.5,40.0 L88.5,40.0 Q92.5,40.0 92.5,44.0 L92.5,256.0 Z" fill="#2f6f9f"><title>0 places off: ×1.00</title></path>
+  <text x="82.5" y="34.0" text-anchor="middle" fill="#2f3136" font-size="11" font-weight="400">×1</text>
+  <path d="M123.3,256.0 L123.3,98.0 Q123.3,94.0 127.3,94.0 L139.3,94.0 Q143.3,94.0 143.3,98.0 L143.3,256.0 Z" fill="#2f6f9f"><title>1 places off: ×0.75</title></path>
+  <text x="133.3" y="88.0" text-anchor="middle" fill="#2f3136" font-size="11" font-weight="400">×0.75</text>
+  <path d="M174.0,256.0 L174.0,138.5 Q174.0,134.5 178.0,134.5 L190.0,134.5 Q194.0,134.5 194.0,138.5 L194.0,256.0 Z" fill="#2f6f9f"><title>2 places off: ×0.56</title></path>
+  <path d="M224.8,256.0 L224.8,168.9 Q224.8,164.9 228.8,164.9 L240.8,164.9 Q244.8,164.9 244.8,168.9 L244.8,256.0 Z" fill="#2f6f9f"><title>3 places off: ×0.42</title></path>
+  <path d="M275.6,256.0 L275.6,191.7 Q275.6,187.7 279.6,187.7 L291.6,187.7 Q295.6,187.7 295.6,191.7 L295.6,256.0 Z" fill="#2f6f9f"><title>4 places off: ×0.32</title></path>
+  <path d="M326.4,256.0 L326.4,208.7 Q326.4,204.7 330.4,204.7 L342.4,204.7 Q346.4,204.7 346.4,208.7 L346.4,256.0 Z" fill="#2f6f9f"><title>5 places off: ×0.24</title></path>
+  <path d="M377.2,256.0 L377.2,221.6 Q377.2,217.6 381.2,217.6 L393.2,217.6 Q397.2,217.6 397.2,221.6 L397.2,256.0 Z" fill="#2f6f9f"><title>6 places off: ×0.18</title></path>
+  <path d="M428.0,256.0 L428.0,231.2 Q428.0,227.2 432.0,227.2 L444.0,227.2 Q448.0,227.2 448.0,231.2 L448.0,256.0 Z" fill="#2f6f9f"><title>7 places off: ×0.13</title></path>
+  <path d="M478.7,256.0 L478.7,238.4 Q478.7,234.4 482.7,234.4 L494.7,234.4 Q498.7,234.4 498.7,238.4 L498.7,256.0 Z" fill="#2f6f9f"><title>8 places off: ×0.10</title></path>
+  <path d="M529.5,256.0 L529.5,243.8 Q529.5,239.8 533.5,239.8 L545.5,239.8 Q549.5,239.8 549.5,243.8 L549.5,256.0 Z" fill="#2f6f9f"><title>9 places off: ×0.08</title></path>
+  <text x="539.5" y="233.8" text-anchor="middle" fill="#2f3136" font-size="11" font-weight="400">×0.075</text>
+  <text x="82.5" y="274.0" text-anchor="middle" fill="#746e66" font-size="11" font-weight="400">0</text>
+  <text x="133.3" y="274.0" text-anchor="middle" fill="#746e66" font-size="11" font-weight="400">1</text>
+  <text x="184.0" y="274.0" text-anchor="middle" fill="#746e66" font-size="11" font-weight="400">2</text>
+  <text x="234.8" y="274.0" text-anchor="middle" fill="#746e66" font-size="11" font-weight="400">3</text>
+  <text x="285.6" y="274.0" text-anchor="middle" fill="#746e66" font-size="11" font-weight="400">4</text>
+  <text x="336.4" y="274.0" text-anchor="middle" fill="#746e66" font-size="11" font-weight="400">5</text>
+  <text x="387.2" y="274.0" text-anchor="middle" fill="#746e66" font-size="11" font-weight="400">6</text>
+  <text x="438.0" y="274.0" text-anchor="middle" fill="#746e66" font-size="11" font-weight="400">7</text>
+  <text x="488.7" y="274.0" text-anchor="middle" fill="#746e66" font-size="11" font-weight="400">8</text>
+  <text x="539.5" y="274.0" text-anchor="middle" fill="#746e66" font-size="11" font-weight="400">9</text>
+  <text x="570.0" y="294.0" text-anchor="end" fill="#746e66" font-size="11" font-weight="400">places off</text>
+</svg>

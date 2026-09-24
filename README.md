@@ -18,6 +18,21 @@ python -m uvicorn app.main:app --reload
 
 The API is then available at `http://127.0.0.1:8000`; interactive docs are at `/docs`. The database is local SQLite at `data/game.sqlite3` and is intentionally ignored by git.
 
+### End-to-end smoke test
+
+```powershell
+python -m pip install -e ".[e2e]"
+python -m scripts.e2e_local            # add --headed to watch it
+```
+
+It builds a blank SQLite database in a temporary folder the way the Render
+build does, starts the API on a free port, registers two players and fills
+their Top 10s and wildcards through the real UI (one of them via a named
+template), previews a result on the admin page, checks the scores against the
+scoring module and checks that the compare chart ends exactly on each score. It drives the installed Edge or
+Chrome, prints where it saved a screenshot of every step, and never touches
+`data/game.sqlite3` or a remote database.
+
 ## Deployment
 
 The public deployment is three free services, all live:
@@ -49,6 +64,12 @@ never disturbs predictions that players have already saved.
 Note the free tier's one rough edge: the API sleeps after about fifteen
 minutes of inactivity, so the first request after a quiet spell takes roughly
 a minute while the service wakes. Every request after that is fast.
+
+The two heavy payloads -- the rider reference set and a published leaderboard
+-- are rendered and gzipped once and then served from memory
+(`app/response_cache.py`), with an ETag so browsers revalidate for free. That
+is what keeps the 0.1-CPU free instance responsive when many players arrive at
+once, such as right after the result is published.
 
 ### One-off 2026 startlist import
 
@@ -125,6 +146,19 @@ status means he started and did not finish classified. Editions still to be
 ridden -- the 2026 Worlds and Il Lombardia -- are reported and skipped, never
 guessed. The race list lives in `scripts/pcs/races.py` and `--races` narrows it.
 
+`fetch_team_icons` gives every trade team on the startlist a small jersey icon
+for the rider list, the team filter and the rider card:
+
+```powershell
+python -m scripts.fetch_team_icons
+```
+
+It maps team names to PCS team slugs through the cached ranking pages, visits
+each team page once for its jersey, and writes 48 px PNGs plus
+`frontend/teams/index.json` (team name to file). Teams PCS shows no jersey for
+are left out; the UI draws their initials instead. It needs Pillow, which the
+`dev` extra installs.
+
 PCS disallows automated access in robots.txt. Run these from your own machine,
 not from a server or CI, and leave the request delay alone.
 
@@ -181,7 +215,7 @@ otherwise render wrong, and transformations worth showing.
 - **Database:** SQLite locally and managed PostgreSQL in the public deployment,
   using the same SQLAlchemy models.
 - **Data ingestion:** isolated PCS fetchers in `scripts/pcs/` normalize rider, ranking, and race data. Raw pages are cached on disk, and the imported reference tables stay separate from scoring, which reads only `event_riders` and `event_results`.
-- **Scoring:** deterministic, versioned server-side rules. The client displays scores but never calculates the authoritative result.
+- **Scoring:** deterministic, versioned server-side rules (model v2: placement, permutation bonuses and wildcards; see `docs/SCORING_MODEL_V2.md`). The client displays scores but never calculates the authoritative result. Published scores are stored with their rules snapshot and served unchanged. Players read `frontend/scoring.md` through `scoring.html`; after changing a rule, re-run `python -m scripts.render_scoring_figures` to redraw its curves.
 
 The mock seed remains available for isolated local testing; the public build
 loads the checked-in 2026 Road Worlds data instead.

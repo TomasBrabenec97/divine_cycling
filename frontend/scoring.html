@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>divine. — How scoring works</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="doc-page">
+    <main class="shell">
+      <a class="admin-home" href="./">Back to your Top 10</a>
+      <p class="eyebrow">ROAD WORLDS / SCORING</p>
+      <article id="scoring-doc" class="doc">Loading…</article>
+    </main>
+    <script>
+      // scoring.md is the single source for this page; this renders the small
+      // subset of Markdown it uses: headings, paragraphs, lists, tables, code,
+      // rules, emphasis, links and images (SVG figures are inlined).
+      const escapeHtml = value => value.replace(/[&<>"]/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[character]);
+      const inline = text => escapeHtml(text)
+        .replace(/`([^`]+)`/g, "<code>$1</code>")
+        .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+        .replace(/\*([^*]+)\*/g, "<em>$1</em>")
+        .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2">$1</a>');
+      const cells = row => row.trim().replace(/^\||\|$/g, "").split("|").map(cell => cell.trim());
+
+      function render(markdown) {
+        const lines = markdown.replace(/\r/g, "").split("\n");
+        const html = [];
+        for (let index = 0; index < lines.length;) {
+          const line = lines[index];
+          if (!line.trim()) { index += 1; continue; }
+          if (line.startsWith("```")) {
+            const code = [];
+            for (index += 1; index < lines.length && !lines[index].startsWith("```"); index += 1) code.push(lines[index]);
+            html.push(`<pre><code>${escapeHtml(code.join("\n"))}</code></pre>`);
+            index += 1;
+          } else if (/^#{1,4} /.test(line)) {
+            const level = line.match(/^#+/)[0].length;
+            const text = line.slice(level + 1);
+            const id = text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+            html.push(`<h${level} id="${id}">${inline(text)}</h${level}>`);
+            index += 1;
+          } else if (/^---+$/.test(line.trim())) {
+            html.push("<hr />");
+            index += 1;
+          } else if (/^!\[/.test(line)) {
+            const [, alt, src] = line.match(/^!\[([^\]]*)\]\(([^)]+)\)/);
+            html.push(`<figure class="doc-figure" data-src="${escapeHtml(src)}"><img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" /></figure>`);
+            index += 1;
+          } else if (line.trim().startsWith("|")) {
+            const rows = [];
+            for (; index < lines.length && lines[index].trim().startsWith("|"); index += 1) rows.push(cells(lines[index]));
+            const align = rows[1].map(cell => cell.endsWith(":") ? "right" : "left");
+            const head = rows[0].map((cell, column) => `<th style="text-align:${align[column]}">${inline(cell)}</th>`).join("");
+            const body = rows.slice(2).map(row => `<tr>${row.map((cell, column) => `<td style="text-align:${align[column]}">${inline(cell)}</td>`).join("")}</tr>`).join("");
+            html.push(`<div class="doc-table"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`);
+          } else if (/^- /.test(line)) {
+            const items = [];
+            for (; index < lines.length && /^- /.test(lines[index]); index += 1) items.push(`<li>${inline(lines[index].slice(2))}</li>`);
+            html.push(`<ul>${items.join("")}</ul>`);
+          } else {
+            const paragraph = [];
+            for (; index < lines.length && lines[index].trim() && !/^(#|\||- |```|!\[|---)/.test(lines[index]); index += 1) paragraph.push(lines[index]);
+            html.push(`<p>${inline(paragraph.join(" "))}</p>`);
+          }
+        }
+        return html.join("\n");
+      }
+
+      (async () => {
+        const doc = document.querySelector("#scoring-doc");
+        try {
+          const response = await fetch("scoring.md", { cache: "no-cache" });
+          if (!response.ok) throw new Error(`The scoring guide could not be loaded (${response.status}).`);
+          doc.innerHTML = render(await response.text());
+          // Inline the SVG figures so they use the page's font.
+          await Promise.all([...doc.querySelectorAll('.doc-figure[data-src$=".svg"]')].map(async figure => {
+            const svg = await fetch(figure.dataset.src).then(reply => reply.ok ? reply.text() : "");
+            if (svg.startsWith("<svg")) figure.innerHTML = svg;
+          }));
+        } catch (error) {
+          doc.textContent = error.message;
+        }
+      })();
+    </script>
+  </body>
+</html>

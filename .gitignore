@@ -16,3 +16,4 @@ frontend/flags/*.ico
 .neon
 .env.local
 node_modules/
+.agents/
