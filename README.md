@@ -27,8 +27,9 @@ python -m scripts.e2e_local            # add --headed to watch it
 
 It builds a blank SQLite database in a temporary folder the way the Render
 build does, starts the API on a free port, registers two players and fills
-their Top 10s through the real UI, previews a result on the admin page and
-checks the scores against the scoring module. It drives the installed Edge or
+their Top 10s and wildcards through the real UI (one of them via a named
+template), previews a result on the admin page, checks the scores against the
+scoring module and checks that the compare chart ends exactly on each score. It drives the installed Edge or
 Chrome, prints where it saved a screenshot of every step, and never touches
 `data/game.sqlite3` or a remote database.
 
