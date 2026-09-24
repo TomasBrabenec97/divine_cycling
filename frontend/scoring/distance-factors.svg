@@ -21,11 +21,11 @@
   <path d="M301.0,256.0 L301.0,193.0 Q301.0,189.0 305.0,189.0 L317.0,189.0 Q321.0,189.0 321.0,193.0 L321.0,256.0 Z" fill="#2f6f9f"><title>7 places off: ×0.31</title></path>
   <path d="M335.1,256.0 L335.1,203.8 Q335.1,199.8 339.1,199.8 L351.1,199.8 Q355.1,199.8 355.1,203.8 L355.1,256.0 Z" fill="#2f6f9f"><title>8 places off: ×0.26</title></path>
   <path d="M369.2,256.0 L369.2,212.5 Q369.2,208.5 373.2,208.5 L385.2,208.5 Q389.2,208.5 389.2,212.5 L389.2,256.0 Z" fill="#2f6f9f"><title>9 places off: ×0.22</title></path>
-  <path d="M403.2,256.0 L403.2,219.0 Q403.2,215.0 407.2,215.0 L419.2,215.0 Q423.2,215.0 423.2,219.0 L423.2,256.0 Z" fill="#cbbfae"><title>10 places off: ×0.19</title></path>
-  <path d="M437.3,256.0 L437.3,225.4 Q437.3,221.4 441.3,221.4 L453.3,221.4 Q457.3,221.4 457.3,225.4 L457.3,256.0 Z" fill="#cbbfae"><title>11 places off: ×0.16</title></path>
-  <path d="M471.4,256.0 L471.4,229.8 Q471.4,225.8 475.4,225.8 L487.4,225.8 Q491.4,225.8 491.4,229.8 L491.4,256.0 Z" fill="#cbbfae"><title>12 places off: ×0.14</title></path>
-  <path d="M505.5,256.0 L505.5,234.1 Q505.5,230.1 509.5,230.1 L521.5,230.1 Q525.5,230.1 525.5,234.1 L525.5,256.0 Z" fill="#cbbfae"><title>13 places off: ×0.12</title></path>
-  <path d="M539.6,256.0 L539.6,238.4 Q539.6,234.4 543.6,234.4 L555.6,234.4 Q559.6,234.4 559.6,238.4 L559.6,256.0 Z" fill="#cbbfae"><title>14 places off: ×0.10</title></path>
+  <path d="M403.2,256.0 L403.2,219.0 Q403.2,215.0 407.2,215.0 L419.2,215.0 Q423.2,215.0 423.2,219.0 L423.2,256.0 Z" fill="#2f6f9f"><title>10 places off: ×0.19</title></path>
+  <path d="M437.3,256.0 L437.3,225.4 Q437.3,221.4 441.3,221.4 L453.3,221.4 Q457.3,221.4 457.3,225.4 L457.3,256.0 Z" fill="#2f6f9f"><title>11 places off: ×0.16</title></path>
+  <path d="M471.4,256.0 L471.4,229.8 Q471.4,225.8 475.4,225.8 L487.4,225.8 Q491.4,225.8 491.4,229.8 L491.4,256.0 Z" fill="#2f6f9f"><title>12 places off: ×0.14</title></path>
+  <path d="M505.5,256.0 L505.5,234.1 Q505.5,230.1 509.5,230.1 L521.5,230.1 Q525.5,230.1 525.5,234.1 L525.5,256.0 Z" fill="#2f6f9f"><title>13 places off: ×0.12</title></path>
+  <path d="M539.6,256.0 L539.6,238.4 Q539.6,234.4 543.6,234.4 L555.6,234.4 Q559.6,234.4 559.6,238.4 L559.6,256.0 Z" fill="#2f6f9f"><title>14 places off: ×0.10</title></path>
   <text x="549.6" y="228.4" text-anchor="middle" fill="#2f3136" font-size="11" font-weight="400">×0.10</text>
   <text x="72.4" y="274.0" text-anchor="middle" fill="#746e66" font-size="11" font-weight="400">0</text>
   <text x="106.5" y="274.0" text-anchor="middle" fill="#746e66" font-size="11" font-weight="400">1</text>
@@ -43,5 +43,4 @@
   <text x="515.5" y="274.0" text-anchor="middle" fill="#746e66" font-size="11" font-weight="400">13</text>
   <text x="549.6" y="274.0" text-anchor="middle" fill="#746e66" font-size="11" font-weight="400">14</text>
   <text x="570.0" y="294.0" text-anchor="end" fill="#746e66" font-size="11" font-weight="400">places off</text>
-  <text x="632.0" y="22.0" text-anchor="end" fill="#746e66" font-size="11" font-weight="400">grey: more than 9 places off, unreachable while only the top 10 scores</text>
 </svg>

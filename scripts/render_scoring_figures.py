@@ -112,6 +112,7 @@ def rounded_column(x: float, y_top: float, y_base: float, width: float, color: s
 
 def distance_figure() -> str:
     factors = DEFAULT_RULES.distance_factors
+    # The furthest a scoring guess can be off: guessed 1st, finished at the depth.
     reachable = DEFAULT_RULES.placement_depth - 1
     plot = Plot((-0.6, len(factors) - 0.4), (0, 1.0), "Distance factor by places off")
     plot.grid([0, 0.25, 0.5, 0.75, 1.0], lambda tick: f"×{tick:.2f}")
@@ -125,11 +126,12 @@ def distance_figure() -> str:
         if distance in (0, 1, len(factors) - 1):
             plot.text(x, plot.y(factor) - 6, f"×{factor:.2f}", anchor="middle", color=INK)
     plot.x_ticks([(d, str(d)) for d in range(len(factors))], "places off")
-    plot.text(
-        WIDTH - 8, TOP - 18,
-        f"grey: more than {reachable} places off, unreachable while only the top 10 scores",
-        anchor="end",
-    )
+    if reachable < len(factors) - 1:
+        plot.text(
+            WIDTH - 8, TOP - 18,
+            f"grey: more than {reachable} places off, beyond the deepest scored finish",
+            anchor="end",
+        )
     return plot.svg()
 
 

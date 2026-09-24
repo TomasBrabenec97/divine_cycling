@@ -17,7 +17,8 @@ def test_the_guide_quotes_the_current_rules() -> None:
     rules = DEFAULT_RULES
     assert f"rules version **{rules.version}**" in GUIDE
 
-    factors = [f"×{factor:.2f}" for factor in rules.distance_factors[: rules.placement_depth]]
+    factors = [f"×{factor:.2f}" for factor in rules.distance_factors]
+    assert rules.placement_depth == 10 + len(rules.distance_factors) - 1
     assert table_row("Factor", factors) in GUIDE
 
     points = rules.top10_points

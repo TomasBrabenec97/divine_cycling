@@ -50,20 +50,30 @@ def test_placement_scales_base_points_by_distance_and_rank() -> None:
     assert line["points"] == pytest.approx(15 * 0.68 * position_multiplier(30), abs=1e-5)
 
 
-def test_riders_outside_the_actual_top_ten_earn_no_placement_points() -> None:
-    score = score_prediction([(10, 5), (9, 6)], [], {5: 11, 6: 24}, {5: UNRANKED, 6: 700})
+def test_near_misses_outside_the_top_ten_still_earn_placement_points() -> None:
+    # Guessed 10th, finished 11th: one place off, like any other near miss.
+    score = score_prediction([(10, 5)], [], {5: 11}, {5: 1})
+    assert score["placements"][0]["distance_factor"] == 0.8
+    assert score["placements"][0]["points"] == pytest.approx(5 * 0.8)
 
-    assert [line["points"] for line in score["placements"]] == [0.0, 0.0]
+    # 24th is the deepest a 10th pick can finish and still score (14 places off).
+    deepest = score_prediction([(10, 5)], [], {5: 24}, {5: 1})
+    assert deepest["placements"][0]["distance"] == 14
+    assert deepest["placements"][0]["points"] == pytest.approx(5 * 0.1)
+
+
+def test_far_misses_and_non_finishers_earn_no_placement_points() -> None:
+    ranks = {5: UNRANKED, 6: 700, 7: 30}
+    score = score_prediction([(1, 5), (10, 6), (5, 7)], [], {5: 16, 6: 25}, ranks)
+
+    # 15 places off, beyond the deepest scored finish, and no classified finish.
+    assert [line["points"] for line in score["placements"]] == [0.0, 0.0, 0.0]
     assert score["total_points"] == 0
 
 
-def test_placement_depth_can_reward_near_misses_outside_the_top_ten() -> None:
-    deep = replace(DEFAULT_RULES, placement_depth=24)
-    score = score_prediction([(10, 5)], [], {5: 24}, {5: 1}, rules=deep)
-
-    assert score["placements"][0]["distance"] == 14
-    assert score["placements"][0]["points"] == pytest.approx(5 * 0.1)
-    assert score_prediction([(10, 5)], [], {5: 25}, {5: 1}, rules=deep)["total_points"] == 0
+def test_placement_depth_can_restrict_placement_to_the_top_ten() -> None:
+    top_ten_only = replace(DEFAULT_RULES, placement_depth=10)
+    assert score_prediction([(10, 5)], [], {5: 11}, {5: 1}, rules=top_ten_only)["total_points"] == 0
 
 
 def test_distance_factors_follow_the_configured_curve() -> None:
