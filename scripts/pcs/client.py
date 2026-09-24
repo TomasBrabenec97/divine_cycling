@@ -81,6 +81,32 @@ class PCSClient:
         self.stats["network"] += 1
         return html
 
+    def get_bytes(self, path: str, referer: str = "") -> bytes:
+        """Return a binary asset such as an image, cached on disk like pages are.
+
+        PCS refuses images requested without the page that shows them, so pass
+        that page's path as ``referer``.
+        """
+        url = self.url(path)
+        cached = self._cache_path(url).with_suffix(".bin")
+        if not self.refresh and cached.exists():
+            self.stats["cache"] += 1
+            return cached.read_bytes()
+
+        headers = dict(HEADERS, Accept="image/avif,image/webp,image/png,image/*,*/*;q=0.8")
+        if referer:
+            headers["Referer"] = self.url(referer)
+        self._wait_turn()
+        response = self.session.get(url, headers=headers, timeout=30)
+        self._last_request_at = time.monotonic()
+        if response.status_code == 404:
+            raise PCSUnavailable(f"404 {url}")
+        response.raise_for_status()
+        cached.parent.mkdir(parents=True, exist_ok=True)
+        cached.write_bytes(response.content)
+        self.stats["network"] += 1
+        return response.content
+
     def get_optional(self, path: str, params: dict[str, object] | None = None) -> str | None:
         """Like :meth:`get`, but return ``None`` instead of raising on 404/500."""
         try:

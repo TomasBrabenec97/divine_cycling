@@ -115,3 +115,32 @@ def test_result_simulation_scores_without_persisting_results() -> None:
     assert preview.json()["is_simulation"] is True
     assert preview.json()["entries"][0]["total_points"] > 0
     assert client.get(f"/api/events/{event['id']}/leaderboard").status_code == 409
+
+
+def test_event_riders_carry_their_trade_team() -> None:
+    from datetime import date
+
+    from app.models import RiderProfile, RiderRanking
+
+    client = TestClient(app)
+    riders = client.get("/api/events/active").json()["riders"]
+    profiled, ranked_only = riders[0]["id"], riders[1]["id"]
+    with db_module.SessionLocal() as session:
+        session.add_all(
+            [
+                RiderProfile(rider_id=profiled, team="Team Profile", profile_url="https://pcs/x"),
+                RiderRanking(rider_id=ranked_only, ranking_date=date(2025, 12, 30), team="Old"),
+                RiderRanking(rider_id=ranked_only, ranking_date=date(2026, 9, 22), team="New"),
+            ]
+        )
+        session.commit()
+
+    event = client.get("/api/events/active").json()
+    teams = {rider["id"]: rider["team"] for rider in event["riders"]}
+    assert teams[profiled] == "Team Profile"
+    assert teams[ranked_only] == "New"
+    assert teams[riders[2]["id"]] is None
+
+    reference = client.get("/api/riders/reference").json()
+    profile = next(rider for rider in reference["riders"] if rider["id"] == profiled)["profile"]
+    assert profile["profile_url"] == "https://pcs/x"

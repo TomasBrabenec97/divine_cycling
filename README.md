@@ -18,6 +18,20 @@ python -m uvicorn app.main:app --reload
 
 The API is then available at `http://127.0.0.1:8000`; interactive docs are at `/docs`. The database is local SQLite at `data/game.sqlite3` and is intentionally ignored by git.
 
+### End-to-end smoke test
+
+```powershell
+python -m pip install -e ".[e2e]"
+python -m scripts.e2e_local            # add --headed to watch it
+```
+
+It builds a blank SQLite database in a temporary folder the way the Render
+build does, starts the API on a free port, registers two players and fills
+their Top 10s through the real UI, previews a result on the admin page and
+checks the scores against the scoring module. It drives the installed Edge or
+Chrome, prints where it saved a screenshot of every step, and never touches
+`data/game.sqlite3` or a remote database.
+
 ## Deployment
 
 The public deployment is three free services, all live:
@@ -124,6 +138,19 @@ A missing year means the rider was not on that startlist; a `null` rank with a
 status means he started and did not finish classified. Editions still to be
 ridden -- the 2026 Worlds and Il Lombardia -- are reported and skipped, never
 guessed. The race list lives in `scripts/pcs/races.py` and `--races` narrows it.
+
+`fetch_team_icons` gives every trade team on the startlist a small jersey icon
+for the rider list, the team filter and the rider card:
+
+```powershell
+python -m scripts.fetch_team_icons
+```
+
+It maps team names to PCS team slugs through the cached ranking pages, visits
+each team page once for its jersey, and writes 48 px PNGs plus
+`frontend/teams/index.json` (team name to file). Teams PCS shows no jersey for
+are left out; the UI draws their initials instead. It needs Pillow, which the
+`dev` extra installs.
 
 PCS disallows automated access in robots.txt. Run these from your own machine,
 not from a server or CI, and leave the request delay alone.
