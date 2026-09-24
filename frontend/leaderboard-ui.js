@@ -16,6 +16,8 @@
   const number = value => Number(value).toFixed(2).replace(/\.00$/, "");
   const points = value => `${number(value)} pts`;
   const factor = value => `×${Number(value).toFixed(2)}`;
+  // Distance factors go down to ×0.075, so they keep a third decimal.
+  const distanceFactor = value => `×${Number(value).toFixed(3)}`;
   const ordinal = value => {
     const tens = value % 100;
     const suffix = tens >= 11 && tens <= 13 ? "th" : ({ 1: "st", 2: "nd", 3: "rd" })[value % 10] || "th";
@@ -35,7 +37,7 @@
         kind: "placement",
         label: `#${line.predicted_position} ${riderName(riderById, line.rider_id)}`,
         detail: `guessed ${ordinal(line.predicted_position)}, finished ${finishLabel(line.actual_position)}`,
-        formula: line.points > 0 ? `${line.base_points} × ${factor(line.distance_factor)} × ${factor(line.multiplier)}` : "",
+        formula: line.points > 0 ? `${line.base_points} × ${distanceFactor(line.distance_factor)} × ${factor(line.multiplier)}` : "",
         points: line.points,
       })),
       ...entry.permutations.map(line => ({
@@ -156,7 +158,7 @@
         short: String(pick),
         points: line ? line.points : 0,
         rows: line
-          ? [[points(line.points), `Pick #${pick}: ${riderName(riderById, line.rider_id)}`], ["", `guessed ${ordinal(pick)}, finished ${finishLabel(line.actual_position)}`], ["", line.points > 0 ? `${line.base_points} base × ${Number(line.distance_factor).toFixed(2)} distance × ${Number(line.multiplier).toFixed(2)} rank` : "outside the scored places: no placement points"]]
+          ? [[points(line.points), `Pick #${pick}: ${riderName(riderById, line.rider_id)}`], ["", `guessed ${ordinal(pick)}, finished ${finishLabel(line.actual_position)}`], ["", line.points > 0 ? `${line.base_points} base × ${Number(line.distance_factor).toFixed(3)} distance × ${Number(line.multiplier).toFixed(2)} rank` : "outside the scored places: no placement points"]]
           : [["0 pts", `Pick #${pick}: empty`]],
       });
     }
@@ -385,7 +387,7 @@
       ["span", "score-rider", riderName(riderById, line.rider_id)],
       ["span", "", line.actual_position ? `#${line.actual_position}` : "Out"],
       ["span", "", String(line.base_points)],
-      ["span", "", line.actual_position && line.actual_position <= depth ? factor(line.distance_factor) : "—"],
+      ["span", "", line.actual_position && line.actual_position <= depth ? distanceFactor(line.distance_factor) : "—"],
       ["span", "", factor(line.multiplier)],
       ["strong", "", points(line.points)],
     ])));

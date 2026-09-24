@@ -46,27 +46,27 @@ def test_placement_scales_base_points_by_distance_and_rank() -> None:
     line = score["placements"][0]
 
     assert line["distance"] == 2
-    assert line["distance_factor"] == distance_factor(2) == 0.68
-    assert line["points"] == pytest.approx(15 * 0.68 * position_multiplier(30), abs=1e-5)
+    assert line["distance_factor"] == distance_factor(2) == pytest.approx(0.5625)
+    assert line["points"] == pytest.approx(15 * 0.5625 * position_multiplier(30), abs=1e-5)
 
 
 def test_near_misses_outside_the_top_ten_still_earn_placement_points() -> None:
     # Guessed 10th, finished 11th: one place off, like any other near miss.
     score = score_prediction([(10, 5)], [], {5: 11}, {5: 1})
-    assert score["placements"][0]["distance_factor"] == 0.8
-    assert score["placements"][0]["points"] == pytest.approx(5 * 0.8)
+    assert score["placements"][0]["distance_factor"] == 0.75
+    assert score["placements"][0]["points"] == pytest.approx(5 * 0.75)
 
-    # 24th is the deepest a 10th pick can finish and still score (14 places off).
-    deepest = score_prediction([(10, 5)], [], {5: 24}, {5: 1})
-    assert deepest["placements"][0]["distance"] == 14
-    assert deepest["placements"][0]["points"] == pytest.approx(5 * 0.1)
+    # 19th is the deepest a 10th pick can finish and still score (9 places off).
+    deepest = score_prediction([(10, 5)], [], {5: 19}, {5: 1})
+    assert deepest["placements"][0]["distance"] == 9
+    assert deepest["placements"][0]["points"] == pytest.approx(5 * 0.75**9, abs=1e-5)
 
 
 def test_far_misses_and_non_finishers_earn_no_placement_points() -> None:
     ranks = {5: UNRANKED, 6: 700, 7: 30}
-    score = score_prediction([(1, 5), (10, 6), (5, 7)], [], {5: 16, 6: 25}, ranks)
+    score = score_prediction([(1, 5), (10, 6), (5, 7)], [], {5: 11, 6: 20}, ranks)
 
-    # 15 places off, beyond the deepest scored finish, and no classified finish.
+    # 10 places off, beyond the deepest scored finish, and no classified finish.
     assert [line["points"] for line in score["placements"]] == [0.0, 0.0, 0.0]
     assert score["total_points"] == 0
 
@@ -76,12 +76,13 @@ def test_placement_depth_can_restrict_placement_to_the_top_ten() -> None:
     assert score_prediction([(10, 5)], [], {5: 11}, {5: 1}, rules=top_ten_only)["total_points"] == 0
 
 
-def test_distance_factors_follow_the_configured_curve() -> None:
+def test_distance_factors_decay_by_a_quarter_per_place_and_stop_at_ten() -> None:
     assert distance_factor(0) == 1.0
-    assert distance_factor(1) == 0.8
-    assert distance_factor(14) == 0.1
-    assert distance_factor(15) == 0.0
-    factors = [distance_factor(d) for d in range(16)]
+    assert distance_factor(1) == 0.75
+    assert distance_factor(9) == pytest.approx(0.075, abs=5e-4)
+    assert distance_factor(10) == 0.0
+    assert all(distance_factor(d) == pytest.approx(0.75**d) for d in range(10))
+    factors = [distance_factor(d) for d in range(12)]
     assert factors == sorted(factors, reverse=True)
 
 
@@ -116,8 +117,8 @@ def test_wildcards_earn_a_finish_band_bonus_times_their_own_multiplier() -> None
     lines = score["wildcards"]
 
     assert [line["base_points"] for line in lines] == [10, 7, 5]
-    assert lines[0]["points"] == pytest.approx(10 * 3.0)
-    assert lines[1]["points"] == pytest.approx(7 * 1.25)
+    assert lines[0]["points"] == pytest.approx(10 * 4.0)
+    assert lines[1]["points"] == pytest.approx(7 * 2.25)
     assert lines[2]["points"] == 0.0  # the world number one is no wildcard
     assert score_prediction([], [23], {23: 11}, ranks)["wildcards"][0]["points"] == 0.0
 
@@ -134,16 +135,17 @@ def test_rank_curves_hit_their_anchors_and_never_decrease() -> None:
     assert position_boost(100) == 1.0
     assert position_multiplier(UNRANKED) == 2.0
     assert wildcard_multiplier(1) == 0.0
-    assert wildcard_multiplier(30) < 0.05
-    assert wildcard_multiplier(100) == pytest.approx(1.0)
-    assert wildcard_multiplier(300) == pytest.approx(2.0)
-    assert wildcard_multiplier(500) == 3.0
-    assert wildcard_multiplier(UNRANKED) == 3.0
+    assert wildcard_multiplier(30) < 0.07
+    assert 0.5 < wildcard_multiplier(75) < wildcard_multiplier(80) < 1.0
+    assert wildcard_multiplier(100) == pytest.approx(2.0)
+    assert wildcard_multiplier(300) == pytest.approx(3.0)
+    assert wildcard_multiplier(500) == 4.0
+    assert wildcard_multiplier(UNRANKED) == 4.0
 
     positions = [position_multiplier(rank) for rank in range(1, 701)]
     wildcards = [wildcard_multiplier(rank) for rank in range(1, 701)]
     assert positions == sorted(positions) and max(positions) == 2.0
-    assert wildcards == sorted(wildcards) and max(wildcards) == 3.0
+    assert wildcards == sorted(wildcards) and max(wildcards) == 4.0
 
 
 def test_scoring_is_deterministic_and_rounds_once() -> None:

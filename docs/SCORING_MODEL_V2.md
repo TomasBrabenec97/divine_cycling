@@ -313,3 +313,16 @@ The model is implemented in `app/scoring.py`; every number below lives in `Scori
 | Results entry | Admin enters finishes through 25th: the lineage view, and every finish that can earn placement points. | `MAX_RESULT_POSITION` |
 
 The player-facing explanation is `frontend/scoring.md`, served as `scoring.html`; `tests/test_scoring_guide.py` fails if its numbers drift from the rules. The curves in this document and in the guide are drawn from the live rules by `python -m scripts.render_scoring_figures`.
+
+## Rules version v3.0
+
+Two changes on review; everything else above still holds.
+
+| Rule | v2.0 | v3.0 |
+|---|---|---|
+| Distance factor | 1.00, 0.80, then exponential to 0.10 at 14 places; zero from 15 | `0.75 ** distance`: 1.00, 0.75, 0.563, … 0.075 at 9 places; **zero from 10** |
+| Deepest scoring finish (`placement_depth`) | 24th | **19th** — a 10th pick 9 places off |
+| Wildcard multiplier at rank 100 (`wildcard_transition`) | ×1.00 | **×2.00** (same exponential ramp from rank 1, scaled; it matters from ranks 70–80) |
+| Wildcard multiplier cap from rank 500 (`wildcard_max`) | ×3.00 | **×4.00**, linear from ×2.00 at rank 100 |
+
+The most the wildcards can add rises from 90 to 120 points. Published runs keep the version they were scored under; stored v2 and v3 breakdowns share one shape and are both served as stored.
