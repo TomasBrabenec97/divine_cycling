@@ -18,6 +18,7 @@ from app.models import (
     Event,
     EventResult,
     EventRider,
+    FavouriteRider,
     Player,
     Prediction,
     PredictionItem,
@@ -32,6 +33,7 @@ from app.models import (
 )
 from app.schemas import (
     EventResponse,
+    FavouritesUpdate,
     LeaderboardEntry,
     LeaderboardResponse,
     PicksBase,
@@ -57,7 +59,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
     allow_credentials=False,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "X-Admin-Key"],
 )
 # The rider reference set is a few hundred KB of JSON the page now loads on
@@ -464,6 +466,130 @@ def delete_template(
 ) -> None:
     require_open_event(event_id, db)
     db.delete(owned_template(db, event_id, template_id, player_id))
+    db.commit()
+
+
+# -- favourites: riders a player hearts to narrow the pool ---------------------
+
+
+def require_player_and_starters(
+    db: Session, event_id: int, player_id: int, rider_ids: set[int]
+) -> None:
+    if db.get(Event, event_id) is None:
+        raise HTTPException(status_code=404, detail="Event not found")
+    if db.get(Player, player_id) is None:
+        raise HTTPException(status_code=404, detail="Player not found")
+    if not rider_ids:
+        return
+    starters = set(
+        db.scalars(
+            select(EventRider.rider_id).where(
+                EventRider.event_id == event_id,
+                EventRider.rider_id.in_(rider_ids),
+                EventRider.is_starter.is_(True),
+            )
+        ).all()
+    )
+    if starters != rider_ids:
+        raise HTTPException(status_code=422, detail="Favourites must be riders on the startlist")
+
+
+def require_player_and_starter(db: Session, event_id: int, player_id: int, rider_id: int) -> None:
+    require_player_and_starters(db, event_id, player_id, {rider_id})
+
+
+@app.get("/api/events/{event_id}/players/{player_id}/favourites", response_model=list[int])
+def list_favourites(
+    event_id: int, player_id: int, db: Session = Depends(get_db)
+) -> list[int]:
+    return list(
+        db.scalars(
+            select(FavouriteRider.rider_id)
+            .where(FavouriteRider.event_id == event_id, FavouriteRider.player_id == player_id)
+            .order_by(FavouriteRider.created_at, FavouriteRider.id)
+        ).all()
+    )
+
+
+@app.put(
+    "/api/events/{event_id}/players/{player_id}/favourites/{rider_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def add_favourite(
+    event_id: int, player_id: int, rider_id: int, db: Session = Depends(get_db)
+) -> None:
+    require_player_and_starter(db, event_id, player_id, rider_id)
+    exists = db.scalar(
+        select(FavouriteRider.id).where(
+            FavouriteRider.event_id == event_id,
+            FavouriteRider.player_id == player_id,
+            FavouriteRider.rider_id == rider_id,
+        )
+    )
+    if exists is None:
+        db.add(FavouriteRider(event_id=event_id, player_id=player_id, rider_id=rider_id))
+        try:
+            db.commit()
+        except IntegrityError:
+            # A double tap raced itself; the favourite is there either way.
+            db.rollback()
+
+
+@app.patch("/api/events/{event_id}/players/{player_id}/favourites", response_model=list[int])
+def update_favourites(
+    event_id: int, player_id: int, payload: FavouritesUpdate, db: Session = Depends(get_db)
+) -> list[int]:
+    """Heart and un-heart many riders at once; returns the whole list afterwards."""
+    require_player_and_starters(db, event_id, player_id, set(payload.add))
+    if payload.remove:
+        db.execute(
+            delete(FavouriteRider).where(
+                FavouriteRider.event_id == event_id,
+                FavouriteRider.player_id == player_id,
+                FavouriteRider.rider_id.in_(payload.remove),
+            )
+        )
+    existing = set(list_favourites(event_id, player_id, db))
+    db.add_all(
+        FavouriteRider(event_id=event_id, player_id=player_id, rider_id=rider_id)
+        for rider_id in dict.fromkeys(payload.add)
+        if rider_id not in existing
+    )
+    try:
+        db.commit()
+    except IntegrityError:
+        # A concurrent request hearted some of them first; they are there either way.
+        db.rollback()
+    return list_favourites(event_id, player_id, db)
+
+
+@app.delete(
+    "/api/events/{event_id}/players/{player_id}/favourites",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def clear_favourites(event_id: int, player_id: int, db: Session = Depends(get_db)) -> None:
+    db.execute(
+        delete(FavouriteRider).where(
+            FavouriteRider.event_id == event_id, FavouriteRider.player_id == player_id
+        )
+    )
+    db.commit()
+
+
+@app.delete(
+    "/api/events/{event_id}/players/{player_id}/favourites/{rider_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def remove_favourite(
+    event_id: int, player_id: int, rider_id: int, db: Session = Depends(get_db)
+) -> None:
+    db.execute(
+        delete(FavouriteRider).where(
+            FavouriteRider.event_id == event_id,
+            FavouriteRider.player_id == player_id,
+            FavouriteRider.rider_id == rider_id,
+        )
+    )
     db.commit()
 
 

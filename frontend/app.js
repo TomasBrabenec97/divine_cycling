@@ -17,7 +17,7 @@ const PROFILE_FILTERS = [
 const emptyProfileFilters = () => Object.fromEntries(PROFILE_FILTERS.map((filter) => [filter.key, { min: "", max: "", mode: filter.modes?.[0].id }]));
 const emptyAdvancedFilters = () => ({ resultCells: [], resultMin: "", resultMax: "", profile: emptyProfileFilters() });
 const emptyFilters = () => ({ search: "", countries: [], teams: [], rankMin: "", rankMax: "", pointsMin: "", pointsMax: "", ...emptyAdvancedFilters() });
-const state = { event: null, player: null, reference: null, referencePromise: null, teamIcons: {}, apiStatus: "starting", apiReadyPromise: null, picks: Array(10).fill(null), savedPicks: Array(10).fill(null), wildcards: Array(WILDCARD_COUNT).fill(null), savedWildcards: Array(WILDCARD_COUNT).fill(null), undoStack: [], redoStack: [], mobilePendingRiderId: null, riderView: "country", riderSort: "alphabetical", riderSortDirection: "asc", riderSelectionFilter: "all", filters: emptyFilters(), advancedDraft: null, lists: { final: null, templates: [] }, activeList: "final", renamingList: null };
+const state = { event: null, player: null, reference: null, referencePromise: null, teamIcons: {}, apiStatus: "starting", apiReadyPromise: null, picks: Array(10).fill(null), savedPicks: Array(10).fill(null), wildcards: Array(WILDCARD_COUNT).fill(null), savedWildcards: Array(WILDCARD_COUNT).fill(null), undoStack: [], redoStack: [], mobilePendingRiderId: null, riderView: "country", riderSort: "alphabetical", riderSortDirection: "asc", riderSelectionFilter: "all", filters: emptyFilters(), advancedDraft: null, lists: { final: null, templates: [] }, activeList: "final", renamingList: null, favourites: new Set(), favouritesOnly: false };
 const $ = (selector) => document.querySelector(selector);
 const isMobileLayout = () => window.matchMedia("(max-width: 650px)").matches;
 const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
@@ -51,6 +51,91 @@ const rememberPickState = () => { state.undoStack.push(pickSnapshot()); if (stat
 const resetPickHistory = () => { state.undoStack = []; state.redoStack = []; };
 function restorePickState(from, to, message) { const next = from.pop(); if (!next) return; to.push(pickSnapshot()); if (to.length > 50) to.shift(); state.picks = next.picks; state.wildcards = next.wildcards; state.mobilePendingRiderId = null; document.body.classList.remove("mobile-picking"); showMessage("#prediction-message", message, true); render(); }
 const formatMultiplier = (value) => `×${Number(value ?? 1).toFixed(2)}`;
+// A broken heart: the same outline, split by a zigzag crack.
+const CRACK_PATH = "M12.4 7.4 10.6 11l2.6 2-1.8 3.8";
+const HEART_PATH = "M12 20.5s-7.5-4.6-9.3-9.2C1.5 8.2 3.3 4.8 6.6 4.5c2-.2 3.7.9 5.4 3 1.7-2.1 3.4-3.2 5.4-3 3.3.3 5.1 3.7 3.9 6.8-1.8 4.6-9.3 9.2-9.3 9.2Z";
+function groupHeart(key, riders, label) {
+  const on = riders.length > 0 && riders.every((rider) => state.favourites.has(rider.id));
+  const action = on ? `Remove the ${riders.length} ${label} riders shown from your favourites` : `Add the ${riders.length} ${label} riders shown to your favourites`;
+  return `<button type="button" class="group-fav ${on ? "on" : ""}" data-group-fav="${escapeHtml(key)}" aria-pressed="${on}" aria-label="${escapeHtml(action)}" title="${escapeHtml(action)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${HEART_PATH}" /></svg></button>`;
+}
+function heartButton(rider, className) {
+  const on = state.favourites.has(rider.id);
+  const label = `${on ? "Remove" : "Add"} ${escapeHtml(rider.name)} ${on ? "from" : "to"} your favourites`;
+  return `<button type="button" class="${className} ${on ? "on" : ""}" data-rider-fav="${rider.id}" aria-pressed="${on}" aria-label="${label}" title="${on ? "Favourite: tap to remove" : "Add to favourites"}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${HEART_PATH}" /></svg></button>`;
+}
+// Favourites narrow the pool you build lists from; the heart flips at once and
+// the server catches up, rolling back if it refuses.
+async function toggleFavourite(riderId) {
+  const on = !state.favourites.has(riderId);
+  if (on) state.favourites.add(riderId); else state.favourites.delete(riderId);
+  refreshFavouriteViews();
+  try {
+    await request(`/api/events/${state.event.id}/players/${state.player.id}/favourites/${riderId}`, { method: on ? "PUT" : "DELETE" });
+  } catch (error) {
+    if (on) state.favourites.delete(riderId); else state.favourites.add(riderId);
+    refreshFavouriteViews();
+    showMessage("#prediction-message", error.message);
+  }
+}
+// Heart or un-heart many riders at once (a group, or everything shown) with one
+// request; the server answers with the whole list, which becomes the truth.
+async function updateFavourites({ add = [], remove = [] }) {
+  if (!add.length && !remove.length) return;
+  const previous = new Set(state.favourites);
+  add.forEach((riderId) => state.favourites.add(riderId));
+  remove.forEach((riderId) => state.favourites.delete(riderId));
+  refreshFavouriteViews();
+  try {
+    const stored = await request(`/api/events/${state.event.id}/players/${state.player.id}/favourites`, { method: "PATCH", body: JSON.stringify({ add, remove }) });
+    state.favourites = new Set(stored);
+    refreshFavouriteViews();
+  } catch (error) {
+    state.favourites = previous;
+    refreshFavouriteViews();
+    showMessage("#prediction-message", error.message);
+  }
+}
+function addShownToFavourites() {
+  const add = visibleRiderList().filter((rider) => !state.favourites.has(rider.id)).map((rider) => rider.id);
+  updateFavourites({ add });
+  if (add.length) showMessage("#prediction-message", `Added ${add.length} ${add.length === 1 ? "rider" : "riders"} to your favourites.`, true);
+}
+// A group's heart covers the riders it shows: fill them all, or, when all are
+// favourites already, empty them again.
+function toggleGroupFavourites(key) {
+  const riders = visibleRiderList().filter((rider) => groupKeyFor(rider) === key).map((rider) => rider.id);
+  const allFavourite = riders.length > 0 && riders.every((riderId) => state.favourites.has(riderId));
+  if (allFavourite) updateFavourites({ remove: riders });
+  else updateFavourites({ add: riders.filter((riderId) => !state.favourites.has(riderId)) });
+}
+
+async function clearFavourites() {
+  if (!state.favourites.size) return;
+  const previous = new Set(state.favourites);
+  state.favourites = new Set();
+  // An empty favourites-only view would look like a broken filter.
+  state.favouritesOnly = false;
+  refreshFavouriteViews();
+  try {
+    await request(`/api/events/${state.event.id}/players/${state.player.id}/favourites`, { method: "DELETE" });
+    showMessage("#prediction-message", "Favourites cleared.", true);
+  } catch (error) {
+    state.favourites = previous;
+    refreshFavouriteViews();
+    showMessage("#prediction-message", error.message);
+  }
+}
+function refreshFavouriteViews() {
+  render();
+  const detail = $("#rider-detail-modal");
+  const riderId = Number(detail.dataset.rider);
+  if (detail.open && riderId) {
+    const button = detail.querySelector("[data-rider-fav]");
+    const rider = state.event.riders.find((item) => item.id === riderId);
+    if (button && rider) button.outerHTML = heartButton(rider, "detail-fav");
+  }
+}
 const rankingLabel = (rider) => rider.uci_rank === 999999 ? "UCI unranked" : `UCI #${rider.uci_rank}${rider.uci_points === null ? "" : ` · ${rider.uci_points.toLocaleString()} pts`}`;
 let predictionMessageVersion = 0;
 
@@ -371,11 +456,13 @@ function renderRiderDetail(riderId) {
   const careerWins = profile.wins_total === null || profile.wins_total === undefined ? "" : `<span class="rider-detail-wins">${profile.wins_total} career wins</span>`;
   const team = `<span class="rider-detail-team-name">${rider.team ? `${teamIcon(rider.team)}${escapeHtml(rider.team)}` : escapeHtml(countryName(rider.nation))}</span>`;
   const pcsLink = profile.profile_url ? `<a class="pcs-link" href="${escapeHtml(profile.profile_url)}" target="_blank" rel="noopener noreferrer">ProCyclingStats profile <span aria-hidden="true">↗</span></a>` : "";
-  content.innerHTML = `<header class="rider-detail-header"><div><p class="eyebrow">RIDER PROFILE</p><h2>${flag(rider.nation)}${escapeHtml(rider.name)}</h2><p class="rider-detail-team">${team}${careerWins}</p>${pcsLink}</div></header><section class="rider-stat-grid"><div><span>Age</span><strong>${profile.age ?? "—"}</strong></div><div><span>UCI now</span><strong>${displayPoints(rider.uci_points)}</strong><small>${displayRank(rider.uci_rank === 999999 ? null : rider.uci_rank)}</small></div><div><span>Season start</span><strong>${displayPoints(seasonStart?.uci_points)}</strong><small>${displayRank(seasonStart?.uci_rank)}</small></div><div class="ranking-trend ${trendClass}"><span>Ranking trend</span><strong>${trendText}</strong><small>${season ? `${season.season}: ${season.wins} wins · ${season.top10s} top 10s` : "Season totals unavailable"}</small></div></section><section class="rider-history"><div class="rider-history-heading"><div><p class="eyebrow">PAST RESULTS</p><h3>Tracked one-day races</h3></div></div><div class="rider-history-table-wrap"><table class="rider-history-table"><thead><tr><th scope="col">Race</th>${years.map((year) => `<th scope="col">${year}${races.some((race) => race.editions.some((edition) => edition.year === year && edition.note)) ? "<small>upcoming</small>" : ""}</th>`).join("")}</tr></thead><tbody>${races.map((race) => `<tr><th scope="row">${escapeHtml(race.label)}</th>${years.map((year) => `<td>${resultCell(resultMap.get(`${race.key}-${year}`))}</td>`).join("")}</tr>`).join("")}</tbody></table></div><p class="rider-history-legend"><span class="result-medal medal-1">1</span> podium <span class="result-top-ten">7</span> top 10 <span class="result-status">DNF</span> did not finish · blank: not on the startlist</p></section>`;
+  const favourite = state.player ? heartButton(rider, "detail-fav") : "";
+  content.innerHTML = `<header class="rider-detail-header"><div><p class="eyebrow">RIDER PROFILE</p><h2>${flag(rider.nation)}${escapeHtml(rider.name)}</h2><p class="rider-detail-team">${team}${careerWins}</p><div class="rider-detail-links">${favourite}${pcsLink}</div></div></header><section class="rider-stat-grid"><div><span>Age</span><strong>${profile.age ?? "—"}</strong></div><div><span>UCI now</span><strong>${displayPoints(rider.uci_points)}</strong><small>${displayRank(rider.uci_rank === 999999 ? null : rider.uci_rank)}</small></div><div><span>Season start</span><strong>${displayPoints(seasonStart?.uci_points)}</strong><small>${displayRank(seasonStart?.uci_rank)}</small></div><div class="ranking-trend ${trendClass}"><span>Ranking trend</span><strong>${trendText}</strong><small>${season ? `${season.season}: ${season.wins} wins · ${season.top10s} top 10s` : "Season totals unavailable"}</small></div></section><section class="rider-history"><div class="rider-history-heading"><div><p class="eyebrow">PAST RESULTS</p><h3>Tracked one-day races</h3></div></div><div class="rider-history-table-wrap"><table class="rider-history-table"><thead><tr><th scope="col">Race</th>${years.map((year) => `<th scope="col">${year}${races.some((race) => race.editions.some((edition) => edition.year === year && edition.note)) ? "<small>upcoming</small>" : ""}</th>`).join("")}</tr></thead><tbody>${races.map((race) => `<tr><th scope="row">${escapeHtml(race.label)}</th>${years.map((year) => `<td>${resultCell(resultMap.get(`${race.key}-${year}`))}</td>`).join("")}</tr>`).join("")}</tbody></table></div><p class="rider-history-legend"><span class="result-medal medal-1">1</span> podium <span class="result-top-ten">7</span> top 10 <span class="result-status">DNF</span> did not finish · blank: not on the startlist</p></section>`;
 }
 
 async function openRiderDetail(riderId) {
   const dialog = $("#rider-detail-modal");
+  dialog.dataset.rider = String(riderId);
   const content = $("#rider-detail-content");
   const pageScrollY = window.scrollY;
   const positionModalAndPage = () => {
@@ -595,10 +682,12 @@ function markSaved(list) {
 
 async function loadLists() {
   const base = `/api/events/${state.event.id}`;
-  const [prediction, templates] = await Promise.all([
+  const [prediction, templates, favourites] = await Promise.all([
     request(`${base}/predictions/${state.player.id}`).catch(() => null),
     request(`${base}/players/${state.player.id}/templates`).catch(() => []),
+    request(`${base}/players/${state.player.id}/favourites`).catch(() => []),
   ]);
+  state.favourites = new Set(favourites);
   state.lists.final = prediction ? listFromPicks(prediction.selections, prediction.wildcards) : null;
   state.lists.templates = templates.map((template) => ({ id: template.id, name: template.name, ...listFromPicks(template.selections, template.wildcards) }));
   openList("final", { force: true });
@@ -802,11 +891,19 @@ function ensureRiderViewControls() {
       state.riderSelectionFilter = selection.dataset.riderSelection;
       render();
     });
+    controls.addEventListener("click", (event) => {
+      if (event.target.closest("[data-favourites-clear]")) return clearFavourites();
+      if (event.target.closest("[data-favourites-add-shown]")) return addShownToFavourites();
+      if (!event.target.closest("[data-favourites-only]")) return;
+      state.favouritesOnly = !state.favouritesOnly;
+      render();
+    });
   }
   const arrow = state.riderSortDirection === "asc" ? "↑" : "↓";
+  const addableShown = visibleRiderList().filter((rider) => !state.favourites.has(rider.id)).length;
   const countryCountSort = state.riderView !== "plain" ? `<span class="view-divider">|</span><span role="button" tabindex="0" data-rider-sort="rider-count" class="${state.riderSort === "rider-count" ? "active" : ""}">No. riders ${state.riderSort === "rider-count" ? `<i>${arrow}</i>` : ""}</span>` : "";
   const viewOption = (view, label) => `<span role="button" tabindex="0" data-rider-view="${view}" class="${state.riderView === view ? "active" : ""}">${label}</span>`;
-  controls.innerHTML = `<div class="view-toggle" role="group" aria-label="Rider list view">${viewOption("country", "Group by Country")}<span class="view-divider">|</span>${viewOption("team", "Group by Team")}<span class="view-divider">|</span>${viewOption("plain", "Riders list")}</div><div class="rider-sort-label"><span>Sort:</span><span role="button" tabindex="0" data-rider-sort="alphabetical" class="${state.riderSort === "alphabetical" ? "active" : ""}">Alphabetical ${state.riderSort === "alphabetical" ? `<i>${arrow}</i>` : ""}</span><span class="view-divider">|</span><span role="button" tabindex="0" data-rider-sort="rank" class="${state.riderSort === "rank" ? `active` : ""}" title="${state.riderView === "plain" ? "Riders by UCI rank" : "Groups by their riders' combined UCI points; riders inside a group are always in UCI rank order"}">UCI Rank ${state.riderSort === "rank" ? `<i>${arrow}</i>` : ""}</span>${countryCountSort}</div><div class="rider-selection-label" role="group" aria-label="Top 10 selection filter"><span>Riders:</span><span role="button" tabindex="0" data-rider-selection="all" class="${state.riderSelectionFilter === "all" ? "active" : ""}">All</span><span class="view-divider">|</span><span role="button" tabindex="0" data-rider-selection="selected" class="${state.riderSelectionFilter === "selected" ? "active" : ""}">Selected</span><span class="view-divider">|</span><span role="button" tabindex="0" data-rider-selection="unselected" class="${state.riderSelectionFilter === "unselected" ? "active" : ""}">Not selected</span></div>`;
+  controls.innerHTML = `<div class="view-toggle" role="group" aria-label="Rider list view">${viewOption("country", "Group by Country")}<span class="view-divider">|</span>${viewOption("team", "Group by Team")}<span class="view-divider">|</span>${viewOption("plain", "Riders list")}</div><div class="rider-sort-label"><span>Sort:</span><span role="button" tabindex="0" data-rider-sort="alphabetical" class="${state.riderSort === "alphabetical" ? "active" : ""}">Alphabetical ${state.riderSort === "alphabetical" ? `<i>${arrow}</i>` : ""}</span><span class="view-divider">|</span><span role="button" tabindex="0" data-rider-sort="rank" class="${state.riderSort === "rank" ? `active` : ""}" title="${state.riderView === "plain" ? "Riders by UCI rank" : "Groups by their riders' combined UCI points; riders inside a group are always in UCI rank order"}">UCI Rank ${state.riderSort === "rank" ? `<i>${arrow}</i>` : ""}</span>${countryCountSort}</div><div class="rider-selection-label" role="group" aria-label="Top 10 selection filter"><span>Riders:</span><span role="button" tabindex="0" data-rider-selection="all" class="${state.riderSelectionFilter === "all" ? "active" : ""}">All</span><span class="view-divider">|</span><span role="button" tabindex="0" data-rider-selection="selected" class="${state.riderSelectionFilter === "selected" ? "active" : ""}">Selected</span><span class="view-divider">|</span><span role="button" tabindex="0" data-rider-selection="unselected" class="${state.riderSelectionFilter === "unselected" ? "active" : ""}">Not selected</span></div><div class="favourites-controls" role="group" aria-label="Favourites"><button type="button" class="favourites-toggle ${state.favouritesOnly ? "on" : ""}" data-favourites-only aria-pressed="${state.favouritesOnly}" title="Show only your favourites; combines with All, Selected and Not selected"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${HEART_PATH}" /></svg>Favourites <i>${state.favourites.size}</i></button>${addableShown ? `<button type="button" class="favourites-add" data-favourites-add-shown aria-label="Add the ${addableShown} riders shown to your favourites" title="Add the ${addableShown} riders shown to your favourites"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${HEART_PATH}" /></svg></button>` : ""}${state.favourites.size ? `<button type="button" class="favourites-clear" data-favourites-clear aria-label="Clear all favourites" title="Clear all favourites"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${HEART_PATH}" /><path d="${CRACK_PATH}" /></svg></button>` : ""}</div>`;
 }
 
 // Inside a country or team group riders always read in UCI rank order; the
@@ -819,6 +916,14 @@ function sortRiders(riders) {
     return direction * a.name.localeCompare(b.name);
   });
 }
+
+function visibleRiderList() {
+  return state.event.riders.filter((rider) => matchesFilters(rider)).filter((rider) => (state.riderSelectionFilter === "all"
+    || (state.riderSelectionFilter === "selected" && isPicked(rider.id))
+    || (state.riderSelectionFilter === "unselected" && !isPicked(rider.id)))
+    && (!state.favouritesOnly || state.favourites.has(rider.id)));
+}
+const groupKeyFor = (rider) => (state.riderView === "team" ? teamLabel(rider.team) : rider.nation);
 
 function render() {
   const pickActions = ensurePickActions();
@@ -835,12 +940,10 @@ function render() {
   $("#picks").innerHTML = state.picks.map((riderId, index) => { const rider = riderById.get(riderId); return `<li data-position="${index}" class="${rider ? "pick-filled" : "pick-empty"}" ${rider ? `draggable="true" data-picked-rider="${rider.id}" title="Open rider details"` : ""}><span class="position">${index + 1}.</span>${rider ? `${flag(rider.nation)}${escapeHtml(rider.name)}<span class="pick-multiplier" title="Placement points ${formatMultiplier(rider.position_multiplier)} for this rider's UCI rank">${formatMultiplier(rider.position_multiplier)}</span><button class="remove" data-remove="${index}" aria-label="Remove ${escapeHtml(rider.name)}">×</button><span class="rank-scale pick-rank-scale" style="--rank-fill:${rankFill(rider)}%" aria-hidden="true"></span>` : "Drop rider here"}</li>`; }).join("");
   $("#wildcards").innerHTML = state.wildcards.map((riderId, slot) => { const rider = riderById.get(riderId); return `<li data-wildcard-slot="${slot}" class="wildcard-slot ${rider ? "pick-filled" : "pick-empty"}" ${rider ? `draggable="true" data-picked-rider="${rider.id}" title="Open rider details"` : ""}><span class="position wildcard-mark" aria-label="Wildcard ${slot + 1}">★</span>${rider ? `${flag(rider.nation)}${escapeHtml(rider.name)}<span class="pick-multiplier" title="Wildcard bonus ${formatMultiplier(rider.wildcard_multiplier)} for this rider's UCI rank">${formatMultiplier(rider.wildcard_multiplier)}</span><button class="remove" data-remove-wildcard="${slot}" aria-label="Remove ${escapeHtml(rider.name)}">×</button><span class="rank-scale pick-rank-scale" style="--rank-fill:${rankFill(rider)}%" aria-hidden="true"></span>` : "Drop a wildcard here"}</li>`; }).join("");
   const filteredRiders = state.event.riders.filter((rider) => matchesFilters(rider));
-  const visibleRiders = filteredRiders.filter((rider) => state.riderSelectionFilter === "all"
-    || (state.riderSelectionFilter === "selected" && isPicked(rider.id))
-    || (state.riderSelectionFilter === "unselected" && !isPicked(rider.id)));
+  const visibleRiders = visibleRiderList();
   // Country and team views share one grouping path; only the key and header differ.
   const byTeam = state.riderView === "team";
-  const groupKey = (rider) => (byTeam ? teamLabel(rider.team) : rider.nation);
+  const groupKey = groupKeyFor;
   const groupLabel = (key) => (byTeam ? key : countryName(key));
   const groupIcon = (key) => (byTeam ? teamIcon(key === NO_TEAM ? "" : key) : flag(key));
   const groupStats = new Map();
@@ -852,7 +955,7 @@ function render() {
   const ridersByGroup = new Map(); visibleRiders.forEach((rider) => ridersByGroup.set(groupKey(rider), [...(ridersByGroup.get(groupKey(rider)) || []), rider]));
   $("#filter-summary").textContent = `${visibleRiders.length} of ${filteredRiders.length} filtered riders shown (${state.event.riders.length} total). The bar shows UCI rank strength (red = stronger); the arrow shows the UCI points trend since the season start.`;
   ensureRiderViewControls();
-  const riderCard = (rider) => { const topTenPosition = state.picks.indexOf(rider.id); const isWildcard = state.wildcards.includes(rider.id); const selected = topTenPosition >= 0 || isWildcard; const riderFlag = state.riderView === "country" ? "" : flag(rider.nation); const badge = topTenPosition >= 0 ? `<span class="pick-position"><strong>#${topTenPosition + 1}</strong><small>Top 10</small></span>` : isWildcard ? `<span class="pick-position"><strong>★</strong><small>Wildcard</small></span>` : ""; return `<article draggable="true" class="rider ${selected ? "selected" : ""} ${isWildcard ? "wildcard" : ""}" data-rider="${rider.id}" role="button" tabindex="0" title="${topTenPosition >= 0 ? `Top 10 position ${topTenPosition + 1}. Open rider details, or drag to move it.` : isWildcard ? "Wildcard. Open rider details, or drag to move it." : "Open rider details"}">${riderFlag}${escapeHtml(rider.name)}<button type="button" class="rider-add" data-rider-add="${rider.id}" aria-label="Add ${escapeHtml(rider.name)} to your picks">+</button>${badge}<br><span class="rank">${rankingLabel(rider)}</span>${trendArrow(rider)}<span class="rank-scale" style="--rank-fill:${rankFill(rider)}%" aria-hidden="true"></span></article>`; };
+  const riderCard = (rider) => { const topTenPosition = state.picks.indexOf(rider.id); const isWildcard = state.wildcards.includes(rider.id); const selected = topTenPosition >= 0 || isWildcard; const riderFlag = state.riderView === "country" ? "" : flag(rider.nation); const badge = topTenPosition >= 0 ? `<span class="pick-position"><strong>#${topTenPosition + 1}</strong><small>Top 10</small></span>` : isWildcard ? `<span class="pick-position"><strong>★</strong><small>Wildcard</small></span>` : ""; return `<article draggable="true" class="rider ${selected ? "selected" : ""} ${isWildcard ? "wildcard" : ""} ${state.favourites.has(rider.id) ? "favourite" : ""}" data-rider="${rider.id}" role="button" tabindex="0" title="${topTenPosition >= 0 ? `Top 10 position ${topTenPosition + 1}. Open rider details, or drag to move it.` : isWildcard ? "Wildcard. Open rider details, or drag to move it." : "Open rider details"}">${riderFlag}${escapeHtml(rider.name)}${heartButton(rider, "rider-fav")}<button type="button" class="rider-add" data-rider-add="${rider.id}" aria-label="Add ${escapeHtml(rider.name)} to your picks">+</button>${badge}<br><span class="rank">${rankingLabel(rider)}</span>${trendArrow(rider)}<span class="rank-scale" style="--rank-fill:${rankFill(rider)}%" aria-hidden="true"></span></article>`; };
   if (state.riderView === "plain") {
     $("#riders").innerHTML = `<div class="plain-riders">${sortRiders(visibleRiders).map(riderCard).join("")}</div>`;
   } else {
@@ -867,10 +970,12 @@ function render() {
       if (state.riderSort === "rank") return direction * (statsB.points - statsA.points || byLabel);
       return direction * byLabel;
     });
-    $("#riders").innerHTML = sortedGroups.map(([key, riders]) => { const stats = groupStats.get(key); return `<section class="country-group ${byTeam ? "team-group" : ""}"><h3>${groupIcon(key)}${escapeHtml(groupLabel(key))} <span class="country-meta">${stats.count} ${stats.count === 1 ? "rider" : "riders"} · ${Math.round(stats.points).toLocaleString()} pts</span></h3><div class="country-riders">${byUciRank(riders).map(riderCard).join("")}</div></section>`; }).join("");
+    $("#riders").innerHTML = sortedGroups.map(([key, riders]) => { const stats = groupStats.get(key); return `<section class="country-group ${byTeam ? "team-group" : ""}"><h3>${groupIcon(key)}${escapeHtml(groupLabel(key))} <span class="country-meta">${stats.count} ${stats.count === 1 ? "rider" : "riders"} · ${Math.round(stats.points).toLocaleString()} pts</span>${groupHeart(key, riders, groupLabel(key))}</h3><div class="country-riders">${byUciRank(riders).map(riderCard).join("")}</div></section>`; }).join("");
   }
-  document.querySelectorAll(".rider").forEach((node) => { node.addEventListener("click", (event) => { if (event.target.closest("[data-rider-add]")) return; openRiderDetail(Number(node.dataset.rider)); }); node.addEventListener("keydown", (event) => { if (event.target.closest("[data-rider-add]")) return; if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openRiderDetail(Number(node.dataset.rider)); } }); node.addEventListener("dragstart", (event) => { event.dataTransfer.setData("text/plain", node.dataset.rider); document.body.classList.add("mobile-dragging"); }); node.addEventListener("dragend", () => document.body.classList.remove("mobile-dragging")); });
+  document.querySelectorAll(".rider").forEach((node) => { node.addEventListener("click", (event) => { if (event.target.closest("[data-rider-add], [data-rider-fav]")) return; openRiderDetail(Number(node.dataset.rider)); }); node.addEventListener("keydown", (event) => { if (event.target.closest("[data-rider-add], [data-rider-fav]")) return; if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openRiderDetail(Number(node.dataset.rider)); } }); node.addEventListener("dragstart", (event) => { event.dataTransfer.setData("text/plain", node.dataset.rider); document.body.classList.add("mobile-dragging"); }); node.addEventListener("dragend", () => document.body.classList.remove("mobile-dragging")); });
   document.querySelectorAll("[data-rider-add]").forEach((button) => button.addEventListener("click", (event) => { event.stopPropagation(); addRiderToPicks(Number(button.dataset.riderAdd)); }));
+  document.querySelectorAll("#riders [data-rider-fav]").forEach((button) => button.addEventListener("click", (event) => { event.stopPropagation(); toggleFavourite(Number(button.dataset.riderFav)); }));
+  document.querySelectorAll("#riders [data-group-fav]").forEach((button) => button.addEventListener("click", () => toggleGroupFavourites(button.dataset.groupFav)));
   document.querySelectorAll("[data-picked-rider]").forEach((node) => node.addEventListener("dragstart", (event) => event.dataTransfer.setData("text/plain", node.dataset.pickedRider)));
   document.querySelectorAll("[data-remove]").forEach((button) => button.addEventListener("click", (event) => { event.stopPropagation(); rememberPickState(); state.picks[Number(button.dataset.remove)] = null; render(); }));
   document.querySelectorAll("[data-remove-wildcard]").forEach((button) => button.addEventListener("click", (event) => { event.stopPropagation(); rememberPickState(); state.wildcards[Number(button.dataset.removeWildcard)] = null; render(); }));
@@ -1184,7 +1289,11 @@ $("#join").addEventListener("click", async () => {
 });
 $("#username").addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); $("#join").click(); } });
 $("#close-rider-detail").addEventListener("click", () => $("#rider-detail-modal").close());
-$("#rider-detail-modal").addEventListener("click", (event) => { if (event.target === event.currentTarget) event.currentTarget.close(); });
+$("#rider-detail-modal").addEventListener("click", (event) => {
+  if (event.target === event.currentTarget) return event.currentTarget.close();
+  const heart = event.target.closest("[data-rider-fav]");
+  if (heart) toggleFavourite(Number(heart.dataset.riderFav));
+});
 $("#advanced-filter-button").addEventListener("click", openAdvancedFilters);
 $("#close-advanced-filters").addEventListener("click", () => $("#advanced-filter-modal").close());
 $("#advanced-filter-modal").addEventListener("click", (event) => { if (event.target === event.currentTarget) event.currentTarget.close(); });
@@ -1202,7 +1311,7 @@ $("#reset-advanced-filters").addEventListener("click", () => {
   renderAdvancedFilters();
   render();
 });
-$("#logout").addEventListener("click", () => { if (hasUnsavedPickChanges() && !window.confirm("Did you forget to save your prediction?")) return; localStorage.removeItem("ten-up-player"); state.player = null; state.picks = Array(10).fill(null); state.savedPicks = Array(10).fill(null); state.wildcards = Array(WILDCARD_COUNT).fill(null); state.savedWildcards = Array(WILDCARD_COUNT).fill(null); state.lists = { final: null, templates: [] }; state.activeList = "final"; state.renamingList = null; resetPickHistory(); state.mobilePendingRiderId = null; document.body.classList.remove("mobile-picking", "mobile-dragging"); $("#prediction").classList.add("hidden"); $("#identity").classList.remove("hidden"); $("#username").value = ""; renderSessionControls(); showMessage("#identity-message", "You have logged out on this device.", true); $("#username").focus(); });
+$("#logout").addEventListener("click", () => { if (hasUnsavedPickChanges() && !window.confirm("Did you forget to save your prediction?")) return; localStorage.removeItem("ten-up-player"); state.player = null; state.picks = Array(10).fill(null); state.savedPicks = Array(10).fill(null); state.wildcards = Array(WILDCARD_COUNT).fill(null); state.savedWildcards = Array(WILDCARD_COUNT).fill(null); state.lists = { final: null, templates: [] }; state.activeList = "final"; state.renamingList = null; state.favourites = new Set(); state.favouritesOnly = false; resetPickHistory(); state.mobilePendingRiderId = null; document.body.classList.remove("mobile-picking", "mobile-dragging"); $("#prediction").classList.add("hidden"); $("#identity").classList.remove("hidden"); $("#username").value = ""; renderSessionControls(); showMessage("#identity-message", "You have logged out on this device.", true); $("#username").focus(); });
 $("#save").addEventListener("click", saveFinal);
 window.addEventListener("beforeunload", (event) => { if (!state.player || !hasUnsavedPickChanges()) return; event.preventDefault(); event.returnValue = ""; });
 window.addEventListener("keydown", (event) => { if (!(event.ctrlKey || event.metaKey) || event.altKey || event.target instanceof HTMLElement && event.target.matches("input, textarea, select")) return; if (event.key.toLowerCase() === "z") { event.preventDefault(); if (event.shiftKey) restorePickState(state.redoStack, state.undoStack, "Redid last change."); else restorePickState(state.undoStack, state.redoStack, "Undid last change."); } else if (event.key.toLowerCase() === "y") { event.preventDefault(); restorePickState(state.redoStack, state.undoStack, "Redid last change."); } });

@@ -280,3 +280,58 @@ def test_a_player_keeps_a_bounded_number_of_templates() -> None:
         created = client.post(base, json={"player_id": player_id, "name": f"List {index}"})
         assert created.status_code == 201
     assert client.post(base, json={"player_id": player_id, "name": "One more"}).status_code == 409
+
+
+def test_favourites_are_kept_per_player_and_toggle_idempotently() -> None:
+    client = TestClient(app)
+    event = client.get("/api/events/active").json()
+    ids = [rider["id"] for rider in event["riders"]]
+    player_id = client.post("/api/players", json={"username": "Fan"}).json()["id"]
+    other_id = client.post("/api/players", json={"username": "Other"}).json()["id"]
+    base = f"/api/events/{event['id']}/players"
+
+    for rider_id in (ids[3], ids[1], ids[3]):
+        assert client.put(f"{base}/{player_id}/favourites/{rider_id}").status_code == 204
+    assert client.get(f"{base}/{player_id}/favourites").json() == [ids[3], ids[1]]
+    assert client.get(f"{base}/{other_id}/favourites").json() == []
+
+    assert client.delete(f"{base}/{player_id}/favourites/{ids[3]}").status_code == 204
+    assert client.delete(f"{base}/{player_id}/favourites/{ids[3]}").status_code == 204
+    assert client.get(f"{base}/{player_id}/favourites").json() == [ids[1]]
+
+    assert client.put(f"{base}/{player_id}/favourites/999999").status_code == 422
+    assert client.put(f"{base}/999999/favourites/{ids[0]}").status_code == 404
+
+
+def test_favourites_can_be_cleared_in_one_call() -> None:
+    client = TestClient(app)
+    event = client.get("/api/events/active").json()
+    ids = [rider["id"] for rider in event["riders"]]
+    player_id = client.post("/api/players", json={"username": "Clearer"}).json()["id"]
+    other_id = client.post("/api/players", json={"username": "Keeper"}).json()["id"]
+    base = f"/api/events/{event['id']}/players"
+    for rider_id in ids[:3]:
+        client.put(f"{base}/{player_id}/favourites/{rider_id}")
+    client.put(f"{base}/{other_id}/favourites/{ids[0]}")
+
+    assert client.delete(f"{base}/{player_id}/favourites").status_code == 204
+    assert client.get(f"{base}/{player_id}/favourites").json() == []
+    assert client.get(f"{base}/{other_id}/favourites").json() == [ids[0]]
+
+
+def test_favourites_can_be_added_and_removed_in_batches() -> None:
+    client = TestClient(app)
+    event = client.get("/api/events/active").json()
+    ids = [rider["id"] for rider in event["riders"]]
+    player_id = client.post("/api/players", json={"username": "Batcher"}).json()["id"]
+    url = f"/api/events/{event['id']}/players/{player_id}/favourites"
+
+    added = client.patch(url, json={"add": ids[:5] + [ids[0]]})
+    assert added.status_code == 200
+    assert sorted(added.json()) == sorted(ids[:5])
+    changed = client.patch(url, json={"add": [ids[6]], "remove": ids[:3]})
+    assert sorted(changed.json()) == sorted([ids[3], ids[4], ids[6]])
+
+    assert client.patch(url, json={"add": [ids[7]], "remove": [ids[7]]}).status_code == 422
+    assert client.patch(url, json={"add": [ids[8], 999_999]}).status_code == 422
+    assert sorted(client.get(url).json()) == sorted([ids[3], ids[4], ids[6]])
