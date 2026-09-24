@@ -74,8 +74,7 @@ async function toggleFavourite(riderId) {
   }
 }
 async function clearFavourites() {
-  const count = state.favourites.size;
-  if (!count || !window.confirm(`Clear all ${count} favourites?`)) return;
+  if (!state.favourites.size) return;
   const previous = new Set(state.favourites);
   state.favourites = new Set();
   // An empty favourites-only view would look like a broken filter.

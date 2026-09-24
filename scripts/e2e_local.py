@@ -173,7 +173,6 @@ def clear_favourites(page, rider_ids: list[int]) -> None:
     """Heart a few riders, then empty the list with the broken-heart button."""
     for rider_id in rider_ids:
         page.click(f'#riders [data-rider-fav="{rider_id}"]')
-    page.once("dialog", lambda dialog: dialog.accept())
     page.click("[data-favourites-clear]")
     page.wait_for_selector("[data-favourites-clear]", state="detached")
     if page.locator("#riders .rider-fav.on").count():
