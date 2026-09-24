@@ -65,6 +65,12 @@ Note the free tier's one rough edge: the API sleeps after about fifteen
 minutes of inactivity, so the first request after a quiet spell takes roughly
 a minute while the service wakes. Every request after that is fast.
 
+The two heavy payloads -- the rider reference set and a published leaderboard
+-- are rendered and gzipped once and then served from memory
+(`app/response_cache.py`), with an ETag so browsers revalidate for free. That
+is what keeps the 0.1-CPU free instance responsive when many players arrive at
+once, such as right after the result is published.
+
 ### One-off 2026 startlist import
 
 The importer consumes a saved PCS startlist page and fetches the current official UCI Road Men Elite ranking once; it does not schedule refreshes.

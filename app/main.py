@@ -3,7 +3,7 @@ import secrets
 from datetime import datetime
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, Header, HTTPException, status
+from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse
@@ -31,6 +31,7 @@ from app.models import (
     ScoreLine,
     ScoreRun,
 )
+from app.response_cache import ResponseCache
 from app.schemas import (
     EventResponse,
     FavouritesUpdate,
@@ -62,9 +63,19 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "X-Admin-Key"],
 )
-# The rider reference set is a few hundred KB of JSON the page now loads on
-# every visit; compressed it is a tenth of that.
+# The startlist is tens of KB of JSON on every visit; compressed it is a fifth
+# of that. The cached payloads below arrive already compressed and pass through.
 app.add_middleware(GZipMiddleware, minimum_size=1024)
+
+# The reference set only changes when scripts.load_pcs_data runs, normally as
+# part of a deploy; the lifetime also bounds how stale it is after a loader run
+# against a server that keeps running.
+REFERENCE_TTL_SECONDS = 300
+reference_cache = ResponseCache(ttl_seconds=REFERENCE_TTL_SECONDS)
+# A published score run never changes, so its leaderboard is kept until a newer
+# run replaces it; browsers recheck it every minute in case the result is re-published.
+LEADERBOARD_MAX_AGE_SECONDS = 60
+leaderboard_cache = ResponseCache()
 
 
 @app.on_event("startup")
@@ -184,8 +195,13 @@ def get_latest_finished_event(db: Session = Depends(get_db)) -> EventResponse:
 
 
 @app.get("/api/riders/reference")
-def rider_reference_data(db: Session = Depends(get_db)) -> dict:
+def rider_reference_data(request: Request, db: Session = Depends(get_db)) -> Response:
     """Read-only PCS background data, delivered once for the rider detail UI."""
+    payload = reference_cache.get("riders", None, lambda: rider_reference_payload(db))
+    return payload.response(request, max_age=REFERENCE_TTL_SECONDS)
+
+
+def rider_reference_payload(db: Session) -> dict:
     riders = db.scalars(
         select(Rider)
         .options(
@@ -723,19 +739,20 @@ def publish_results(event_id: int, payload: ResultUpsert, db: Session = Depends(
     return response
 
 
-def persisted_leaderboard(event: Event, db: Session) -> LeaderboardResponse | None:
-    """The scores stored when the result was published, if they use this model.
-
-    Serving the stored run keeps a finished leaderboard stable when the rules
-    or the UCI ranking change later.
-    """
-    run = db.scalar(
+def latest_published_run(event: Event, db: Session) -> ScoreRun | None:
+    return db.scalar(
         select(ScoreRun)
         .where(ScoreRun.event_id == event.id, ScoreRun.is_simulation.is_(False))
         .order_by(ScoreRun.created_at.desc(), ScoreRun.id.desc())
     )
-    if run is None or not run.rules_version.startswith("v2"):
-        return None
+
+
+def persisted_leaderboard(event: Event, run: ScoreRun, db: Session) -> LeaderboardResponse:
+    """The scores stored when the result was published.
+
+    Serving the stored run keeps a finished leaderboard stable when the rules
+    or the UCI ranking change later.
+    """
     lines = db.scalars(select(ScoreLine).where(ScoreLine.score_run_id == run.id)).all()
     entries = [LeaderboardEntry.model_validate_json(line.breakdown_json) for line in lines]
     entries.sort(key=lambda entry: (-entry.total_points, entry.username.lower()))
@@ -753,13 +770,23 @@ def persisted_leaderboard(event: Event, db: Session) -> LeaderboardResponse | No
 
 
 @app.get("/api/events/{event_id}/leaderboard", response_model=LeaderboardResponse)
-def leaderboard(event_id: int, db: Session = Depends(get_db)) -> LeaderboardResponse:
+def leaderboard(
+    event_id: int, request: Request, db: Session = Depends(get_db)
+) -> Response | LeaderboardResponse:
     event = db.get(Event, event_id)
     if event is None:
         raise HTTPException(status_code=404, detail="Event not found")
     if event.status != "finished":
         raise HTTPException(status_code=409, detail="Leaderboard is available after the race is finalized")
-    return persisted_leaderboard(event, db) or score_event(event, db, is_simulation=False)
+    run = latest_published_run(event, db)
+    if run is None or not run.rules_version.startswith("v2"):
+        return score_event(event, db, is_simulation=False)
+    # The timestamp keeps a rebuilt database that reuses a run id from being
+    # served the board of the run it replaced.
+    payload = leaderboard_cache.get(
+        event.id, (run.id, run.created_at), lambda: persisted_leaderboard(event, run, db)
+    )
+    return payload.response(request, max_age=LEADERBOARD_MAX_AGE_SECONDS)
 
 
 frontend_dir = Path(__file__).resolve().parent.parent / "frontend"

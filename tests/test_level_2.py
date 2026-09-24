@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 import app.db as db_module
 import app.seed as seed_module
 from app.db import Base
-from app.main import app
+from app.main import app, leaderboard_cache, reference_cache
 from app.seed import seed_mock_data
 
 
@@ -21,6 +21,10 @@ def isolated_database(tmp_path, monkeypatch):
     monkeypatch.setattr(seed_module, "SessionLocal", session_local)
     Base.metadata.create_all(bind=engine)
     seed_mock_data()
+    # The payload caches outlive a request, so they must not carry one test's
+    # database into the next.
+    reference_cache.clear()
+    leaderboard_cache.clear()
     yield
     engine.dispose()
 
@@ -335,3 +339,81 @@ def test_favourites_can_be_added_and_removed_in_batches() -> None:
     assert client.patch(url, json={"add": [ids[7]], "remove": [ids[7]]}).status_code == 422
     assert client.patch(url, json={"add": [ids[8], 999_999]}).status_code == 422
     assert sorted(client.get(url).json()) == sorted([ids[3], ids[4], ids[6]])
+
+
+def test_rider_reference_is_built_once_and_revalidated_by_etag(monkeypatch) -> None:
+    import app.main as main_module
+
+    client = TestClient(app)
+    first = client.get("/api/riders/reference")
+    assert first.status_code == 200
+    assert first.headers["content-encoding"] == "gzip"
+    assert first.headers["cache-control"] == "public, max-age=300"
+
+    def fail(db):
+        raise AssertionError("the reference set was rebuilt")
+
+    monkeypatch.setattr(main_module, "rider_reference_payload", fail)
+    plain = client.get("/api/riders/reference", headers={"Accept-Encoding": "identity"})
+    assert "content-encoding" not in plain.headers
+    assert plain.json() == first.json()
+    unchanged = client.get(
+        "/api/riders/reference", headers={"If-None-Match": first.headers["etag"]}
+    )
+    assert unchanged.status_code == 304
+    assert unchanged.content == b""
+
+
+def test_rider_reference_picks_up_a_loader_run_once_it_ages_out(monkeypatch) -> None:
+    from app.models import RiderProfile
+
+    client = TestClient(app)
+    rider_id = client.get("/api/events/active").json()["riders"][0]["id"]
+    before = client.get("/api/riders/reference")
+    with db_module.SessionLocal() as session:
+        session.add(RiderProfile(rider_id=rider_id, team="Fresh Team"))
+        session.commit()
+
+    assert client.get("/api/riders/reference").json() == before.json()
+    monkeypatch.setattr(reference_cache, "ttl_seconds", -1)
+    after = client.get("/api/riders/reference", headers={"If-None-Match": before.headers["etag"]})
+    assert after.status_code == 200
+    profile = next(rider for rider in after.json()["riders"] if rider["id"] == rider_id)["profile"]
+    assert profile["team"] == "Fresh Team"
+
+
+def test_a_published_leaderboard_is_cached_until_the_result_is_republished(monkeypatch) -> None:
+    import app.main as main_module
+
+    client = TestClient(app)
+    event = client.get("/api/events/active").json()
+    ids = [rider["id"] for rider in event["riders"]]
+    save_prediction(client, event, "Keeper", ids[:10])
+    url = f"/api/events/{event['id']}/leaderboard"
+
+    def publish(order):
+        results = [
+            {"position": position, "rider_id": rider_id}
+            for position, rider_id in enumerate(order, start=1)
+        ]
+        return client.post(f"/api/admin/events/{event['id']}/results", json={"results": results})
+
+    published = publish(ids[:10])
+    board = client.get(url)
+    assert board.json()["entries"] == published.json()["entries"]
+    assert board.headers["cache-control"] == "public, max-age=60"
+
+    builds = []
+    original = main_module.persisted_leaderboard
+    monkeypatch.setattr(
+        main_module, "persisted_leaderboard", lambda *args: builds.append(args) or original(*args)
+    )
+    assert client.get(url).json() == board.json()
+    assert builds == []
+
+    corrected = publish(ids[10:20])
+    again = client.get(url, headers={"If-None-Match": board.headers["etag"]})
+    assert again.status_code == 200
+    assert len(builds) == 1
+    assert again.json()["entries"] == corrected.json()["entries"]
+    assert again.json()["entries"] != board.json()["entries"]
