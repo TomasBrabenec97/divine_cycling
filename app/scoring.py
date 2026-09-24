@@ -21,6 +21,9 @@ import math
 from dataclasses import asdict, dataclass, field
 
 UNRANKED = 999999
+# Rule versions whose stored breakdowns share today's shape, so a published run
+# under any of them can be served as stored.
+STORED_BREAKDOWN_VERSIONS = ("v2", "v3")
 
 
 @dataclass(frozen=True)
@@ -51,9 +54,9 @@ class RankCurves:
 
     Positioned riders: an S-curve from 0 at rank 1, through `knee_boost` at
     `knee_rank`, to `max` at `transition_rank`, flat after that; the multiplier
-    is 1 + boost. Wildcards: an exponential ramp from 0.00x at rank 1 to 1.00x
-    at `transition_rank` (worth `low_target` halfway along), then linear to
-    `wildcard_max` at `cap_rank`, flat after that.
+    is 1 + boost. Wildcards: an exponential ramp from 0.00x at rank 1 to
+    `wildcard_transition` at `transition_rank` (a `low_target` share of it
+    halfway along), then linear to `wildcard_max` at `cap_rank`, flat after that.
     """
 
     max: float = 1.0
@@ -61,24 +64,22 @@ class RankCurves:
     knee_boost: float = 0.2
     transition_rank: int = 100
     low_target: float = 0.1
-    wildcard_max: float = 3.0
+    wildcard_transition: float = 2.0
+    wildcard_max: float = 4.0
     cap_rank: int = 500
 
 
 @dataclass(frozen=True)
 class ScoringRules:
-    version: str = "v2.0"
+    version: str = "v3.0"
     # The deepest actual finish that can still earn placement points: a near
     # miss outside the top 10 still scores (guessed 10th, finished 11th earns
-    # the one-place factor). 24 is the last finish your 10th pick can reach
-    # while fewer than 15 places off; set 10 to score the actual top 10 only.
-    placement_depth: int = 24
-    # Factor by distance between guessed and actual position, 0 through 14;
-    # 15 or more places off earns nothing. Anchored at 1.00, 0.80 and 0.10
-    # with an exponential decay between 1 and 14 places.
-    distance_factors: tuple[float, ...] = (
-        1.0, 0.8, 0.68, 0.58, 0.5, 0.42, 0.36, 0.31, 0.26, 0.22, 0.19, 0.16, 0.14, 0.12, 0.1,
-    )
+    # the one-place factor). 19 is the last finish your 10th pick can reach
+    # while fewer than 10 places off; set 10 to score the actual top 10 only.
+    placement_depth: int = 19
+    # Factor by distance between guessed and actual position: 0.75 to the power
+    # of the places off, 0 through 9 (x0.075 at nine); 10 or more earns nothing.
+    distance_factors: tuple[float, ...] = tuple(0.75**distance for distance in range(10))
     top10_points: tuple[float, ...] = (15, 10, 8, 7, 6, 5, 5, 5, 5, 5)
     permutation_bonuses: PermutationBonuses = field(default_factory=PermutationBonuses)
     wildcards: WildcardRules = field(default_factory=WildcardRules)
@@ -123,21 +124,21 @@ def position_multiplier(rank: int | None, rules: ScoringRules = DEFAULT_RULES) -
 
 
 def wildcard_multiplier(rank: int | None, rules: ScoringRules = DEFAULT_RULES) -> float:
-    """Wildcard multiplier: near 0 for favourites, 1.00 at rank 100, capped at rank 500."""
+    """Wildcard multiplier: near 0 for favourites, 2.00 at rank 100, 4.00 from rank 500."""
     curve = rules.position_boost
     rank = _known_rank(rank)
     if rank is None or rank >= curve.cap_rank:
         return curve.wildcard_max
     if rank >= curve.transition_rank:
         progress = (rank - curve.transition_rank) / (curve.cap_rank - curve.transition_rank)
-        return 1 + (curve.wildcard_max - 1) * progress
+        return curve.wildcard_transition + (curve.wildcard_max - curve.wildcard_transition) * progress
     # (e^(kx) - 1) / (e^k - 1) passes through 0 and 1, and through `low_target`
-    # at x = 1/2 exactly when k = 2 ln(1/low_target - 1).
+    # at x = 1/2 exactly when k = 2 ln(1/low_target - 1); scaled to reach
+    # `wildcard_transition` at the transition rank.
     x = (rank - 1) / (curve.transition_rank - 1)
     k = 2 * math.log(1 / curve.low_target - 1)
-    if abs(k) < 1e-9:
-        return x
-    return math.expm1(k * x) / math.expm1(k)
+    ramp = x if abs(k) < 1e-9 else math.expm1(k * x) / math.expm1(k)
+    return curve.wildcard_transition * ramp
 
 
 def wildcard_base_bonus(actual_position: int | None, rules: ScoringRules = DEFAULT_RULES) -> float:

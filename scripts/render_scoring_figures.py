@@ -124,7 +124,7 @@ def distance_figure() -> str:
             "/>", f"><title>{distance} places off: ×{factor:.2f}</title></path>"
         )
         if distance in (0, 1, len(factors) - 1):
-            plot.text(x, plot.y(factor) - 6, f"×{factor:.2f}", anchor="middle", color=INK)
+            plot.text(x, plot.y(factor) - 6, f"×{factor:.3f}".rstrip("0").rstrip("."), anchor="middle", color=INK)
     plot.x_ticks([(d, str(d)) for d in range(len(factors))], "places off")
     if reachable < len(factors) - 1:
         plot.text(
@@ -139,13 +139,14 @@ def multiplier_figure() -> str:
     curve = DEFAULT_RULES.position_boost
     last = curve.cap_rank + 100
     plot = Plot((1, last), (0, curve.wildcard_max), "Rank multipliers by UCI rank")
-    plot.grid([0, 1, 2, 3], lambda tick: f"×{tick:.0f}")
+    plot.grid(list(range(int(curve.wildcard_max) + 1)), lambda tick: f"×{tick:.0f}")
     ranks = list(range(1, last + 1))
     plot.line([(rank, position_multiplier(rank)) for rank in ranks], SERIES[0])
     plot.line([(rank, wildcard_multiplier(rank)) for rank in ranks], SERIES[1])
     plot.dot(curve.transition_rank, position_multiplier(curve.transition_rank), SERIES[0],
              f"Top 10 pick: ×{1 + curve.max:.2f} from rank {curve.transition_rank}")
-    plot.dot(curve.transition_rank, 1.0, SERIES[1], f"Wildcard: ×1.00 at rank {curve.transition_rank}")
+    plot.dot(curve.transition_rank, curve.wildcard_transition, SERIES[1],
+             f"Wildcard: ×{curve.wildcard_transition:.2f} at rank {curve.transition_rank}")
     plot.dot(curve.cap_rank, curve.wildcard_max, SERIES[1],
              f"Wildcard: ×{curve.wildcard_max:.2f} from rank {curve.cap_rank}")
     plot.text(WIDTH - RIGHT + 8, plot.y(position_multiplier(last)) + 4,

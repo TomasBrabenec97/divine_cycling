@@ -49,6 +49,7 @@ from app.schemas import (
 )
 from app.scoring import (
     DEFAULT_RULES,
+    STORED_BREAKDOWN_VERSIONS,
     position_multiplier,
     rules_snapshot,
     score_prediction,
@@ -779,7 +780,7 @@ def leaderboard(
     if event.status != "finished":
         raise HTTPException(status_code=409, detail="Leaderboard is available after the race is finalized")
     run = latest_published_run(event, db)
-    if run is None or not run.rules_version.startswith("v2"):
+    if run is None or not run.rules_version.startswith(STORED_BREAKDOWN_VERSIONS):
         return score_event(event, db, is_simulation=False)
     # The timestamp keeps a rebuilt database that reuses a run id from being
     # served the board of the run it replaced.
