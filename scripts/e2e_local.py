@@ -11,8 +11,10 @@ What it does, in order:
 2. Starts uvicorn on a free port with a throwaway admin key.
 3. Drives the real UI in a browser: registers two players and fills each Top
    10 and three wildcards through the rider list. The first player hearts a
-   pool of favourites and picks from that view only, keeps a named template,
-   saves it as final, then edits the template and switches between the lists;
+   pool of favourites and picks from that view only, duplicates the picks into
+   a named template from the tab menu, saves it as final, then edits the
+   template (which saves itself), switches between the lists, drags a second
+   copy ahead of the first, deletes it and adds and deletes an empty one with +;
    the second uses the UCI and country filters and saves a final prediction
    directly.
 4. Opens the admin page, enters a finishing order and previews the scoring.
@@ -30,6 +32,7 @@ Chrome, so no browser download is required.
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import random
 import socket
@@ -242,16 +245,49 @@ def fill_top_ten(page, base: str, username: str, picks: list[int], shots: Path) 
     page.wait_for_selector("#identity:not(.hidden)")
 
 
+def tab_menu(page, tab, action: str) -> None:
+    """Right-click a list tab and choose from its menu."""
+    tab.click(button="right")
+    page.click(f'.list-menu [data-menu-action="{action}"]')
+
+
+def template_saved_with(rider_id: int):
+    """Matches the autosave of a template whose Top 10 includes `rider_id`."""
+    def check(response) -> bool:
+        request = response.request
+        if request.method != "PUT" or "/templates/" not in request.url or "/order" in request.url:
+            return False
+        body = json.loads(request.post_data or "{}")
+        return any(item["rider_id"] == rider_id for item in body.get("selections", []))
+
+    return check
+
+
+def template_tabs(page) -> list[str]:
+    return page.eval_on_selector_all(
+        ".list-tab[data-list]:not(.final) .list-tab-label", "labels => labels.map(l => l.textContent)"
+    )
+
+
+def drag_tab(page, tab, onto) -> None:
+    """Press on a tab and drag it onto the left edge of another, as a mouse does."""
+    start, goal = tab.bounding_box(), onto.bounding_box()
+    page.mouse.move(start["x"] + start["width"] / 2, start["y"] + start["height"] / 2)
+    page.mouse.down()
+    page.mouse.move(goal["x"] + 4, goal["y"] + goal["height"] / 2, steps=12)
+    page.mouse.up()
+
+
 def keep_a_template(
     page, base: str, username: str, picks: list[int], spare: int, favourites: list[int], shots: Path
 ):
-    """Save the picks as a named template and as final, then change only the template.
+    """Copy the picks into a named template and save it as final, then change only the template.
 
     The picks are made from a hearted pool of favourites. Returns the
     template's picks after the edit; the final keeps `picks`.
     """
     sign_in_and_pick(page, base, username, picks, favourites)
-    page.click("#save-new-template")
+    tab_menu(page, page.locator('[data-list="final"]'), "duplicate")
     page.wait_for_selector("[data-rename]")
     page.fill("[data-rename]", "Plan A")
     page.keyboard.press("Enter")
@@ -259,11 +295,15 @@ def keep_a_template(
     page.click("#save")
     saved_message(page, "as your final prediction")
 
-    page.click('[data-remove="9"]')
-    page.click(f'[data-rider-add="{spare}"]')
-    page.click("#save-template")
-    saved_message(page, "Saved “Plan A”")
+    # A template has no Save button: the edit goes out by itself.
+    with page.expect_response(template_saved_with(spare)):
+        page.click('[data-remove="9"]')
+        page.click(f'[data-rider-add="{spare}"]')
     edited = shown_top_ten(page)
+    page.click("#revert-picks")
+    saved_message(page, "nothing to revert")
+    if shown_top_ten(page) != edited:
+        raise AssertionError("Revert changed a template")
     page.screenshot(path=shots / f"{username}-template.png", full_page=False)
 
     page.click('[data-list="final"]')
@@ -275,16 +315,39 @@ def keep_a_template(
     if shown_top_ten(page) != edited:
         raise AssertionError(f"Template tab shows {shown_top_ten(page)}, expected {edited}")
 
-    # A throwaway copy, deleted again: the list falls back to Final.
-    page.click("#save-new-template")
+    # A throwaway copy, dragged ahead of Plan A, then deleted with its ×: the
+    # list falls back to Final.
+    tab_menu(page, page.locator('.list-tab.active'), "duplicate")
     page.wait_for_selector("[data-rename]")
     page.keyboard.press("Escape")
-    page.once("dialog", lambda dialog: dialog.accept())
-    page.click('[data-list-action="delete"]')
+    page.wait_for_selector('.list-tab.active:has-text("Plan A copy")')
+    if template_tabs(page) != ["Plan A", "Plan A copy"]:
+        raise AssertionError(f"the copy did not open last: {template_tabs(page)}")
+    tabs = page.locator(".list-tab[data-list]:not(.final)")
+    with page.expect_response(lambda response: response.url.endswith("/templates/order")):
+        drag_tab(page, tabs.nth(1), tabs.nth(0))
+    if template_tabs(page) != ["Plan A copy", "Plan A"]:
+        raise AssertionError(f"dragging did not reorder the tabs: {template_tabs(page)}")
+    page.screenshot(path=shots / f"{username}-tabs.png", full_page=False)
+    with page.expect_response(lambda response: response.request.method == "DELETE"):
+        page.click(".list-tab.active .list-tab-close")
     saved_message(page, "Deleted")
     page.wait_for_selector(".list-tab.final.active")
-    if page.locator(".list-tab").count() != 2:
-        raise AssertionError("the deleted template is still listed")
+    if template_tabs(page) != ["Plan A"]:
+        raise AssertionError(f"the deleted template is still listed: {template_tabs(page)}")
+
+    # + starts an empty template, named and opened at once.
+    page.click("[data-list-add]")
+    page.wait_for_selector("[data-rename]")
+    page.keyboard.press("Escape")
+    page.wait_for_selector('.list-tab.active:has-text("Template 1")')
+    if any(shown_top_ten(page)):
+        raise AssertionError(f"a new template starts with {shown_top_ten(page)}")
+    with page.expect_response(lambda response: response.request.method == "DELETE"):
+        page.click(".list-tab.active .list-tab-close")
+    page.wait_for_selector(".list-tab.final.active")
+    if template_tabs(page) != ["Plan A"]:
+        raise AssertionError(f"the new template is still listed: {template_tabs(page)}")
     page.click("#logout")
     page.wait_for_selector("#identity:not(.hidden)")
     return edited

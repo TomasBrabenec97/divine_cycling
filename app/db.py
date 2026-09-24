@@ -58,6 +58,18 @@ def init_db(seed_mock_data: bool = False) -> None:
         if "boosted_rider_id" not in prediction_columns:
             with engine.begin() as connection:
                 connection.execute(text("ALTER TABLE predictions ADD COLUMN boosted_rider_id INTEGER"))
+    # Templates already exist in the hosted Postgres too, so this column is
+    # added on either database; existing rows keep their creation order.
+    template_columns = {column["name"] for column in inspect(engine).get_columns("prediction_templates")}
+    if "sort_order" not in template_columns:
+        if_missing = "IF NOT EXISTS " if engine.dialect.name == "postgresql" else ""
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    f"ALTER TABLE prediction_templates ADD COLUMN {if_missing}"
+                    "sort_order INTEGER NOT NULL DEFAULT 0"
+                )
+            )
     if seed_mock_data:
         from app.seed import seed_mock_data as seed
 

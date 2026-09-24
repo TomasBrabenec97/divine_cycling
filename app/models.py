@@ -106,6 +106,9 @@ class PredictionTemplate(Base):
     event_id: Mapped[int] = mapped_column(ForeignKey("events.id"), index=True)
     name: Mapped[str] = mapped_column(String(40))
     picks_json: Mapped[str] = mapped_column(Text, default='{"selections": [], "wildcards": []}')
+    # The player's own tab order; ties (templates from before ordering) fall
+    # back to creation order.
+    sort_order: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 

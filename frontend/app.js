@@ -616,6 +616,7 @@ function ensurePickActions() {
     revert.type = "button";
     revert.textContent = "Revert to last saved";
     revert.addEventListener("click", () => {
+      if (state.activeList !== "final") return showMessage("#prediction-message", "Templates save themselves, so there is nothing to revert. Use ↶ to undo a change.", true);
       if (!hasUnsavedPickChanges()) return;
       rememberPickState();
       state.picks = [...state.savedPicks];
@@ -639,20 +640,10 @@ function ensurePickActions() {
   const revert = $("#revert-picks");
   const save = $("#save");
   if (save && save.previousElementSibling !== actions) actions.insertAdjacentElement("afterend", save);
-  let templateActions = $("#template-actions");
-  if (!templateActions) {
-    templateActions = document.createElement("div");
-    templateActions.id = "template-actions";
-    templateActions.className = "template-actions";
-    templateActions.innerHTML = `<button id="save-template" type="button">Save template</button><button id="save-new-template" type="button">Save as new template</button>`;
-    save.insertAdjacentElement("afterend", templateActions);
-    $("#save-template").addEventListener("click", saveActiveTemplate);
-    $("#save-new-template").addEventListener("click", saveAsNewTemplate);
-  }
   const message = $("#prediction-message");
-  if (message && message.previousElementSibling !== templateActions) {
+  if (message && message.previousElementSibling !== save) {
     message.classList.add("top10-message");
-    templateActions.insertAdjacentElement("afterend", message);
+    save.insertAdjacentElement("afterend", message);
   }
   return { clear, revert, save, undo: $("#undo-picks"), redo: $("#redo-picks") };
 }
@@ -697,6 +688,8 @@ async function loadLists() {
 
 function openList(listId, { force = false } = {}) {
   if (!force && listId === state.activeList) return;
+  // A template saves itself on the way out; only the final can hold unsaved picks.
+  flushTemplateAutosave();
   if (!force && hasUnsavedPickChanges() && !window.confirm(`You have unsaved changes in ${listName(state.activeList)}. Switch lists and discard them?`)) return;
   const source = (listId === "final" ? state.lists.final : templateById(listId)) || emptyList();
   state.activeList = listId;
@@ -714,6 +707,8 @@ function openList(listId, { force = false } = {}) {
 // rename and a save of the same template can never overtake each other.
 let templateWrites = Promise.resolve();
 const queueTemplateWrite = (task) => (templateWrites = templateWrites.catch(() => {}).then(task));
+// Ids are taken when a write is asked for: the player may log out before it runs.
+const writeIds = () => ({ event: state.event.id, player: state.player.id });
 
 // Each save records the list it sent, not whatever is on screen when the answer
 // arrives: the player may have switched lists or kept editing meanwhile.
@@ -736,48 +731,91 @@ async function saveFinal() {
   }
 }
 
-async function putTemplate(template, name, list) {
-  return request(`/api/events/${state.event.id}/templates/${template.id}`, { method: "PUT", body: JSON.stringify({ player_id: state.player.id, name, ...picksPayload(list) }) });
+async function putTemplate(ids, template, name, list, options = {}) {
+  return request(`/api/events/${ids.event}/templates/${template.id}`, { method: "PUT", body: JSON.stringify({ player_id: ids.player, name, ...picksPayload(list) }), ...options });
 }
 
-function saveActiveTemplate() {
+// Templates save themselves: a change goes out once the picks have been still
+// for a moment, and at once when you leave the template or the page.
+const TEMPLATE_AUTOSAVE_MS = 600;
+let autosaveTimer = 0;
+let failedAutosave = "";
+const listKey = (id, list) => `${id}|${list.picks.join(",")}|${list.wildcards.join(",")}`;
+function scheduleTemplateAutosave() {
+  window.clearTimeout(autosaveTimer);
+  if (state.activeList === "final" || !hasUnsavedPickChanges()) return;
+  // After a failed save, wait for the next change rather than retry in a loop.
+  if (listKey(state.activeList, workingList()) === failedAutosave) return;
+  autosaveTimer = window.setTimeout(flushTemplateAutosave, TEMPLATE_AUTOSAVE_MS);
+}
+function flushTemplateAutosave(options) {
+  window.clearTimeout(autosaveTimer);
   const template = templateById(state.activeList);
-  if (!template) return;
-  const list = workingList();
+  if (template && hasUnsavedPickChanges()) saveTemplate(template, workingList(), options);
+}
+// The picks count as saved the moment they are sent, so leaving the template
+// and coming back shows them at once; a failed write puts the stored ones back.
+function saveTemplate(template, list, options = {}) {
+  const ids = writeIds();
+  const previous = { picks: [...template.picks], wildcards: [...template.wildcards] };
+  Object.assign(template, list);
+  if (state.activeList === template.id) markSaved(list);
   return queueTemplateWrite(async () => {
     try {
       // The name is read when the write runs, after any rename queued before it.
-      await putTemplate(template, template.name, list);
-      Object.assign(template, list);
-      if (state.activeList === template.id) markSaved(list);
-      showMessage("#prediction-message", `Saved ${listName(template.id)}.`, true);
+      await putTemplate(ids, template, template.name, list, options);
+      failedAutosave = "";
+    } catch (error) {
+      failedAutosave = listKey(template.id, list);
+      if (sameList(template, list)) Object.assign(template, previous);
+      if (state.activeList === template.id) markSaved(template);
+      showMessage("#prediction-message", `${listName(template.id)} was not saved: ${error.message}`);
+      if (state.player) render();
+    }
+  });
+}
+
+function copyName(name) {
+  const taken = new Set(state.lists.templates.map((template) => template.name.toLocaleLowerCase()));
+  for (let number = 1; ; number += 1) {
+    const suffix = number === 1 ? " copy" : ` copy ${number}`;
+    const candidate = `${name.slice(0, 40 - suffix.length).trim()}${suffix}`;
+    if (!taken.has(candidate.toLocaleLowerCase())) return candidate;
+  }
+}
+
+// A new template opens straight away with its name ready to edit. The name is
+// picked when the write runs, so two quick adds never ask for the same one.
+function addTemplate(nameFor, list, { carryFrom = null } = {}) {
+  const ids = writeIds();
+  return queueTemplateWrite(async () => {
+    try {
+      const created = await request(`/api/events/${ids.event}/templates`, { method: "POST", body: JSON.stringify({ player_id: ids.player, name: nameFor(), ...picksPayload(list) }) });
+      const template = { id: created.id, name: created.name, ...list };
+      state.lists.templates.push(template);
+      if (carryFrom !== null && state.activeList === carryFrom) {
+        // Keep editing the same picks, now as the copy.
+        state.activeList = template.id;
+        markSaved(list);
+      } else {
+        openList(template.id);
+      }
+      if (state.activeList === template.id) state.renamingList = template.id;
       render();
     } catch (error) {
       showMessage("#prediction-message", error.message);
     }
   });
 }
-
-async function saveAsNewTemplate() {
-  const list = workingList();
-  const listId = state.activeList;
-  try {
-    const created = await request(`/api/events/${state.event.id}/templates`, { method: "POST", body: JSON.stringify({ player_id: state.player.id, name: uniqueTemplateName(), ...picksPayload(list) }) });
-    const template = { id: created.id, name: created.name, ...list };
-    state.lists.templates.push(template);
-    if (state.activeList === listId) {
-      // Keep editing the same picks, now as the new template; its name opens for editing.
-      state.activeList = template.id;
-      markSaved(list);
-      state.renamingList = template.id;
-      showMessage("#prediction-message", `Saved as “${template.name}”. Type a name for it, or keep this one.`, true);
-    } else {
-      showMessage("#prediction-message", `Saved as “${template.name}”.`, true);
-    }
-    render();
-  } catch (error) {
-    showMessage("#prediction-message", error.message);
-  }
+const createTemplate = () => addTemplate(uniqueTemplateName, emptyList());
+// Copying the list on screen takes what you see; the original keeps what it had saved.
+function duplicateList(listId) {
+  const onScreen = listId === state.activeList;
+  flushTemplateAutosave();
+  const source = (onScreen ? workingList() : listId === "final" ? state.lists.final : templateById(listId)) || emptyList();
+  const list = { picks: [...source.picks], wildcards: [...source.wildcards] };
+  const nameFor = listId === "final" ? uniqueTemplateName : () => copyName(templateById(listId)?.name || "Template");
+  return addTemplate(nameFor, list, { carryFrom: onScreen ? listId : null });
 }
 
 function renameTemplate(id, rawName) {
@@ -785,10 +823,11 @@ function renameTemplate(id, rawName) {
   const name = rawName.replace(/\s+/g, " ").trim();
   state.renamingList = null;
   if (!template || !name || name === template.name) return render();
+  const ids = writeIds();
   return queueTemplateWrite(async () => {
     try {
-      // A rename keeps the template's saved picks; unsaved edits stay unsaved.
-      await putTemplate(template, name, template);
+      // A rename sends the template's own picks, which autosave keeps current.
+      await putTemplate(ids, template, name, template);
       template.name = name;
       showMessage("#prediction-message", `Renamed to “${name}”.`, true);
     } catch (error) {
@@ -798,69 +837,261 @@ function renameTemplate(id, rawName) {
   });
 }
 
-async function deleteTemplate(id) {
+// Deleting is immediate, with no question asked; if the server refuses, the
+// tab comes back where it was.
+function deleteTemplate(id) {
   const template = templateById(id);
-  if (!template || !window.confirm(`Delete the template “${template.name}”? This cannot be undone.`)) return;
+  if (!template) return;
+  const index = state.lists.templates.indexOf(template);
+  const ids = writeIds();
+  state.lists.templates.splice(index, 1);
+  if (state.activeList === id) openList("final", { force: true });
+  else render();
+  showMessage("#prediction-message", `Deleted “${template.name}”.`, true);
   return queueTemplateWrite(async () => {
     try {
-      await request(`/api/events/${state.event.id}/templates/${id}?player_id=${state.player.id}`, { method: "DELETE" });
-      state.lists.templates = state.lists.templates.filter((item) => item.id !== id);
-      showMessage("#prediction-message", `Deleted “${template.name}”.`, true);
-      if (state.activeList === id) openList("final", { force: true });
-      else render();
+      await request(`/api/events/${ids.event}/templates/${id}?player_id=${ids.player}`, { method: "DELETE" });
+    } catch (error) {
+      state.lists.templates.splice(Math.min(index, state.lists.templates.length), 0, template);
+      showMessage("#prediction-message", error.message);
+      render();
+    }
+  });
+}
+
+function saveTemplateOrder() {
+  const ids = writeIds();
+  return queueTemplateWrite(async () => {
+    // The order is read when the write runs, so a copy made just before is in it.
+    if (!state.player || state.player.id !== ids.player) return;
+    try {
+      await request(`/api/events/${ids.event}/players/${ids.player}/templates/order`, { method: "PUT", body: JSON.stringify({ template_ids: state.lists.templates.map((template) => template.id) }) });
     } catch (error) {
       showMessage("#prediction-message", error.message);
     }
   });
 }
 
-function renderListSwitcher() {
+// -- the tab strip: Final first, then the templates in the player's order -----
+const parseListId = (value) => (value === "final" ? "final" : Number(value));
+let shownList = null;
+let lastPointerType = "mouse";
+let lastTabTap = { id: null, time: 0 };
+
+function ensureListSwitcher() {
   let switcher = $("#list-switcher");
-  if (!switcher) {
-    switcher = document.createElement("div");
-    switcher.id = "list-switcher";
-    switcher.className = "list-switcher";
-    $("#picks").insertAdjacentElement("beforebegin", switcher);
-    switcher.addEventListener("click", (event) => {
-      const tab = event.target.closest("[data-list]");
-      if (tab) return openList(tab.dataset.list === "final" ? "final" : Number(tab.dataset.list));
-      const action = event.target.closest("[data-list-action]")?.dataset.listAction;
-      if (action === "rename") { state.renamingList = state.activeList; render(); }
-      if (action === "delete") deleteTemplate(state.activeList);
-    });
-    switcher.addEventListener("keydown", (event) => {
-      const input = event.target.closest("[data-rename]");
-      if (!input) return;
+  if (switcher) return switcher;
+  switcher = document.createElement("div");
+  switcher.id = "list-switcher";
+  switcher.className = "list-switcher";
+  switcher.innerHTML = `<div class="list-tabs" role="tablist" aria-label="Your lists"></div><div class="list-menu hidden" role="menu" aria-label="List actions"></div>`;
+  $("#picks").insertAdjacentElement("beforebegin", switcher);
+  const strip = switcher.querySelector(".list-tabs");
+  const menu = switcher.querySelector(".list-menu");
+  strip.addEventListener("click", (event) => {
+    if (event.target.closest("[data-list-add]")) return createTemplate();
+    const close = event.target.closest("[data-list-delete]");
+    if (close) return deleteTemplate(Number(close.dataset.listDelete));
+    const label = event.target.closest(".list-tab-label");
+    if (!label || tabDropped) return;
+    const listId = parseListId(label.closest("[data-list]").dataset.list);
+    const now = Date.now();
+    const double = lastTabTap.id === listId && now - lastTabTap.time < 400;
+    lastTabTap = double ? { id: null, time: 0 } : { id: listId, time: now };
+    if (!double) return openList(listId);
+    // A double-click renames, as tabs do; on a touch screen a double tap opens the menu.
+    if (lastPointerType === "touch") openListMenu(listId);
+    else if (listId !== "final") { state.renamingList = listId; render(); }
+  });
+  strip.addEventListener("contextmenu", (event) => {
+    const tab = event.target.closest("[data-list]");
+    if (!tab) return;
+    event.preventDefault();
+    // On a touch screen a long press starts a drag instead.
+    if (lastPointerType !== "touch") openListMenu(parseListId(tab.dataset.list));
+  });
+  strip.addEventListener("pointerdown", (event) => {
+    lastPointerType = event.pointerType;
+    const tab = event.target.closest(".list-tab-label")?.closest(".list-tab:not(.final)");
+    if (tab && event.button === 0 && state.lists.templates.length > 1) startTabDrag(event, tab);
+  });
+  // Once a hold has picked a tab up, the finger drags it instead of scrolling.
+  strip.addEventListener("touchmove", (event) => { if (tabDrag?.active) event.preventDefault(); }, { passive: false });
+  strip.addEventListener("scroll", () => markHiddenTabs(strip), { passive: true });
+  strip.addEventListener("keydown", (event) => {
+    const input = event.target.closest("[data-rename]");
+    if (input) {
       if (event.key === "Enter") { event.preventDefault(); input.blur(); }
       if (event.key === "Escape") { input.dataset.cancelled = "true"; state.renamingList = null; render(); }
-    });
-    switcher.addEventListener("focusout", (event) => {
-      const input = event.target.closest("[data-rename]");
-      if (input && !input.dataset.cancelled) renameTemplate(Number(input.dataset.rename), input.value);
-    });
+      return;
+    }
+    const tab = event.target.closest(".list-tab:not(.final)[data-list]");
+    if (tab && event.key === "F2") { event.preventDefault(); state.renamingList = Number(tab.dataset.list); render(); }
+  });
+  strip.addEventListener("focusout", (event) => {
+    const input = event.target.closest("[data-rename]");
+    if (input && !input.dataset.cancelled) renameTemplate(Number(input.dataset.rename), input.value);
+  });
+  menu.addEventListener("click", (event) => {
+    const action = event.target.closest("[data-menu-action]")?.dataset.menuAction;
+    if (!action) return;
+    const listId = parseListId(menu.dataset.list);
+    closeListMenu();
+    if (action === "rename") { state.renamingList = listId; render(); }
+    if (action === "duplicate") duplicateList(listId);
+  });
+  document.addEventListener("pointerdown", (event) => { if (!menu.contains(event.target)) closeListMenu(); });
+  window.addEventListener("pointermove", moveTabDrag);
+  window.addEventListener("pointerup", endTabDrag);
+  window.addEventListener("pointercancel", cancelTabDrag);
+  return switcher;
+}
+
+function openListMenu(listId) {
+  const switcher = $("#list-switcher");
+  const menu = switcher.querySelector(".list-menu");
+  const tab = switcher.querySelector(`.list-tab[data-list="${listId}"]`);
+  if (!tab) return;
+  menu.dataset.list = String(listId);
+  menu.innerHTML = `${listId === "final" ? "" : `<button type="button" role="menuitem" data-menu-action="rename">Rename</button>`}<button type="button" role="menuitem" data-menu-action="duplicate">Duplicate</button>`;
+  menu.classList.remove("hidden");
+  const box = switcher.getBoundingClientRect();
+  const anchor = tab.getBoundingClientRect();
+  menu.style.top = `${anchor.bottom - box.top + 4}px`;
+  menu.style.left = `${Math.max(0, Math.min(anchor.left - box.left, switcher.clientWidth - menu.offsetWidth))}px`;
+  menu.querySelector("button").focus();
+}
+function closeListMenu() { $("#list-switcher .list-menu")?.classList.add("hidden"); }
+
+// Template tabs reorder by dragging: straight away with a mouse, after a short
+// hold on a touch screen so that a swipe still scrolls the strip.
+const TAB_HOLD_MS = 350;
+let tabDrag = null;
+let tabDropped = false;
+const templateOrder = (strip) => [...strip.querySelectorAll(".list-tab:not(.final)[data-list]")].map((node) => Number(node.dataset.list));
+function startTabDrag(event, tab) {
+  const strip = tab.parentElement;
+  tabDrag = { tab, strip, pointerId: event.pointerId, touch: event.pointerType !== "mouse", startX: event.clientX, startY: event.clientY, active: false, grab: 0, holdTimer: 0, order: templateOrder(strip) };
+  if (tabDrag.touch) tabDrag.holdTimer = window.setTimeout(() => activateTabDrag(event.clientX), TAB_HOLD_MS);
+}
+function activateTabDrag(clientX) {
+  const drag = tabDrag;
+  if (!drag) return;
+  drag.active = true;
+  drag.grab = clientX - drag.tab.getBoundingClientRect().left;
+  drag.tab.classList.add("dragging");
+  drag.strip.classList.add("reordering");
+  try { drag.tab.setPointerCapture(drag.pointerId); } catch (_) { /* the pointer is already gone */ }
+  closeListMenu();
+}
+function moveTabDrag(event) {
+  const drag = tabDrag;
+  if (!drag || event.pointerId !== drag.pointerId) return;
+  if (!drag.active) {
+    const moved = Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY);
+    if (drag.touch) { if (moved > 8) cancelTabDrag(); return; }
+    if (moved < 5) return;
+    activateTabDrag(drag.startX);
   }
+  const { tab, strip } = drag;
+  const box = strip.getBoundingClientRect();
+  if (event.clientX < box.left + 24) strip.scrollLeft -= 8;
+  else if (event.clientX > box.right - 24) strip.scrollLeft += 8;
+  // Final stays first: a template can go no further left than just after it.
+  const final = strip.querySelector(".list-tab.final");
+  const add = strip.querySelector(".list-tab-add");
+  const pointer = event.clientX - box.left + strip.scrollLeft;
+  const left = Math.max(final.offsetLeft + final.offsetWidth, Math.min(strip.scrollWidth - add.offsetWidth - tab.offsetWidth, pointer - drag.grab));
+  // The tab goes where the pointer is, whatever the widths of the tabs around
+  // it; the + button always stays last.
+  const next = [...strip.querySelectorAll(".list-tab:not(.final)")].find((node) => node !== tab && node.offsetLeft + node.offsetWidth / 2 > pointer) || add;
+  if (next !== tab.nextElementSibling) strip.insertBefore(tab, next);
+  tab.style.transform = `translateX(${left - tab.offsetLeft}px)`;
+}
+function stopTabDrag() {
+  const drag = tabDrag;
+  tabDrag = null;
+  if (!drag) return null;
+  window.clearTimeout(drag.holdTimer);
+  drag.tab.classList.remove("dragging");
+  drag.tab.style.transform = "";
+  drag.strip.classList.remove("reordering");
+  return drag.active ? drag : null;
+}
+function endTabDrag(event) {
+  if (!tabDrag || event.pointerId !== tabDrag.pointerId) return;
+  const drag = stopTabDrag();
+  if (!drag) return;
+  // The click that ends a drag must not also open the tab.
+  tabDropped = true;
+  window.setTimeout(() => { tabDropped = false; }, 0);
+  const order = templateOrder(drag.strip);
+  if (order.join() === drag.order.join()) return render();
+  const byId = new Map(state.lists.templates.map((template) => [template.id, template]));
+  state.lists.templates = order.map((id) => byId.get(id)).filter(Boolean);
+  render();
+  saveTemplateOrder();
+}
+function cancelTabDrag(event) {
+  if (!tabDrag || (event && event.pointerId !== tabDrag.pointerId)) return;
+  // Back to the order the tabs had before.
+  if (stopTabDrag()) render();
+}
+
+// Final stays pinned at the left edge and + at the right, so a template counts
+// as shown only once it is clear of both.
+function revealTab(strip, node) {
+  if (!node) return;
+  const final = strip.querySelector(".list-tab.final");
+  const coveredLeft = node === final ? 0 : final.offsetWidth;
+  const coveredRight = strip.querySelector(".list-tab-add").offsetWidth;
+  const left = node.offsetLeft;
+  const right = left + node.offsetWidth;
+  if (left < strip.scrollLeft + coveredLeft) strip.scrollLeft = left - coveredLeft;
+  else if (right > strip.scrollLeft + strip.clientWidth - coveredRight) strip.scrollLeft = right - strip.clientWidth + coveredRight;
+}
+// A fade at the right edge says more tabs wait there; a touch screen shows no scrollbar.
+const markHiddenTabs = (strip) => strip.classList.toggle("more-right", strip.scrollLeft + strip.clientWidth < strip.scrollWidth - 1);
+// Tabs shrink to fit, cutting long names; once a name is cut, the strip uses
+// smaller type so more of each still shows. Only then does it scroll.
+function fitListTabs(strip) {
+  strip.classList.remove("crowded");
+  const cut = [...strip.querySelectorAll(".list-tab-label")].some((label) => label.scrollWidth > label.clientWidth + 1);
+  strip.classList.toggle("crowded", cut || strip.scrollWidth > strip.clientWidth + 1);
+}
+
+function renderListSwitcher() {
+  const strip = ensureListSwitcher().querySelector(".list-tabs");
+  if (tabDrag?.active) return;
   // Leave a name the player is still typing alone when something else re-renders.
-  const editing = switcher.querySelector("[data-rename]");
+  const editing = strip.querySelector("[data-rename]");
   if (editing && editing === document.activeElement && Number(editing.dataset.rename) === state.renamingList) return;
-  const dirty = hasUnsavedPickChanges();
-  const final = state.lists.final;
-  const tab = (id, label, extra = "") => {
+  const tab = (id, name, title) => {
     const active = state.activeList === id;
-    const unsaved = active && dirty ? `<span class="list-unsaved" title="Unsaved changes" aria-label="unsaved changes">•</span>` : "";
-    return `<button type="button" role="tab" class="list-tab ${id === "final" ? "final" : ""} ${active ? "active" : ""}" data-list="${id}" aria-selected="${active}">${label}${extra}${unsaved}</button>`;
+    const close = id === "final" ? "" : `<button type="button" class="list-tab-close" data-list-delete="${id}" aria-label="Delete ${escapeHtml(name)}" title="Delete">×</button>`;
+    return `<div class="list-tab ${id === "final" ? "final" : ""} ${active ? "active" : ""}" data-list="${id}"><button type="button" role="tab" class="list-tab-label" aria-selected="${active}" title="${escapeHtml(title)}">${escapeHtml(name)}</button>${close}</div>`;
   };
-  const tabs = [
-    tab("final", "Final", `<span class="list-tab-status">${final ? "scored" : "not saved"}</span>`),
+  const scrollLeft = strip.scrollLeft;
+  strip.innerHTML = [
+    tab("final", "Final", "Your final prediction: the one that is scored"),
     ...state.lists.templates.map((template) => state.renamingList === template.id
-      ? `<input class="list-name-input" data-rename="${template.id}" value="${escapeHtml(template.name)}" maxlength="40" aria-label="Template name" />`
-      : tab(template.id, escapeHtml(template.name), sameList(template, final) ? `<span class="list-same" title="Same picks as your final prediction" aria-label="same as final"></span>` : "")),
+      ? `<div class="list-tab renaming"><input class="list-name-input" data-rename="${template.id}" value="${escapeHtml(template.name)}" maxlength="40" aria-label="Template name" /></div>`
+      : tab(template.id, template.name, template.name)),
+    `<button type="button" class="list-tab-add" data-list-add aria-label="New template" title="New template">+</button>`,
   ].join("");
-  const caption = state.activeList === "final"
-    ? `<strong>Final prediction</strong> — the one that is scored.${final ? "" : " Not saved yet."}`
-    : `<strong>Template</strong> — a private draft, never scored. <button type="button" class="text-button" data-list-action="rename">Rename</button><button type="button" class="text-button" data-list-action="delete">Delete</button>`;
-  switcher.innerHTML = `<div class="list-tabs" role="tablist" aria-label="Your lists">${tabs}</div><p class="list-caption">${caption}</p>`;
-  const input = switcher.querySelector("[data-rename]");
-  if (input) { input.focus(); input.select(); }
+  fitListTabs(strip);
+  strip.scrollLeft = scrollLeft;
+  if (state.activeList !== shownList) {
+    shownList = state.activeList;
+    revealTab(strip, strip.querySelector(".list-tab.active"));
+  }
+  const input = strip.querySelector("[data-rename]");
+  if (input) {
+    revealTab(strip, input.parentElement);
+    input.focus();
+    input.select();
+  }
+  markHiddenTabs(strip);
 }
 
 function ensureRiderViewControls() {
@@ -931,11 +1162,11 @@ function render() {
   const pickActions = ensurePickActions();
   const editingTemplate = state.activeList !== "final";
   pickActions.save.textContent = editingTemplate ? "Save as final prediction" : "Save final prediction";
-  $("#save-template").classList.toggle("hidden", !editingTemplate);
-  $("#template-actions").classList.toggle("single", !editingTemplate);
   renderListSwitcher();
+  scheduleTemplateAutosave();
   pickActions.clear.disabled = savedPicks().length === 0;
-  pickActions.revert.disabled = !hasUnsavedPickChanges();
+  // On a template, Revert stays clickable to explain why there is nothing to revert.
+  pickActions.revert.disabled = !editingTemplate && !hasUnsavedPickChanges();
   pickActions.undo.disabled = state.undoStack.length === 0;
   pickActions.redo.disabled = state.redoStack.length === 0;
   const riderById = new Map(state.event.riders.map((rider) => [rider.id, rider]));
@@ -1350,9 +1581,9 @@ $("#reset-advanced-filters").addEventListener("click", () => {
   renderAdvancedFilters();
   render();
 });
-$("#logout").addEventListener("click", () => { if (hasUnsavedPickChanges() && !window.confirm("Did you forget to save your prediction?")) return; localStorage.removeItem("ten-up-player"); state.player = null; state.picks = Array(10).fill(null); state.savedPicks = Array(10).fill(null); state.wildcards = Array(WILDCARD_COUNT).fill(null); state.savedWildcards = Array(WILDCARD_COUNT).fill(null); state.lists = { final: null, templates: [] }; state.activeList = "final"; state.renamingList = null; state.favourites = new Set(); state.favouritesOnly = false; resetPickHistory(); state.mobilePendingRiderId = null; document.body.classList.remove("mobile-picking", "mobile-dragging"); $("#prediction").classList.add("hidden"); $("#identity").classList.remove("hidden"); $("#username").value = ""; renderSessionControls(); showMessage("#identity-message", "You have logged out on this device.", true); $("#username").focus(); });
+$("#logout").addEventListener("click", () => { flushTemplateAutosave(); if (hasUnsavedPickChanges() && !window.confirm("Did you forget to save your prediction?")) return; window.clearTimeout(autosaveTimer); closeListMenu(); localStorage.removeItem("ten-up-player"); state.player = null; state.picks = Array(10).fill(null); state.savedPicks = Array(10).fill(null); state.wildcards = Array(WILDCARD_COUNT).fill(null); state.savedWildcards = Array(WILDCARD_COUNT).fill(null); state.lists = { final: null, templates: [] }; state.activeList = "final"; state.renamingList = null; state.favourites = new Set(); state.favouritesOnly = false; resetPickHistory(); state.mobilePendingRiderId = null; document.body.classList.remove("mobile-picking", "mobile-dragging"); $("#prediction").classList.add("hidden"); $("#identity").classList.remove("hidden"); $("#username").value = ""; renderSessionControls(); showMessage("#identity-message", "You have logged out on this device.", true); $("#username").focus(); });
 $("#save").addEventListener("click", saveFinal);
-window.addEventListener("beforeunload", (event) => { if (!state.player || !hasUnsavedPickChanges()) return; event.preventDefault(); event.returnValue = ""; });
+window.addEventListener("beforeunload", (event) => { if (!state.player) return; flushTemplateAutosave({ keepalive: true }); if (!hasUnsavedPickChanges()) return; event.preventDefault(); event.returnValue = ""; });
 window.addEventListener("keydown", (event) => { if (!(event.ctrlKey || event.metaKey) || event.altKey || event.target instanceof HTMLElement && event.target.matches("input, textarea, select")) return; if (event.key.toLowerCase() === "z") { event.preventDefault(); if (event.shiftKey) restorePickState(state.redoStack, state.undoStack, "Redid last change."); else restorePickState(state.undoStack, state.redoStack, "Undid last change."); } else if (event.key.toLowerCase() === "y") { event.preventDefault(); restorePickState(state.redoStack, state.undoStack, "Redid last change."); } });
 $("#cancel-pick").addEventListener("click", cancelPendingPick);
 // The help popover is a <details>; close it on a tap anywhere else, as a phone user expects.
@@ -1360,5 +1591,5 @@ document.addEventListener("pointerdown", (event) => { const help = $(".event-hel
 const backToTop = $("#back-to-top");
 backToTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
 window.addEventListener("scroll", () => backToTop.classList.toggle("hidden", window.scrollY < 400), { passive: true });
-window.addEventListener("keydown", (event) => { if (event.key === "Escape" && !$("dialog[open]")) cancelPendingPick(); });
+window.addEventListener("keydown", (event) => { if (event.key === "Escape" && !$("dialog[open]")) { closeListMenu(); cancelPendingPick(); } });
 boot();

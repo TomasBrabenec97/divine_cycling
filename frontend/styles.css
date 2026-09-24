@@ -207,24 +207,46 @@ button.matrix-cell.on { border-color:var(--sage); background:var(--sage); box-sh
 .doc-figure { margin:8px 0 18px; border:1px solid var(--line); background:var(--surface); padding:10px 6px 4px; }
 .doc-figure svg,.doc-figure img { display:block; width:100%; height:auto; }
 
-.list-switcher { margin-bottom:12px; }
-.list-tabs { display:flex; gap:4px; overflow-x:auto; padding-bottom:2px; border-bottom:1px solid var(--line); scrollbar-width:thin; }
-.list-tab { position:relative; display:inline-flex; flex:none; align-items:baseline; gap:5px; max-width:180px; margin-bottom:-1px; border:1px solid transparent; border-bottom:0; background:transparent; padding:7px 10px 6px; color:var(--muted); font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+/* List tabs: Final first and tinted sage, the templates after it in the
+   player's order. Tabs shrink before the strip scrolls, and its scrollbar only
+   shows under the pointer. The baseline is painted at the tab foot, so it stays
+   put when a scrollbar takes room below the tabs. */
+/* The strip scrolls inside the column; it must never widen it. */
+.picks-column { min-width:0; }
+.list-switcher { position:relative; margin-bottom:12px; }
+.list-tabs { position:relative; display:flex; gap:2px; overflow-x:auto; overflow-y:hidden; background:linear-gradient(var(--line),var(--line)) 0 31px / 100% 1px no-repeat; scrollbar-width:thin; scrollbar-color:transparent transparent; }
+.list-tabs:hover { scrollbar-color:var(--line) transparent; }
+.list-tab-add { position:sticky; z-index:3; right:0; display:grid; flex:none; width:32px; height:32px; min-width:0; place-items:center; border:0; background:var(--paper); box-shadow:inset 0 -1px 0 var(--line); padding:0; color:var(--muted); font-family:inherit; font-size:20px; font-weight:400; line-height:1; }
+.list-tab-add:hover { background:var(--beige-tint); color:var(--ink); }
+.list-tab-add:focus-visible { outline:1px solid var(--sage); outline-offset:-4px; }
+.list-tabs.more-right .list-tab-add::before { content:""; position:absolute; top:0; right:100%; bottom:1px; width:26px; background:linear-gradient(to right,rgba(245,239,230,0),var(--paper)); pointer-events:none; }
+.list-tab { position:relative; display:flex; flex:0 1 auto; align-items:center; min-width:54px; max-width:170px; height:32px; border:1px solid transparent; border-bottom:0; box-shadow:inset 0 -1px 0 var(--line); color:var(--muted); font-size:13px; font-weight:600; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; touch-action:manipulation; }
 .list-tab:hover { background:var(--beige-tint); color:var(--ink); }
 .list-tab.active { border-color:var(--line); background:var(--paper); color:var(--ink); box-shadow:inset 0 2px 0 var(--ink); }
-.list-tab.final.active { box-shadow:inset 0 2px 0 var(--sage); }
-.list-tab-status { color:var(--muted); font-size:10px; font-weight:400; letter-spacing:.04em; text-transform:uppercase; }
-.list-unsaved { color:var(--terracotta); font-size:16px; line-height:0; }
-.list-same { display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--sage); }
-.list-name-input { flex:none; width:150px; margin:2px 0 3px; padding:5px 8px; border:1px solid var(--ink); background:var(--surface); font-size:13px; }
-.list-caption { margin:7px 2px 0; color:var(--muted); font-size:11px; line-height:1.4; }
-.list-caption strong { color:var(--ink); }
-.list-caption .text-button { margin-left:8px; font-size:11px; }
-.template-actions { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:6px; }
-.template-actions.single { grid-template-columns:1fr; }
-.template-actions button { border-color:var(--line); padding:8px 10px; color:var(--muted); font-size:12px; }
-.template-actions button:hover { border-color:var(--ink); background:transparent; color:var(--ink); }
-.template-actions .hidden { display:none; }
+.list-tab-label { flex:1 1 auto; min-width:0; height:100%; overflow:hidden; border:0; background:transparent; padding:0 10px; color:inherit; font:inherit; text-overflow:ellipsis; white-space:nowrap; }
+.list-tab-label:hover { background:transparent; color:inherit; }
+.list-tab-label:focus-visible { outline:1px solid var(--sage); outline-offset:-4px; }
+.list-tab-close { display:grid; flex:none; width:18px; height:18px; min-width:0; margin:0 5px 0 -5px; place-items:center; border:0; border-radius:50%; background:transparent; padding:0; color:var(--placeholder); font:400 15px/1 inherit; }
+.list-tab-close:hover { background:var(--beige-tint); color:var(--terracotta); }
+.list-tab.active .list-tab-close { color:var(--muted); }
+.list-tab.active:not(.final) { min-width:76px; }
+.list-tab.final { position:sticky; z-index:3; left:0; flex:none; background:var(--sage-tint); color:#52604f; font-weight:700; }
+.list-tab.final:hover { background:#dce8d5; color:var(--ink); }
+.list-tab.final.active { border-color:var(--sage); background:var(--sage-tint); color:var(--ink); box-shadow:inset 0 2px 0 var(--sage); }
+.list-tabs.crowded .list-tab { font-size:12px; }
+.list-tabs.crowded .list-tab-label { padding:0 7px; }
+.list-tabs.crowded .list-tab:not(.active) .list-tab-close { display:none; }
+.list-tab.renaming { flex:none; min-width:0; max-width:none; border-color:transparent; background:transparent; }
+.list-name-input { flex:none; width:150px; margin:0; padding:4px 8px; border:1px solid var(--ink); background:var(--surface); font-size:13px; }
+.list-tab.dragging { z-index:2; border-color:var(--ink); background:var(--paper); box-shadow:inset 0 -1px 0 var(--line),2px 3px 0 rgba(47,49,54,.16); color:var(--ink); cursor:grabbing; }
+.list-tabs.reordering { cursor:grabbing; }
+.list-menu { position:absolute; z-index:15; display:grid; min-width:140px; padding:4px; border:1px solid var(--line); background:var(--surface); box-shadow:4px 4px 0 rgba(47,49,54,.12); }
+.list-menu.hidden { display:none; }
+.list-menu button { border:0; background:transparent; padding:7px 10px; color:var(--ink); font:600 13px inherit; text-align:left; }
+.list-menu button:hover,.list-menu button:focus-visible { background:var(--beige-tint); color:var(--ink); outline:0; }
+@media(max-width:650px) { .list-tab-close { width:26px; height:26px; margin-left:-7px; font-size:17px; }
+.list-menu button { min-height:40px; }
+ }
 .mobile-dragging .list-switcher,.mobile-picking .list-switcher { display:none; }
 
 /* Results: leaderboard table, analyzer and compare. Chart colours: a validated

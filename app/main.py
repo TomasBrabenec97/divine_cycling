@@ -44,6 +44,7 @@ from app.schemas import (
     PredictionUpsert,
     ResultUpsert,
     RiderResponse,
+    TemplateOrder,
     TemplateResponse,
     TemplateUpsert,
 )
@@ -417,9 +418,35 @@ def list_templates(
     templates = db.scalars(
         select(PredictionTemplate)
         .where(PredictionTemplate.event_id == event_id, PredictionTemplate.player_id == player_id)
-        .order_by(PredictionTemplate.created_at, PredictionTemplate.id)
+        .order_by(PredictionTemplate.sort_order, PredictionTemplate.created_at, PredictionTemplate.id)
     ).all()
     return [template_response(template) for template in templates]
+
+
+@app.put(
+    "/api/events/{event_id}/players/{player_id}/templates/order",
+    response_model=list[TemplateResponse],
+)
+def reorder_templates(
+    event_id: int, player_id: int, payload: TemplateOrder, db: Session = Depends(get_db)
+) -> list[TemplateResponse]:
+    # The order carries no picks, so like favourites it is not bound to the deadline.
+    if db.get(Event, event_id) is None:
+        raise HTTPException(status_code=404, detail="Event not found")
+    templates = {
+        template.id: template
+        for template in db.scalars(
+            select(PredictionTemplate).where(
+                PredictionTemplate.event_id == event_id, PredictionTemplate.player_id == player_id
+            )
+        )
+    }
+    if sorted(payload.template_ids) != sorted(templates):
+        raise HTTPException(status_code=409, detail="Your lists changed meanwhile; reload the page")
+    for sort_order, template_id in enumerate(payload.template_ids):
+        templates[template_id].sort_order = sort_order
+    db.commit()
+    return [template_response(templates[template_id]) for template_id in payload.template_ids]
 
 
 @app.post(
@@ -435,7 +462,7 @@ def create_template(
         raise HTTPException(status_code=404, detail="Player not found")
     require_startlist_picks(event, payload, db)
     existing = db.scalars(
-        select(PredictionTemplate.id).where(
+        select(PredictionTemplate.sort_order).where(
             PredictionTemplate.event_id == event_id,
             PredictionTemplate.player_id == payload.player_id,
         )
@@ -449,6 +476,8 @@ def create_template(
         event_id=event_id,
         name=payload.name,
         picks_json=template_picks_json(payload),
+        # A new list opens as the last tab.
+        sort_order=max(existing, default=-1) + 1,
         created_at=now,
         updated_at=now,
     )

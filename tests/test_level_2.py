@@ -273,6 +273,60 @@ def test_templates_are_named_drafts_kept_apart_from_the_final_prediction() -> No
     assert [item["name"] for item in remaining] == ["Blank list"]
 
 
+def test_templates_keep_the_order_their_player_gives_them() -> None:
+    client = TestClient(app)
+    event = client.get("/api/events/active").json()
+    player_id = client.post("/api/players", json={"username": "Sorter"}).json()["id"]
+    stranger = client.post("/api/players", json={"username": "Nosy"}).json()["id"]
+    base = f"/api/events/{event['id']}/templates"
+    listing = f"/api/events/{event['id']}/players/{player_id}/templates"
+    ids = [
+        client.post(base, json={"player_id": player_id, "name": name}).json()["id"]
+        for name in ("A", "B", "C")
+    ]
+    client.post(base, json={"player_id": stranger, "name": "Theirs"})
+
+    reordered = client.put(f"{listing}/order", json={"template_ids": [ids[2], ids[0], ids[1]]})
+    assert reordered.status_code == 200
+    assert [item["name"] for item in reordered.json()] == ["C", "A", "B"]
+    assert [item["name"] for item in client.get(listing).json()] == ["C", "A", "B"]
+
+    # A new list opens as the last tab.
+    client.post(base, json={"player_id": player_id, "name": "D"})
+    assert [item["name"] for item in client.get(listing).json()] == ["C", "A", "B", "D"]
+
+    # The order must name every one of the player's lists and nobody else's.
+    assert client.put(f"{listing}/order", json={"template_ids": ids}).status_code == 409
+    theirs = client.get(f"/api/events/{event['id']}/players/{stranger}/templates").json()[0]["id"]
+    everything = [item["id"] for item in client.get(listing).json()]
+    assert (
+        client.put(f"{listing}/order", json={"template_ids": [*everything[:-1], theirs]}).status_code
+        == 409
+    )
+    assert [item["name"] for item in client.get(listing).json()] == ["C", "A", "B", "D"]
+
+
+def test_init_db_adds_the_template_order_to_an_existing_table(tmp_path, monkeypatch) -> None:
+    engine = create_engine(f"sqlite:///{tmp_path / 'old.sqlite3'}")
+    with engine.begin() as connection:
+        connection.exec_driver_sql(
+            "CREATE TABLE prediction_templates (id INTEGER PRIMARY KEY, player_id INTEGER,"
+            " event_id INTEGER, name VARCHAR(40), picks_json TEXT, created_at DATETIME,"
+            " updated_at DATETIME)"
+        )
+        connection.exec_driver_sql(
+            "INSERT INTO prediction_templates (player_id, event_id, name, picks_json)"
+            " VALUES (1, 1, 'Old', '{}')"
+        )
+    monkeypatch.setattr(db_module, "engine", engine)
+    db_module.init_db()
+    db_module.init_db()
+    with engine.connect() as connection:
+        rows = connection.exec_driver_sql("SELECT name, sort_order FROM prediction_templates").all()
+    assert [tuple(row) for row in rows] == [("Old", 0)]
+    engine.dispose()
+
+
 def test_a_player_keeps_a_bounded_number_of_templates() -> None:
     import app.main as main_module
 

@@ -99,6 +99,12 @@ class TemplateUpsert(PicksBase):
         return cleaned
 
 
+class TemplateOrder(BaseModel):
+    """Every one of a player's templates, in the order their tabs should read."""
+
+    template_ids: list[int] = Field(max_length=100)
+
+
 class FavouritesUpdate(BaseModel):
     """Riders to heart and to un-heart in one go (a group, or every rider shown)."""
 
