@@ -169,19 +169,38 @@ def sign_in_and_pick(page, base: str, username: str, picks: list[int], favourite
         page.click("[data-favourites-only]")
 
 
-def clear_favourites(page, rider_ids: list[int]) -> None:
-    """Heart a few riders, then empty the list with the broken-heart button."""
-    for rider_id in rider_ids:
-        page.click(f'#riders [data-rider-fav="{rider_id}"]')
+def favourites_count(page) -> int:
+    return int(page.inner_text(".favourites-toggle i"))
+
+
+def bulk_favourites(page) -> None:
+    """A group's heart, the pulsing add-all heart, then the broken clear-all heart."""
+    group = page.locator("#riders .country-group").first
+    size = group.locator(".rider").count()
+    group.locator("[data-group-fav]").click()
+    page.wait_for_function(f"() => document.querySelector('.favourites-toggle i').textContent === '{size}'")
+    if group.locator(".rider-fav.on").count() != size:
+        raise AssertionError("the group heart did not heart every rider in the group")
+    group.locator("[data-group-fav]").click()
+    page.wait_for_function("() => document.querySelector('.favourites-toggle i').textContent === '0'")
+
+    page.fill("#rider-search", "van")
+    shown = page.locator("#riders .rider").count()
+    page.click("[data-favourites-add-shown]")
+    page.wait_for_function(f"() => document.querySelector('.favourites-toggle i').textContent === '{shown}'")
+    if page.locator("#riders .rider-fav.on").count() != shown:
+        raise AssertionError("the pulsing heart did not heart every rider shown")
+    page.fill("#rider-search", "")
+
     page.click("[data-favourites-clear]")
     page.wait_for_selector("[data-favourites-clear]", state="detached")
-    if page.locator("#riders .rider-fav.on").count():
+    if favourites_count(page) or page.locator("#riders .rider-fav.on").count():
         raise AssertionError("hearts are still on after clearing favourites")
 
 
 def fill_top_ten(page, base: str, username: str, picks: list[int], shots: Path) -> None:
     sign_in_and_pick(page, base, username, picks)
-    clear_favourites(page, picks[:2])
+    bulk_favourites(page)
     page.click("#save")
     saved_message(page, "Final prediction saved")
     page.screenshot(path=shots / f"{username}-top10.png", full_page=True)
@@ -334,7 +353,7 @@ def main() -> int:
                 stored = httpx.get(
                     f"{base}/api/events/{event['id']}/players/{player['id']}/favourites"
                 ).json()
-                # The first player kept a pool; the second hearted two and cleared them.
+                # The first player kept a pool; the second used the bulk hearts, then cleared.
                 expected = sorted(favourites) if index == 0 else []
                 if sorted(stored) != expected:
                     failures.append(f"{username}: favourites stored as {stored}")

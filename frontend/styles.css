@@ -400,3 +400,21 @@ button.matrix-cell.on { border-color:var(--sage); background:var(--sage); box-sh
 .favourites-clear:hover { background:var(--pink-tint); color:var(--pink); }
 .favourites-clear:focus-visible { outline:1px solid var(--pink); outline-offset:1px; }
 @media(max-width:650px) { .favourites-clear { width:34px; height:34px; } .favourites-clear svg { width:18px; height:18px; } }
+
+/* Favourites get their own row under Riders: the toggle, the pulsing add-all
+   heart and the broken clear-all heart. */
+.favourites-controls { display:flex; flex-wrap:wrap; align-items:center; gap:4px; grid-column:1 / -1; }
+.favourites-controls .favourites-toggle { margin-left:0; }
+.favourites-add { display:inline-grid; width:26px; height:26px; min-width:0; place-items:center; border:0; border-radius:50%; background:transparent; padding:0; color:var(--pink); }
+.favourites-add svg { width:15px; height:15px; fill:var(--pink); stroke:var(--pink); stroke-width:1.7; stroke-linejoin:round; animation:heart-pulse 1.8s ease-in-out infinite; }
+.favourites-add:hover { background:var(--pink-tint); color:var(--pink); }
+.favourites-add:focus-visible { outline:1px solid var(--pink); outline-offset:1px; }
+@keyframes heart-pulse { 0%,55%,100% { transform:scale(1); } 12% { transform:scale(1.2); } 24% { transform:scale(.95); } 36% { transform:scale(1.12); } }
+@media(prefers-reduced-motion:reduce) { .favourites-add svg { animation:none; } }
+.group-fav { display:inline-grid; width:24px; height:24px; min-width:0; margin-left:2px; place-items:center; border:0; border-radius:50%; background:transparent; padding:0; color:var(--placeholder); vertical-align:middle; }
+.group-fav svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linejoin:round; }
+.group-fav:hover { background:var(--pink-tint); color:var(--pink); }
+.group-fav.on { color:var(--pink); }
+.group-fav.on svg { fill:var(--pink); }
+.group-fav:focus-visible { outline:1px solid var(--pink); outline-offset:1px; }
+@media(max-width:650px) { .favourites-add,.group-fav { width:34px; height:34px; } .favourites-add svg { width:18px; height:18px; } .group-fav svg { width:16px; height:16px; } }

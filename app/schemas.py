@@ -99,6 +99,19 @@ class TemplateUpsert(PicksBase):
         return cleaned
 
 
+class FavouritesUpdate(BaseModel):
+    """Riders to heart and to un-heart in one go (a group, or every rider shown)."""
+
+    add: list[int] = Field(default_factory=list, max_length=500)
+    remove: list[int] = Field(default_factory=list, max_length=500)
+
+    @model_validator(mode="after")
+    def add_and_remove_differ(self) -> "FavouritesUpdate":
+        if set(self.add) & set(self.remove):
+            raise ValueError("A rider cannot be added and removed at once")
+        return self
+
+
 class TemplateResponse(BaseModel):
     id: int
     name: str
