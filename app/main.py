@@ -18,6 +18,7 @@ from app.models import (
     Event,
     EventResult,
     EventRider,
+    FavouriteRider,
     Player,
     Prediction,
     PredictionItem,
@@ -464,6 +465,79 @@ def delete_template(
 ) -> None:
     require_open_event(event_id, db)
     db.delete(owned_template(db, event_id, template_id, player_id))
+    db.commit()
+
+
+# -- favourites: riders a player hearts to narrow the pool ---------------------
+
+
+def require_player_and_starter(db: Session, event_id: int, player_id: int, rider_id: int) -> None:
+    if db.get(Event, event_id) is None:
+        raise HTTPException(status_code=404, detail="Event not found")
+    if db.get(Player, player_id) is None:
+        raise HTTPException(status_code=404, detail="Player not found")
+    starter = db.scalar(
+        select(EventRider.id).where(
+            EventRider.event_id == event_id,
+            EventRider.rider_id == rider_id,
+            EventRider.is_starter.is_(True),
+        )
+    )
+    if starter is None:
+        raise HTTPException(status_code=422, detail="Favourites must be riders on the startlist")
+
+
+@app.get("/api/events/{event_id}/players/{player_id}/favourites", response_model=list[int])
+def list_favourites(
+    event_id: int, player_id: int, db: Session = Depends(get_db)
+) -> list[int]:
+    return list(
+        db.scalars(
+            select(FavouriteRider.rider_id)
+            .where(FavouriteRider.event_id == event_id, FavouriteRider.player_id == player_id)
+            .order_by(FavouriteRider.created_at, FavouriteRider.id)
+        ).all()
+    )
+
+
+@app.put(
+    "/api/events/{event_id}/players/{player_id}/favourites/{rider_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def add_favourite(
+    event_id: int, player_id: int, rider_id: int, db: Session = Depends(get_db)
+) -> None:
+    require_player_and_starter(db, event_id, player_id, rider_id)
+    exists = db.scalar(
+        select(FavouriteRider.id).where(
+            FavouriteRider.event_id == event_id,
+            FavouriteRider.player_id == player_id,
+            FavouriteRider.rider_id == rider_id,
+        )
+    )
+    if exists is None:
+        db.add(FavouriteRider(event_id=event_id, player_id=player_id, rider_id=rider_id))
+        try:
+            db.commit()
+        except IntegrityError:
+            # A double tap raced itself; the favourite is there either way.
+            db.rollback()
+
+
+@app.delete(
+    "/api/events/{event_id}/players/{player_id}/favourites/{rider_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def remove_favourite(
+    event_id: int, player_id: int, rider_id: int, db: Session = Depends(get_db)
+) -> None:
+    db.execute(
+        delete(FavouriteRider).where(
+            FavouriteRider.event_id == event_id,
+            FavouriteRider.player_id == player_id,
+            FavouriteRider.rider_id == rider_id,
+        )
+    )
     db.commit()
 
 

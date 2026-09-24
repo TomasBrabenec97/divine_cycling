@@ -110,6 +110,25 @@ class PredictionTemplate(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
+class FavouriteRider(Base):
+    """A rider a player has hearted to narrow the pool while building lists.
+
+    Favourites are a browsing aid only: they never affect a prediction or its
+    score, so they stay editable after the deadline.
+    """
+
+    __tablename__ = "favourite_riders"
+    __table_args__ = (
+        UniqueConstraint("player_id", "event_id", "rider_id", name="uq_favourite_rider"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    player_id: Mapped[int] = mapped_column(ForeignKey("players.id"), index=True)
+    event_id: Mapped[int] = mapped_column(ForeignKey("events.id"), index=True)
+    rider_id: Mapped[int] = mapped_column(ForeignKey("riders.id"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
 class PredictionItem(Base):
     __tablename__ = "prediction_items"
     __table_args__ = (

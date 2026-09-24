@@ -10,9 +10,10 @@ What it does, in order:
    event deadline a week ahead so the test still works after the real race.
 2. Starts uvicorn on a free port with a throwaway admin key.
 3. Drives the real UI in a browser: registers two players and fills each Top
-   10 and three wildcards through the rider list. The first player keeps a
-   named template, saves it as final, then edits the template and switches
-   between the lists; the second saves a final prediction directly.
+   10 and three wildcards through the rider list. The first player hearts a
+   pool of favourites and picks from that view only, keeps a named template,
+   saves it as final, then edits the template and switches between the lists;
+   the second saves a final prediction directly.
 4. Opens the admin page, enters a finishing order and previews the scoring.
 5. Checks the previewed scores against the scoring module run independently,
    that the leaderboard shows each player's total, and that the compare chart
@@ -141,15 +142,25 @@ def saved_message(page, text: str) -> None:
     )
 
 
-def sign_in_and_pick(page, base: str, username: str, picks: list[int]) -> None:
+def sign_in_and_pick(page, base: str, username: str, picks: list[int], favourites=()) -> None:
     page.goto(base)
     page.wait_for_selector("#identity:not(.hidden)")
     page.fill("#username", username)
     page.click("#join")
     page.wait_for_selector("#prediction:not(.hidden)")
     page.wait_for_selector("[data-rider-add]")
+    if favourites:
+        # Heart a pool first, then build the lists from the favourites view only.
+        for rider_id in favourites:
+            page.click(f'#riders [data-rider-fav="{rider_id}"]')
+        page.click('[data-rider-selection="favourites"]')
+        shown = page.locator("#riders .rider").count()
+        if shown != len(favourites):
+            raise AssertionError(f"Favourites view shows {shown} riders, hearted {len(favourites)}")
     for rider_id in picks:
         page.click(f'[data-rider-add="{rider_id}"]')
+    if favourites:
+        page.click('[data-rider-selection="all"]')
 
 
 def fill_top_ten(page, base: str, username: str, picks: list[int], shots: Path) -> None:
@@ -161,12 +172,15 @@ def fill_top_ten(page, base: str, username: str, picks: list[int], shots: Path) 
     page.wait_for_selector("#identity:not(.hidden)")
 
 
-def keep_a_template(page, base: str, username: str, picks: list[int], spare: int, shots: Path):
+def keep_a_template(
+    page, base: str, username: str, picks: list[int], spare: int, favourites: list[int], shots: Path
+):
     """Save the picks as a named template and as final, then change only the template.
 
-    Returns the template's picks after the edit; the final keeps `picks`.
+    The picks are made from a hearted pool of favourites. Returns the
+    template's picks after the edit; the final keeps `picks`.
     """
-    sign_in_and_pick(page, base, username, picks)
+    sign_in_and_pick(page, base, username, picks, favourites)
     page.click("#save-new-template")
     page.wait_for_selector("[data-rename]")
     page.fill("[data-rename]", "Plan A")
@@ -288,8 +302,9 @@ def main() -> int:
                 print(f"Filling the Top 10 of {username} through the UI")
                 if index == 0:
                     spare = next(r for r in ranks if r not in rider_ids)
+                    favourites = rider_ids + [r for r in ranks if r not in rider_ids][1:3]
                     template_edits[username] = keep_a_template(
-                        page, base, username, rider_ids, spare, shots
+                        page, base, username, rider_ids, spare, favourites, shots
                     )
                 else:
                     fill_top_ten(page, base, username, rider_ids, shots)
@@ -299,6 +314,12 @@ def main() -> int:
                 saved_ids = [item["rider_id"] for item in body["selections"]] + body["wildcards"]
                 if saved_ids != rider_ids:
                     failures.append(f"{username}: saved {saved_ids}, picked {rider_ids}")
+                if index == 0:
+                    stored = httpx.get(
+                        f"{base}/api/events/{event['id']}/players/{player['id']}/favourites"
+                    ).json()
+                    if sorted(stored) != sorted(favourites):
+                        failures.append(f"{username}: favourites stored as {stored}")
                 if username in template_edits:
                     lists = httpx.get(
                         f"{base}/api/events/{event['id']}/players/{player['id']}/templates"

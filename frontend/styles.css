@@ -346,3 +346,34 @@ button.matrix-cell.on { border-color:var(--sage); background:var(--sage); box-sh
 .rider.selected.wildcard .rank,.rider.selected.wildcard .pick-position { color:#8c4a28; }
 .rider.selected.wildcard .rank-scale::after,.rider.selected.wildcard:hover .rank-scale::after { background:#f3dccd; }
 .wildcard-slot.pick-filled .wildcard-mark { color:var(--terracotta); }
+
+/* Favourites: a heart on every rider cell, left of the + button. */
+.rider-fav { position:absolute; top:7px; right:34px; display:grid; width:23px; height:23px; min-width:0; place-items:center; border:0; background:transparent; padding:0; color:var(--placeholder); }
+.rider-fav svg,.detail-fav svg,.favourites-filter svg { fill:none; stroke:currentColor; stroke-width:1.8; stroke-linejoin:round; }
+.rider-fav svg { width:16px; height:16px; }
+.rider:hover .rider-fav { color:var(--muted); }
+.rider-fav:hover,.rider:hover .rider-fav:hover { background:transparent; color:var(--terracotta); }
+.rider-fav.on,.rider:hover .rider-fav.on { color:var(--terracotta); }
+.rider-fav.on svg,.detail-fav.on svg { fill:currentColor; }
+.rider-fav:focus-visible { outline:1px solid var(--terracotta); outline-offset:1px; }
+.rider { padding-right:62px; }
+.rider.selected { padding-right:106px; }
+.rider.selected .rider-fav { right:79px; }
+.favourites-filter svg { width:12px; height:12px; margin-right:4px; vertical-align:-1px; color:var(--terracotta); fill:var(--terracotta); }
+.favourites-filter i { color:var(--muted); font-style:normal; font-weight:400; }
+.rider-detail-links { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; margin-top:10px; }
+.rider-detail-links .pcs-link { margin-top:0; }
+.detail-fav { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); background:transparent; padding:3px 9px; color:var(--muted); font:700 12px inherit; }
+.detail-fav svg { width:14px; height:14px; color:var(--terracotta); }
+.detail-fav::after { content:"Add to favourites"; }
+.detail-fav.on { border-color:#e4c6b2; color:var(--ink); }
+.detail-fav.on::after { content:"Favourite"; }
+.detail-fav:hover { border-color:var(--terracotta); background:transparent; color:var(--ink); }
+
+@media(max-width:650px) { .rider-fav { top:5px; right:42px; width:34px; height:34px; }
+.rider-fav svg { width:20px; height:20px; }
+.rider { padding-right:80px; }
+.rider.selected { padding-right:131px; }
+.rider.selected .rider-fav { right:93px; }
+ }
+.rider-selection-label { flex-wrap:wrap; row-gap:2px; }
