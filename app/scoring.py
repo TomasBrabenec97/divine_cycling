@@ -68,10 +68,11 @@ class RankCurves:
 @dataclass(frozen=True)
 class ScoringRules:
     version: str = "v2.0"
-    # The deepest actual finish that can still earn placement points. The
-    # model document scores the actual top 10 only; raise it (and enter that
-    # many results) to reward near misses outside the top 10 as well.
-    placement_depth: int = 10
+    # The deepest actual finish that can still earn placement points: a near
+    # miss outside the top 10 still scores (guessed 10th, finished 11th earns
+    # the one-place factor). 24 is the last finish your 10th pick can reach
+    # while fewer than 15 places off; set 10 to score the actual top 10 only.
+    placement_depth: int = 24
     # Factor by distance between guessed and actual position, 0 through 14;
     # 15 or more places off earns nothing. Anchored at 1.00, 0.80 and 0.10
     # with an exponential decay between 1 and 14 places.
