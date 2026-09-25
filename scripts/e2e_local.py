@@ -86,6 +86,12 @@ def build_database(workdir: Path) -> dict[str, str]:
             "UPDATE events SET prediction_deadline = ?, starts_at = ?",
             (deadline.isoformat(sep=" "), (deadline + timedelta(hours=1)).isoformat(sep=" ")),
         )
+        event_id = connection.execute("SELECT id FROM events LIMIT 1").fetchone()[0]
+        connection.execute(
+            "INSERT INTO local_leagues (event_id, code, submission_deadline, created_at)"
+            " VALUES (?, ?, ?, ?)",
+            (event_id, "prg-office", (deadline + timedelta(hours=2)).isoformat(sep=" "), datetime.now(UTC).replace(tzinfo=None).isoformat(sep=" ")),
+        )
     return env
 
 
@@ -144,6 +150,36 @@ def saved_message(page, text: str) -> None:
     page.wait_for_function(
         "text => document.querySelector('#prediction-message').textContent.includes(text)", arg=text
     )
+
+
+def check_league_invite(page, base: str, shots: Path) -> None:
+    page.goto(f"{base}/join_league?league_code=prg-office")
+    page.wait_for_selector("#identity:not(.hidden)")
+    if "prg-office" not in page.inner_text("#league-invite"):
+        raise AssertionError("the invite code is not shown before sign-in")
+    page.fill("#username", "e2e_invited")
+    page.click("#join")
+    page.wait_for_selector("#prediction:not(.hidden)")
+    page.wait_for_function("() => document.querySelector('#league-summary').textContent.includes('prg-office')")
+    page.screenshot(path=shots / "league-profile.png", full_page=False)
+    if "prg-office" not in page.inner_text("#event-meta"):
+        raise AssertionError("the league deadline is not shown on the player page")
+    page.evaluate("() => { window.copiedInvite = ''; Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async text => { window.copiedInvite = text; } } }); }")
+    page.click("#copy-league-link")
+    page.wait_for_function("() => window.copiedInvite.includes('join_league/') && window.copiedInvite.includes('league_code=prg-office')")
+    page.click("#leave-league-button")
+    page.wait_for_function("() => document.querySelector('#league-summary').textContent === 'Global leaderboard'")
+    page.click("#join-league-button")
+    page.fill("#league-code", "missing")
+    page.click("#confirm-join-league")
+    page.wait_for_function("() => document.querySelector('#league-message').textContent.includes('not found')")
+    page.fill("#league-code", "prg-office")
+    page.click("#confirm-join-league")
+    page.wait_for_selector("#join-league-dialog", state="hidden")
+    if "1 joined" not in page.inner_text("#league-counts"):
+        raise AssertionError("the league member count did not update")
+    page.click("#logout")
+    page.wait_for_selector("#identity:not(.hidden)")
 
 
 def sign_in_and_pick(page, base: str, username: str, picks: list[int], favourites=()) -> None:
@@ -236,13 +272,109 @@ def use_filters(page) -> None:
 
 def fill_top_ten(page, base: str, username: str, picks: list[int], shots: Path) -> None:
     sign_in_and_pick(page, base, username, picks)
+    if page.inner_text('[data-list="final"] .list-tab-label') != "My Picks":
+        raise AssertionError("the scored list tab should be named My Picks")
+    if not page.is_checked("#final-autosave") or not page.is_disabled("#revert-picks"):
+        raise AssertionError("FINAL must start with auto-save on and Revert disabled")
+    page.wait_for_function(
+        "() => document.querySelector('#final-save-status').textContent === 'All changes saved'"
+    )
     bulk_favourites(page)
     use_filters(page)
-    page.click("#save")
-    saved_message(page, "Final prediction saved")
+    page.uncheck("#final-autosave")
+    if not page.is_visible("#save"):
+        raise AssertionError("turning off auto-save did not show Save")
+    page.reload()
+    page.wait_for_selector("#prediction:not(.hidden)")
+    if page.is_checked("#final-autosave"):
+        raise AssertionError("the player auto-save preference did not survive a reload")
+    page.click('[data-remove="9"]')
+    page.wait_for_timeout(850)
+    player = httpx.get(f"{base}/api/players/by-username/{username}").json()
+    event_id = httpx.get(f"{base}/api/events/active").json()["id"]
+    prediction_url = f"{base}/api/events/{event_id}/predictions/{player['id']}"
+    if len(httpx.get(prediction_url).json()["selections"]) != 10:
+        raise AssertionError("FINAL changed on the server while auto-save was off")
+    page.click("#revert-picks")
+    if shown_top_ten(page) != picks[:10]:
+        raise AssertionError("Revert did not restore the saved FINAL list")
+    page.click('[data-remove="9"]')
+    with page.expect_response(lambda response: response.request.method == "PUT" and "/predictions" in response.url):
+        page.click("#save")
+    if len(httpx.get(prediction_url).json()["selections"]) != 9:
+        raise AssertionError("manual Save did not persist the edited FINAL list")
+    page.click(f'[data-rider-add="{picks[9]}"]')
+    with page.expect_response(lambda response: response.request.method == "PUT" and "/predictions" in response.url):
+        page.click("#save")
+    saved_message(page, "My Picks saved")
     page.screenshot(path=shots / f"{username}-top10.png", full_page=True)
     page.click("#logout")
     page.wait_for_selector("#identity:not(.hidden)")
+
+
+def touch_move_pick(page, source: str, target: str) -> None:
+    """Hold a mobile pick, then move it to another visible slot."""
+    start, end = page.locator(source).bounding_box(), page.locator(target).bounding_box()
+    session = page.context.new_cdp_session(page)
+    point = lambda box: {"x": box["x"] + box["width"] / 2, "y": box["y"] + box["height"] / 2}
+    session.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [point(start)]})
+    time.sleep(0.45)
+    session.send("Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [point(end)]})
+    session.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+    session.detach()
+
+
+def check_mobile_editor(page, base: str, shots: Path) -> None:
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.goto(base)
+    page.wait_for_selector("#identity:not(.hidden)")
+    page.fill("#username", "e2e_bob")
+    page.click("#join")
+    page.wait_for_selector("#prediction:not(.hidden)")
+    if not page.is_visible("#mobile-picks-handle"):
+        raise AssertionError("the mobile Top 10 handle is missing")
+    handle = page.locator("#mobile-picks-handle").bounding_box()
+    page.mouse.move(handle["x"] + 12, handle["y"] + 45)
+    page.mouse.down()
+    page.mouse.move(handle["x"] + 90, handle["y"] + 45, steps=6)
+    page.mouse.up()
+    page.wait_for_selector("body.mobile-picks-open")
+    if page.is_visible("#mobile-picks-handle"):
+        raise AssertionError("the left handle overlays the open Top 10 popup")
+    page.click("#mobile-picks-backdrop", position={"x": 360, "y": 30})
+    if not page.is_visible("#mobile-picks-handle"):
+        raise AssertionError("the left handle did not return after closing the popup")
+    page.click("#mobile-picks-handle")
+    page.wait_for_selector("body.mobile-picks-open")
+    if page.locator("#picks li").count() != 10 or page.locator("#wildcards li").count() != 3:
+        raise AssertionError("the mobile drawer does not show all Top 10 and wildcard slots")
+    if page.is_visible("#list-switcher") or page.is_visible("#clear-picks") or page.is_visible("#save"):
+        raise AssertionError("the drawer shows actions below the picks")
+    top, wildcard = page.locator('#picks li[data-position="0"]').get_attribute("data-picked-rider"), page.locator('#wildcards li[data-wildcard-slot="0"]').get_attribute("data-picked-rider")
+    touch_move_pick(page, '#picks li[data-position="0"]', '#wildcards li[data-wildcard-slot="0"]')
+    if page.locator('#picks li[data-position="0"]').get_attribute("data-picked-rider") != wildcard:
+        raise AssertionError("touch hold did not move a Top 10 rider into a wildcard slot")
+    touch_move_pick(page, '#picks li[data-position="0"]', '#wildcards li[data-wildcard-slot="0"]')
+    if page.locator('#picks li[data-position="0"]').get_attribute("data-picked-rider") != top:
+        raise AssertionError("touch hold did not restore the Top 10 order")
+    page.screenshot(path=shots / "mobile-top10-drawer.png", full_page=False)
+    page.click("#mobile-picks-backdrop", position={"x": 360, "y": 30})
+    page.wait_for_selector("body.mobile-picks-open", state="detached")
+    page.locator("#riders .rider:not(.selected) [data-rider-add]").first.click()
+    page.wait_for_selector("body.mobile-picking")
+    if page.is_visible("#mobile-picks-handle"):
+        raise AssertionError("the left handle overlays the add-rider popup")
+    if not page.is_visible("#wildcards li:last-child"):
+        raise AssertionError("the add-rider popup does not include the wildcards")
+    page.click("#mobile-picks-backdrop", position={"x": 360, "y": 30})
+    page.wait_for_selector("body.mobile-picking", state="detached")
+    page.evaluate("() => { state.finalAutosave = false; render(); }")
+    if not page.is_visible("#mobile-save"):
+        raise AssertionError("manual FINAL mode does not show the floating Save button")
+    page.evaluate("() => window.scrollTo(0, document.body.scrollHeight)")
+    page.click("#back-to-top")
+    page.wait_for_function("() => Math.abs(window.scrollY - document.querySelector('#prediction').offsetTop) < 35")
+    page.set_viewport_size({"width": 1280, "height": 900})
 
 
 def tab_menu(page, tab, action: str) -> None:
@@ -293,7 +425,7 @@ def keep_a_template(
     page.keyboard.press("Enter")
     page.wait_for_selector('.list-tab.active:has-text("Plan A")')
     page.click("#save")
-    saved_message(page, "as your final prediction")
+    saved_message(page, "as My Picks")
 
     # A template has no Save button: the edit goes out by itself.
     with page.expect_response(template_saved_with(spare)):
@@ -309,7 +441,7 @@ def keep_a_template(
     page.click('[data-list="final"]')
     page.wait_for_selector('.list-tab.final.active')
     if shown_top_ten(page) != picks[:10]:
-        raise AssertionError(f"Final tab shows {shown_top_ten(page)}, expected {picks[:10]}")
+        raise AssertionError(f"My Picks tab shows {shown_top_ten(page)}, expected {picks[:10]}")
     page.click('.list-tab:has-text("Plan A")')
     page.wait_for_selector('.list-tab.active:has-text("Plan A")')
     if shown_top_ten(page) != edited:
@@ -429,6 +561,8 @@ def main() -> int:
             context = browser.new_context(viewport={"width": 1280, "height": 900})
             page = context.new_page()
             page.on("pageerror", lambda error: failures.append(f"page error: {error}"))
+            print("Checking the league invite and membership UI")
+            check_league_invite(page, base, shots)
 
             template_edits: dict[str, list[int]] = {}
             for index, (username, rider_ids) in enumerate(picks.items()):
@@ -464,8 +598,54 @@ def main() -> int:
                     ]:
                         failures.append(f"{username}: template stored as {lists}")
 
+            print("Checking the mobile Top 10 drawer")
+            check_mobile_editor(page, base, shots)
             print("Previewing the scoring on the admin page")
             preview = simulate(page, base, finish, shots)
+            page.wait_for_selector("#admin-players:not(.hidden)")
+            page.fill("#admin-player-filter", 'league_code = "prg-office" and submitted_flag = FALSE')
+            if page.locator("#admin-player-rows tr").count() != 1 or "e2e_invited" not in page.inner_text("#admin-player-rows"):
+                failures.append("the admin player filter did not select the invited non-submitter")
+            page.screenshot(path=shots / "admin-players.png", full_page=False)
+            page.click("#admin-player-rows button")
+            page.fill("#admin-delete-confirmation", "no")
+            page.click("#admin-delete-submit")
+            if "Type DELETE exactly" not in page.inner_text("#admin-delete-message"):
+                failures.append("the admin delete dialog accepted an invalid confirmation")
+            page.fill("#admin-delete-confirmation", "DELETE")
+            page.click("#admin-delete-submit")
+            page.wait_for_selector("#admin-delete-dialog", state="hidden")
+            if page.locator("#admin-player-rows tr").count() != 0:
+                failures.append("the deleted player still appears in the admin table")
+            alice = httpx.get(f"{base}/api/players/by-username/e2e_alice").json()
+            joined = httpx.put(
+                f"{base}/api/events/{event['id']}/players/{alice['id']}/league",
+                json={"code": "prg-office"},
+            )
+            if joined.status_code != 200:
+                failures.append(f"could not join Alice to the local league: {joined.text}")
+            results = [
+                {"position": position, "rider_id": rider_id}
+                for position, rider_id in enumerate(finish, start=1)
+            ]
+            published = httpx.post(
+                f"{base}/api/admin/events/{event['id']}/results",
+                json={"results": results},
+                headers={"X-Admin-Key": ADMIN_KEY},
+            )
+            if published.status_code != 200:
+                failures.append(f"could not publish the local leaderboard: {published.text}")
+            else:
+                page.goto(f"{base}/leaderboard.html")
+                page.evaluate("player => localStorage.setItem('ten-up-player', JSON.stringify(player))", alice)
+                page.reload()
+                page.wait_for_selector("#league-scope:not(.hidden)")
+                page.wait_for_selector("#leaderboard .lb-row")
+                page.screenshot(path=shots / "local-leaderboard.png", full_page=False)
+                if page.locator("#leaderboard .lb-row").count() != 1 or "e2e_alice" not in page.inner_text("#leaderboard .lb-table"):
+                    failures.append("the local league is not the signed-in player's default leaderboard")
+                page.click('[data-league-scope="global"]')
+                page.wait_for_function("() => document.querySelectorAll('#leaderboard .lb-row').length === 2")
             browser.close()
 
         totals = {entry["username"]: entry["total_points"] for entry in preview["entries"]}

@@ -20,6 +20,33 @@ class PlayerResponse(BaseModel):
     username: str
 
 
+class LeagueJoin(BaseModel):
+    code: str = Field(min_length=3, max_length=40)
+
+    @field_validator("code")
+    @classmethod
+    def normalize_code(cls, value: str) -> str:
+        code = value.strip().lower()
+        if not code or not all(char.isalnum() and char.isascii() or char == "-" for char in code):
+            raise ValueError("League code may use only letters, numbers, and hyphens")
+        return code
+
+
+class LeagueResponse(BaseModel):
+    code: str
+    submission_deadline: datetime
+    joined_players: int
+    submitted_players: int
+
+
+class LeagueStatus(BaseModel):
+    league: LeagueResponse | None
+
+
+class AdminDeletePlayer(BaseModel):
+    confirmation: str
+
+
 class RiderResponse(BaseModel):
     id: int
     name: str

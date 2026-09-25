@@ -484,7 +484,46 @@ async function openRiderDetail(riderId) {
     window.requestAnimationFrame(positionModalAndPage);
   }
 }
-function renderSessionControls() { const signedIn = Boolean(state.player); $("#session-controls").classList.toggle("hidden", !signedIn); $("#event-context").classList.toggle("hidden", !signedIn); $("#session-username").textContent = signedIn ? state.player.username : ""; }
+function renderSessionControls() {
+  const signedIn = Boolean(state.player);
+  $("#session-controls").classList.toggle("hidden", !signedIn);
+  $("#event-context").classList.toggle("hidden", !signedIn);
+  $("#session-username").textContent = signedIn ? state.player.username : "";
+  $("#league-summary").textContent = state.league ? `Local League · ${state.league.code}` : "Global leaderboard";
+  $("#league-counts").textContent = state.league ? `${state.league.joined_players} joined · ${state.league.submitted_players} submitted` : "";
+  $("#join-league-button").classList.toggle("hidden", Boolean(state.league));
+  $("#copy-league-link").classList.toggle("hidden", !state.league);
+  $("#leave-league-button").classList.toggle("hidden", !state.league);
+}
+function renderDeadline() {
+  if (!state.event) return;
+  const deadline = state.league?.submission_deadline || state.event.prediction_deadline;
+  const utcDeadline = /[zZ]|[+-]\d{2}:\d{2}$/.test(deadline) ? deadline : `${deadline}Z`;
+  const formatted = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(utcDeadline));
+  $("#event-meta").textContent = `Submit your ${state.league ? `${state.league.code} league` : "global"} prediction by ${formatted}.`;
+}
+async function loadLeagueInfo() {
+  if (!state.player || !state.event) return;
+  const status = await request(`/api/events/${state.event.id}/players/${state.player.id}/league`);
+  state.league = status.league;
+  renderSessionControls();
+  renderDeadline();
+}
+async function joinLeagueCode(code) {
+  const status = await request(`/api/events/${state.event.id}/players/${state.player.id}/league`, { method: "PUT", body: JSON.stringify({ code }) });
+  state.league = status.league;
+  renderSessionControls();
+  renderDeadline();
+}
+async function applyInvite() {
+  if (!state.inviteCode) return;
+  await joinLeagueCode(state.inviteCode);
+  state.inviteCode = "";
+  $("#league-invite").classList.add("hidden");
+  const url = new URL(window.location.href);
+  url.searchParams.delete("league_code");
+  window.history.replaceState({}, "", url);
+}
 function insertRider(riderId, position) {
   const wildcardSlot = state.wildcards.indexOf(riderId);
   if (wildcardSlot < 0 && state.picks.indexOf(riderId) === position) return;
@@ -534,14 +573,27 @@ function cancelPendingPick() {
   if (!state.mobilePendingRiderId) return;
   state.mobilePendingRiderId = null;
   document.body.classList.remove("mobile-picking");
+  $("#mobile-picks-handle").setAttribute("aria-expanded", "false");
   showMessage("#prediction-message", "Pick cancelled.", true);
   render();
+}
+function closeMobilePicks() {
+  document.body.classList.remove("mobile-picks-open");
+  if (state.mobilePendingRiderId) return cancelPendingPick();
+  $("#mobile-picks-handle").setAttribute("aria-expanded", "false");
+}
+function toggleMobilePicks() {
+  if (state.mobilePendingRiderId) return closeMobilePicks();
+  const open = document.body.classList.toggle("mobile-picks-open");
+  $("#mobile-picks-handle").setAttribute("aria-expanded", String(open));
 }
 function addRiderToPicks(riderId) {
   if (isMobileLayout()) {
     if (state.mobilePendingRiderId === riderId) return cancelPendingPick();
     state.mobilePendingRiderId = riderId;
+    document.body.classList.remove("mobile-picks-open");
     document.body.classList.add("mobile-picking");
+    $("#mobile-picks-handle").setAttribute("aria-expanded", "true");
     showMessage("#prediction-message", `Tap a Top 10 position or a wildcard slot for ${riderName(riderId)}.`, true);
     render();
     return;
@@ -578,6 +630,25 @@ function matchesFilters(rider, filters = state.filters) {
 }
 
 function ensurePickActions() {
+  let autosave = $("#final-autosave-control");
+  if (!autosave) {
+    autosave = document.createElement("div");
+    autosave.id = "final-autosave-control";
+    autosave.className = "final-autosave-control";
+    autosave.innerHTML = '<label for="final-autosave"><input id="final-autosave" type="checkbox" /> Auto-save</label><span id="final-save-status" role="status" aria-live="polite"></span><button id="retry-final-save" type="button" class="hidden">Retry</button>';
+    autosave.querySelector("input").addEventListener("change", (event) => {
+      state.finalAutosave = event.target.checked;
+      localStorage.setItem(finalAutosavePreferenceKey(), String(state.finalAutosave));
+      failedFinalAutosave = "";
+      if (!state.finalAutosave) window.clearTimeout(finalAutosaveTimer);
+      render();
+    });
+    autosave.querySelector("#retry-final-save").addEventListener("click", () => {
+      failedFinalAutosave = "";
+      saveFinal({ automatic: true });
+    });
+    $("#wildcards-block").insertAdjacentElement("afterend", autosave);
+  }
   let clear = $("#clear-picks");
   if (!clear) {
     clear = document.createElement("button");
@@ -595,7 +666,7 @@ function ensurePickActions() {
       showMessage("#prediction-message", "Top 10 and wildcards cleared.", true);
       render();
     });
-    $("#wildcards-block").insertAdjacentElement("afterend", clear);
+    autosave.insertAdjacentElement("afterend", clear);
   }
   let actions = $("#revert-actions");
   if (!actions) {
@@ -645,7 +716,7 @@ function ensurePickActions() {
     message.classList.add("top10-message");
     save.insertAdjacentElement("afterend", message);
   }
-  return { clear, revert, save, undo: $("#undo-picks"), redo: $("#redo-picks") };
+  return { autosave, clear, revert, save, undo: $("#undo-picks"), redo: $("#redo-picks") };
 }
 
 // -- lists: the final prediction plus named templates --------------------------
@@ -661,7 +732,7 @@ function listFromPicks(selections = [], wildcards = []) {
 const workingList = () => ({ picks: [...state.picks], wildcards: [...state.wildcards] });
 const picksPayload = (list = workingList()) => ({ selections: list.picks.flatMap((rider_id, index) => rider_id ? [{ position: index + 1, rider_id }] : []), wildcards: list.wildcards.filter(Boolean) });
 const templateById = (id) => state.lists.templates.find((template) => template.id === id);
-const listName = (id) => (id === "final" ? "your final prediction" : `“${templateById(id)?.name || "this list"}”`);
+const listName = (id) => (id === "final" ? "My Picks" : `“${templateById(id)?.name || "this list"}”`);
 const wildcardKey = (list) => list.wildcards.filter(Boolean).sort((a, b) => a - b).join(",");
 const sameList = (a, b) => Boolean(a && b) && a.picks.every((riderId, index) => riderId === b.picks[index]) && wildcardKey(a) === wildcardKey(b);
 function uniqueTemplateName() {
@@ -671,6 +742,10 @@ function uniqueTemplateName() {
 function markSaved(list) {
   state.savedPicks = [...list.picks];
   state.savedWildcards = [...list.wildcards];
+}
+const finalAutosavePreferenceKey = () => `divine-final-autosave:${state.player.id}`;
+function loadFinalAutosavePreference() {
+  state.finalAutosave = localStorage.getItem(finalAutosavePreferenceKey()) !== "false";
 }
 
 async function loadLists() {
@@ -682,7 +757,9 @@ async function loadLists() {
   ]);
   state.favourites = new Set(favourites);
   state.lists.final = prediction ? listFromPicks(prediction.selections, prediction.wildcards) : null;
+  state.finalDraft = null;
   state.lists.templates = templates.map((template) => ({ id: template.id, name: template.name, ...listFromPicks(template.selections, template.wildcards) }));
+  loadFinalAutosavePreference();
   openList("final", { force: true });
 }
 
@@ -690,12 +767,17 @@ function openList(listId, { force = false } = {}) {
   if (!force && listId === state.activeList) return;
   // A template saves itself on the way out; only the final can hold unsaved picks.
   flushTemplateAutosave();
-  if (!force && hasUnsavedPickChanges() && !window.confirm(`You have unsaved changes in ${listName(state.activeList)}. Switch lists and discard them?`)) return;
-  const source = (listId === "final" ? state.lists.final : templateById(listId)) || emptyList();
+  const autosavingFinal = state.activeList === "final" && state.finalAutosave && state.picks.some(Boolean);
+  if (!force && hasUnsavedPickChanges() && !autosavingFinal && !window.confirm(`You have unsaved changes in ${listName(state.activeList)}. Switch lists and discard them?`)) return;
+  if (!force && autosavingFinal && hasUnsavedPickChanges()) {
+    state.finalDraft = workingList();
+    flushFinalAutosave();
+  }
+  const source = (listId === "final" ? state.finalDraft || state.lists.final : templateById(listId)) || emptyList();
   state.activeList = listId;
   state.picks = [...source.picks];
   state.wildcards = [...source.wildcards];
-  markSaved(source);
+  markSaved(listId === "final" ? state.lists.final || emptyList() : source);
   state.renamingList = null;
   state.mobilePendingRiderId = null;
   document.body.classList.remove("mobile-picking");
@@ -710,25 +792,81 @@ const queueTemplateWrite = (task) => (templateWrites = templateWrites.catch(() =
 // Ids are taken when a write is asked for: the player may log out before it runs.
 const writeIds = () => ({ event: state.event.id, player: state.player.id });
 
+// Final writes are serialized, so a slow earlier request cannot overwrite the
+// most recent picks. A failed autosave waits for a new edit or an explicit retry.
+const FINAL_AUTOSAVE_MS = 600;
+let finalAutosaveTimer = 0;
+let finalWrites = Promise.resolve();
+let pendingFinalSaves = new Set();
+let failedFinalAutosave = "";
+const finalSaveKey = (ids, list) => `${ids.event}|${ids.player}|${listKey("final", list)}`;
+function scheduleFinalAutosave() {
+  window.clearTimeout(finalAutosaveTimer);
+  if (!state.player || state.activeList !== "final" || !state.finalAutosave || !hasUnsavedPickChanges() || !state.picks.some(Boolean)) return;
+  const key = finalSaveKey(writeIds(), workingList());
+  if (key !== failedFinalAutosave) failedFinalAutosave = "";
+  if (key === failedFinalAutosave || pendingFinalSaves.has(key)) return;
+  finalAutosaveTimer = window.setTimeout(() => saveFinal({ automatic: true }), FINAL_AUTOSAVE_MS);
+}
+function flushFinalAutosave() {
+  window.clearTimeout(finalAutosaveTimer);
+  if (state.activeList === "final" && state.finalAutosave && hasUnsavedPickChanges() && state.picks.some(Boolean)) return saveFinal({ automatic: true });
+  return finalWrites;
+}
 // Each save records the list it sent, not whatever is on screen when the answer
 // arrives: the player may have switched lists or kept editing meanwhile.
-async function saveFinal() {
+function saveFinal({ automatic = false } = {}) {
   if (!state.picks.some(Boolean)) return showMessage("#prediction-message", "Pick at least one Top 10 rider first.");
   const list = workingList();
   const listId = state.activeList;
-  try {
-    await request(`/api/events/${state.event.id}/predictions`, { method: "PUT", body: JSON.stringify({ player_id: state.player.id, ...picksPayload(list) }) });
-    state.lists.final = list;
-    if (listId === "final") {
-      if (state.activeList === "final") markSaved(list);
-      showMessage("#prediction-message", "Final prediction saved. You can edit it until the deadline.", true);
-    } else {
-      showMessage("#prediction-message", `Saved ${listName(listId)} as your final prediction. It is the one that will be scored.`, true);
+  const ids = writeIds();
+  const key = finalSaveKey(ids, list);
+  if (automatic && (pendingFinalSaves.has(key) || failedFinalAutosave === key)) return finalWrites;
+  pendingFinalSaves.add(key);
+  if (state.player?.id === ids.player) renderFinalSaveStatus();
+  finalWrites = finalWrites.catch(() => {}).then(async () => {
+    try {
+      await request(`/api/events/${ids.event}/predictions`, { method: "PUT", body: JSON.stringify({ player_id: ids.player, ...picksPayload(list) }) });
+      if (state.player?.id !== ids.player) return true;
+      state.lists.final = list;
+      if (!automatic || sameList(state.finalDraft, list)) state.finalDraft = null;
+      if (listId === "final") {
+        if (state.activeList === "final") markSaved(list);
+        if (!automatic) showMessage("#prediction-message", "My Picks saved. You can edit them until the deadline.", true);
+      } else {
+        showMessage("#prediction-message", `Saved ${listName(listId)} as My Picks. These picks will count toward your score.`, true);
+      }
+      if (failedFinalAutosave === key) failedFinalAutosave = "";
+      return true;
+    } catch (error) {
+      if (automatic) failedFinalAutosave = key;
+      if (state.player?.id === ids.player) showMessage("#prediction-message", `${automatic ? "Auto-save failed: " : ""}${error.message}`);
+      return false;
+    } finally {
+      pendingFinalSaves.delete(key);
+      if (state.player?.id === ids.player) render();
     }
-    render();
-  } catch (error) {
-    showMessage("#prediction-message", error.message);
-  }
+  });
+  return finalWrites;
+}
+function renderFinalSaveStatus() {
+  const control = $("#final-autosave-control");
+  if (!control || !state.player) return;
+  const editingFinal = state.activeList === "final";
+  control.classList.toggle("hidden", !editingFinal);
+  control.querySelector("input").checked = state.finalAutosave;
+  if (!editingFinal) return;
+  const dirty = hasUnsavedPickChanges();
+  const key = finalSaveKey(writeIds(), workingList());
+  const failed = state.finalAutosave && dirty && failedFinalAutosave === key;
+  const saving = [...pendingFinalSaves].some((pending) => pending.startsWith(`${state.event.id}|${state.player.id}|`));
+  const status = !state.finalAutosave ? (dirty ? "Auto-save off · Unsaved changes" : "Auto-save off")
+    : failed ? "Auto-save failed"
+    : dirty && !state.picks.some(Boolean) ? "Add a Top 10 rider to save"
+    : saving ? "Saving…"
+    : dirty ? "Saving shortly…" : state.lists.final ? "All changes saved" : "On · Add a rider to start";
+  control.querySelector("#final-save-status").textContent = status;
+  control.querySelector("#retry-final-save").classList.toggle("hidden", !failed);
 }
 
 async function putTemplate(ids, template, name, list, options = {}) {
@@ -1073,7 +1211,7 @@ function renderListSwitcher() {
   };
   const scrollLeft = strip.scrollLeft;
   strip.innerHTML = [
-    tab("final", "Final", "Your final prediction: the one that is scored"),
+    tab("final", "My Picks", "These picks count toward your score and can be changed until the deadline"),
     ...state.lists.templates.map((template) => state.renamingList === template.id
       ? `<div class="list-tab renaming"><input class="list-name-input" data-rename="${template.id}" value="${escapeHtml(template.name)}" maxlength="40" aria-label="Template name" /></div>`
       : tab(template.id, template.name, template.name)),
@@ -1161,12 +1299,16 @@ const groupKeyFor = (rider) => (state.riderView === "team" ? teamLabel(rider.tea
 function render() {
   const pickActions = ensurePickActions();
   const editingTemplate = state.activeList !== "final";
-  pickActions.save.textContent = editingTemplate ? "Save as final prediction" : "Save final prediction";
+  document.body.classList.toggle("mobile-manual-final", !editingTemplate && state.finalAutosave === false);
+  pickActions.save.textContent = editingTemplate ? "Use as My Picks" : "Save My Picks";
+  pickActions.save.classList.toggle("hidden", !editingTemplate && state.finalAutosave);
   renderListSwitcher();
   scheduleTemplateAutosave();
+  scheduleFinalAutosave();
+  renderFinalSaveStatus();
   pickActions.clear.disabled = savedPicks().length === 0;
   // On a template, Revert stays clickable to explain why there is nothing to revert.
-  pickActions.revert.disabled = !editingTemplate && !hasUnsavedPickChanges();
+  pickActions.revert.disabled = !editingTemplate && (state.finalAutosave || !hasUnsavedPickChanges());
   pickActions.undo.disabled = state.undoStack.length === 0;
   pickActions.redo.disabled = state.redoStack.length === 0;
   const riderById = new Map(state.event.riders.map((rider) => [rider.id, rider]));
@@ -1215,11 +1357,13 @@ function render() {
   document.querySelectorAll("[data-wildcard-slot]").forEach((slot) => {
     const slotIndex = Number(slot.dataset.wildcardSlot);
     slot.addEventListener("click", (event) => {
+      if (suppressMobilePickClick) return;
       if (event.target.closest("[data-remove-wildcard]")) return;
       if (state.mobilePendingRiderId) {
         const riderId = state.mobilePendingRiderId;
         state.mobilePendingRiderId = null;
         document.body.classList.remove("mobile-picking");
+        $("#mobile-picks-handle").setAttribute("aria-expanded", "false");
         insertWildcard(riderId, slotIndex);
         return;
       }
@@ -1230,7 +1374,7 @@ function render() {
     slot.addEventListener("dragleave", () => slot.classList.remove("drag-over"));
     slot.addEventListener("drop", (event) => { event.preventDefault(); slot.classList.remove("drag-over"); document.body.classList.remove("mobile-dragging"); insertWildcard(Number(event.dataTransfer.getData("text/plain")), slotIndex); });
   });
-  document.querySelectorAll("[data-position]").forEach((slot) => { slot.addEventListener("click", (event) => { if (event.target.closest("[data-remove]")) return; if (state.mobilePendingRiderId) { const riderId = state.mobilePendingRiderId; state.mobilePendingRiderId = null; document.body.classList.remove("mobile-picking"); insertRider(riderId, Number(slot.dataset.position)); return; } const riderId = Number(slot.dataset.pickedRider); if (riderId) openRiderDetail(riderId); }); slot.addEventListener("dragover", (event) => { event.preventDefault(); slot.classList.add("drag-over"); }); slot.addEventListener("dragleave", () => slot.classList.remove("drag-over")); slot.addEventListener("drop", (event) => { event.preventDefault(); slot.classList.remove("drag-over"); document.body.classList.remove("mobile-dragging"); insertRider(Number(event.dataTransfer.getData("text/plain")), Number(slot.dataset.position)); }); });
+  document.querySelectorAll("[data-position]").forEach((slot) => { slot.addEventListener("click", (event) => { if (suppressMobilePickClick || event.target.closest("[data-remove]")) return; if (state.mobilePendingRiderId) { const riderId = state.mobilePendingRiderId; state.mobilePendingRiderId = null; document.body.classList.remove("mobile-picking"); $("#mobile-picks-handle").setAttribute("aria-expanded", "false"); insertRider(riderId, Number(slot.dataset.position)); return; } const riderId = Number(slot.dataset.pickedRider); if (riderId) openRiderDetail(riderId); }); slot.addEventListener("dragover", (event) => { event.preventDefault(); slot.classList.add("drag-over"); }); slot.addEventListener("dragleave", () => slot.classList.remove("drag-over")); slot.addEventListener("drop", (event) => { event.preventDefault(); slot.classList.remove("drag-over"); document.body.classList.remove("mobile-dragging"); insertRider(Number(event.dataTransfer.getData("text/plain")), Number(slot.dataset.position)); }); });
 }
 
 // A searchable multi-select: the country and team filters are two instances.
@@ -1472,9 +1616,8 @@ let filtersConfigured = false;
 async function loadEvent() {
   state.event = await request("/api/events/active");
   if (!filtersConfigured) { configureFilters(); filtersConfigured = true; }
-  const deadline = new Intl.DateTimeFormat(undefined, { weekday:"long", month:"long", day:"numeric", hour:"numeric", minute:"2-digit" }).format(new Date(state.event.prediction_deadline));
   $("#event-title").textContent = state.event.name;
-  $("#event-meta").textContent = `Submit your prediction by ${deadline}.`;
+  renderDeadline();
 }
 function restoreSession() {
   const saved = localStorage.getItem("ten-up-player");
@@ -1484,6 +1627,10 @@ function restoreSession() {
   // The sign-in card starts hidden so a returning player never sees it flash
   // during the seconds the API spends waking up.
   if (!state.player) $("#identity").classList.remove("hidden");
+  if (state.inviteCode) {
+    $("#league-invite").textContent = `League invite: ${state.inviteCode}. Continue with your race name to join.`;
+    $("#league-invite").classList.remove("hidden");
+  }
   renderSessionControls();
 }
 // Trend arrows need the PCS reference set; fetch it behind the first render.
@@ -1499,6 +1646,8 @@ async function boot() {
       $("#identity").classList.add("hidden");
       $("#prediction").classList.remove("hidden");
       renderSessionControls();
+      try { await applyInvite(); } catch (error) { showMessage("#prediction-message", error.message); }
+      await loadLeagueInfo();
       await loadPrediction();
       loadReferenceInBackground();
     } else {
@@ -1537,6 +1686,7 @@ $("#join").addEventListener("click", async () => {
       if (!await whenApiReady()) return showMessage("#identity-message", "The server is still not answering. Give it a minute and try again.");
     }
     if (!state.event) await loadEvent();
+    if (state.inviteCode) await request(`/api/events/${state.event.id}/leagues/${encodeURIComponent(state.inviteCode)}`);
     try {
       state.player = await request(`/api/players/by-username/${encodeURIComponent(username)}`);
     } catch (error) {
@@ -1547,6 +1697,8 @@ $("#join").addEventListener("click", async () => {
     $("#identity").classList.add("hidden");
     $("#prediction").classList.remove("hidden");
     renderSessionControls();
+    try { await applyInvite(); } catch (error) { showMessage("#prediction-message", error.message); }
+    await loadLeagueInfo();
     await loadPrediction();
     loadReferenceInBackground();
   } catch (error) {
@@ -1558,6 +1710,43 @@ $("#join").addEventListener("click", async () => {
   }
 });
 $("#username").addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); $("#join").click(); } });
+$("#join-league-button").addEventListener("click", () => {
+  $("#league-code").value = "";
+  $("#league-message").textContent = "";
+  $("#join-league-dialog").showModal();
+  $("#league-code").focus();
+});
+$("#cancel-join-league").addEventListener("click", () => $("#join-league-dialog").close());
+$("#league-code").addEventListener("keydown", (event) => {
+  if (event.key === "Enter") { event.preventDefault(); $("#confirm-join-league").click(); }
+});
+$("#confirm-join-league").addEventListener("click", async () => {
+  const code = $("#league-code").value.trim().toLowerCase();
+  if (!code) return showMessage("#league-message", "Enter a league code first.");
+  try {
+    await joinLeagueCode(code);
+    $("#join-league-dialog").close();
+    showMessage("#prediction-message", `Joined ${state.league.code}. Your deadline is shown above.`, true);
+  } catch (error) { showMessage("#league-message", error.message); }
+});
+$("#leave-league-button").addEventListener("click", async () => {
+  try {
+    await request(`/api/events/${state.event.id}/players/${state.player.id}/league`, { method: "DELETE" });
+    state.league = null;
+    renderSessionControls();
+    renderDeadline();
+    showMessage("#prediction-message", "You left the local league. The global deadline now applies.", true);
+  } catch (error) { showMessage("#prediction-message", error.message); }
+});
+$("#copy-league-link").addEventListener("click", async () => {
+  if (!state.league) return;
+  const invite = new URL("join_league/", new URL(".", window.location.href));
+  invite.searchParams.set("league_code", state.league.code);
+  try {
+    await navigator.clipboard.writeText(invite.href);
+    showMessage("#prediction-message", "League invite link copied.", true);
+  } catch (_) { window.prompt("Copy your league invite link", invite.href); }
+});
 $("#close-rider-detail").addEventListener("click", () => $("#rider-detail-modal").close());
 $("#rider-detail-modal").addEventListener("click", (event) => {
   if (event.target === event.currentTarget) return event.currentTarget.close();
@@ -1583,13 +1772,108 @@ $("#reset-advanced-filters").addEventListener("click", () => {
 });
 $("#logout").addEventListener("click", () => { flushTemplateAutosave(); if (hasUnsavedPickChanges() && !window.confirm("Did you forget to save your prediction?")) return; window.clearTimeout(autosaveTimer); closeListMenu(); localStorage.removeItem("ten-up-player"); state.player = null; state.picks = Array(10).fill(null); state.savedPicks = Array(10).fill(null); state.wildcards = Array(WILDCARD_COUNT).fill(null); state.savedWildcards = Array(WILDCARD_COUNT).fill(null); state.lists = { final: null, templates: [] }; state.activeList = "final"; state.renamingList = null; state.favourites = new Set(); state.favouritesOnly = false; resetPickHistory(); state.mobilePendingRiderId = null; document.body.classList.remove("mobile-picking", "mobile-dragging"); $("#prediction").classList.add("hidden"); $("#identity").classList.remove("hidden"); $("#username").value = ""; renderSessionControls(); showMessage("#identity-message", "You have logged out on this device.", true); $("#username").focus(); });
 $("#save").addEventListener("click", saveFinal);
-window.addEventListener("beforeunload", (event) => { if (!state.player) return; flushTemplateAutosave({ keepalive: true }); if (!hasUnsavedPickChanges()) return; event.preventDefault(); event.returnValue = ""; });
+window.addEventListener("beforeunload", (event) => {
+  if (!state.player) return;
+  flushTemplateAutosave({ keepalive: true });
+  if (!hasUnsavedPickChanges()) return;
+  const canAutosave = state.activeList === "final" && state.finalAutosave && state.picks.some(Boolean);
+  if (canAutosave) {
+    const prefix = `${state.event.id}|${state.player.id}|`;
+    const saving = [...pendingFinalSaves].some((key) => key.startsWith(prefix));
+    const failed = failedFinalAutosave === finalSaveKey(writeIds(), workingList());
+    if (!saving && !failed) {
+      window.clearTimeout(finalAutosaveTimer);
+      request(`/api/events/${state.event.id}/predictions`, { method: "PUT", keepalive: true, body: JSON.stringify({ player_id: state.player.id, ...picksPayload() }) }).catch(() => {});
+      return;
+    }
+  }
+  event.preventDefault();
+  event.returnValue = "";
+});
 window.addEventListener("keydown", (event) => { if (!(event.ctrlKey || event.metaKey) || event.altKey || event.target instanceof HTMLElement && event.target.matches("input, textarea, select")) return; if (event.key.toLowerCase() === "z") { event.preventDefault(); if (event.shiftKey) restorePickState(state.redoStack, state.undoStack, "Redid last change."); else restorePickState(state.undoStack, state.redoStack, "Undid last change."); } else if (event.key.toLowerCase() === "y") { event.preventDefault(); restorePickState(state.redoStack, state.undoStack, "Redid last change."); } });
 $("#cancel-pick").addEventListener("click", cancelPendingPick);
+$("#mobile-picks-backdrop").addEventListener("click", closeMobilePicks);
+const mobilePicksHandle = $("#mobile-picks-handle");
+let handleStartX = null;
+let handledHandleSwipe = false;
+mobilePicksHandle.addEventListener("pointerdown", (event) => {
+  handleStartX = event.clientX;
+  mobilePicksHandle.setPointerCapture(event.pointerId);
+});
+mobilePicksHandle.addEventListener("pointerup", (event) => {
+  if (handleStartX === null || Math.abs(event.clientX - handleStartX) < 35) return;
+  handledHandleSwipe = true;
+  if (event.clientX > handleStartX) document.body.classList.add("mobile-picks-open");
+  else closeMobilePicks();
+  mobilePicksHandle.setAttribute("aria-expanded", String(document.body.classList.contains("mobile-picks-open")));
+  handleStartX = null;
+  window.setTimeout(() => { handledHandleSwipe = false; }, 500);
+});
+mobilePicksHandle.addEventListener("pointercancel", () => { handleStartX = null; });
+mobilePicksHandle.addEventListener("click", () => {
+  if (handledHandleSwipe) { handledHandleSwipe = false; return; }
+  toggleMobilePicks();
+});
+$("#mobile-save").addEventListener("click", () => $("#save").click());
+
+// A held pick can be moved by touch between Top 10 positions and wildcards.
+// An ordinary swipe still scrolls the drawer; the drag starts after the hold.
+let mobilePickTouch = null;
+let suppressMobilePickClick = false;
+const clearMobilePickTouch = () => {
+  if (!mobilePickTouch) return;
+  window.clearTimeout(mobilePickTouch.timer);
+  mobilePickTouch.source.classList.remove("mobile-pick-source");
+  mobilePickTouch.target?.classList.remove("mobile-pick-target");
+  mobilePickTouch = null;
+};
+const mobilePickSlotAt = (x, y) => document.elementFromPoint(x, y)?.closest("#picks li[data-position], #wildcards li[data-wildcard-slot]");
+$("#prediction .picks-column").addEventListener("touchstart", (event) => {
+  if (!isMobileLayout() || event.touches.length !== 1 || !document.body.matches(".mobile-picks-open, .mobile-picking")) return;
+  if (event.target.closest("[data-remove], [data-remove-wildcard]")) return;
+  const source = event.target.closest("li[data-picked-rider]");
+  if (!source) return;
+  const touch = event.touches[0];
+  clearMobilePickTouch();
+  mobilePickTouch = { source, riderId: Number(source.dataset.pickedRider), x: touch.clientX, y: touch.clientY, active: false, target: null, timer: 0 };
+  mobilePickTouch.timer = window.setTimeout(() => {
+    if (!mobilePickTouch) return;
+    mobilePickTouch.active = true;
+    mobilePickTouch.source.classList.add("mobile-pick-source");
+  }, 350);
+}, { passive: true });
+document.addEventListener("touchmove", (event) => {
+  if (!mobilePickTouch) return;
+  const touch = event.touches[0];
+  if (!touch) return;
+  if (!mobilePickTouch.active) {
+    if (Math.hypot(touch.clientX - mobilePickTouch.x, touch.clientY - mobilePickTouch.y) > 8) clearMobilePickTouch();
+    return;
+  }
+  event.preventDefault();
+  const target = mobilePickSlotAt(touch.clientX, touch.clientY);
+  mobilePickTouch.target?.classList.remove("mobile-pick-target");
+  mobilePickTouch.target = target;
+  target?.classList.add("mobile-pick-target");
+}, { passive: false });
+document.addEventListener("touchend", (event) => {
+  if (!mobilePickTouch) return;
+  const drag = mobilePickTouch;
+  if (drag.active) {
+    const touch = event.changedTouches[0];
+    const target = touch && mobilePickSlotAt(touch.clientX, touch.clientY);
+    suppressMobilePickClick = true;
+    window.setTimeout(() => { suppressMobilePickClick = false; }, 400);
+    clearMobilePickTouch();
+    if (target?.dataset.position !== undefined) insertRider(drag.riderId, Number(target.dataset.position));
+    else if (target?.dataset.wildcardSlot !== undefined) insertWildcard(drag.riderId, Number(target.dataset.wildcardSlot));
+  } else clearMobilePickTouch();
+});
+document.addEventListener("touchcancel", clearMobilePickTouch);
 // The help popover is a <details>; close it on a tap anywhere else, as a phone user expects.
 document.addEventListener("pointerdown", (event) => { const help = $(".event-help[open]"); if (help && !help.contains(event.target)) help.open = false; });
 const backToTop = $("#back-to-top");
-backToTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+backToTop.addEventListener("click", () => window.scrollTo({ top: Math.max(0, $("#prediction").getBoundingClientRect().top + window.scrollY - 12), behavior: "smooth" }));
 window.addEventListener("scroll", () => backToTop.classList.toggle("hidden", window.scrollY < 400), { passive: true });
 window.addEventListener("keydown", (event) => { if (event.key === "Escape" && !$("dialog[open]")) { closeListMenu(); cancelPendingPick(); } });
 boot();
