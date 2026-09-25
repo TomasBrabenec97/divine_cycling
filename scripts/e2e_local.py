@@ -272,13 +272,109 @@ def use_filters(page) -> None:
 
 def fill_top_ten(page, base: str, username: str, picks: list[int], shots: Path) -> None:
     sign_in_and_pick(page, base, username, picks)
+    if page.inner_text('[data-list="final"] .list-tab-label') != "My Picks":
+        raise AssertionError("the scored list tab should be named My Picks")
+    if not page.is_checked("#final-autosave") or not page.is_disabled("#revert-picks"):
+        raise AssertionError("FINAL must start with auto-save on and Revert disabled")
+    page.wait_for_function(
+        "() => document.querySelector('#final-save-status').textContent === 'All changes saved'"
+    )
     bulk_favourites(page)
     use_filters(page)
-    page.click("#save")
-    saved_message(page, "Final prediction saved")
+    page.uncheck("#final-autosave")
+    if not page.is_visible("#save"):
+        raise AssertionError("turning off auto-save did not show Save")
+    page.reload()
+    page.wait_for_selector("#prediction:not(.hidden)")
+    if page.is_checked("#final-autosave"):
+        raise AssertionError("the player auto-save preference did not survive a reload")
+    page.click('[data-remove="9"]')
+    page.wait_for_timeout(850)
+    player = httpx.get(f"{base}/api/players/by-username/{username}").json()
+    event_id = httpx.get(f"{base}/api/events/active").json()["id"]
+    prediction_url = f"{base}/api/events/{event_id}/predictions/{player['id']}"
+    if len(httpx.get(prediction_url).json()["selections"]) != 10:
+        raise AssertionError("FINAL changed on the server while auto-save was off")
+    page.click("#revert-picks")
+    if shown_top_ten(page) != picks[:10]:
+        raise AssertionError("Revert did not restore the saved FINAL list")
+    page.click('[data-remove="9"]')
+    with page.expect_response(lambda response: response.request.method == "PUT" and "/predictions" in response.url):
+        page.click("#save")
+    if len(httpx.get(prediction_url).json()["selections"]) != 9:
+        raise AssertionError("manual Save did not persist the edited FINAL list")
+    page.click(f'[data-rider-add="{picks[9]}"]')
+    with page.expect_response(lambda response: response.request.method == "PUT" and "/predictions" in response.url):
+        page.click("#save")
+    saved_message(page, "My Picks saved")
     page.screenshot(path=shots / f"{username}-top10.png", full_page=True)
     page.click("#logout")
     page.wait_for_selector("#identity:not(.hidden)")
+
+
+def touch_move_pick(page, source: str, target: str) -> None:
+    """Hold a mobile pick, then move it to another visible slot."""
+    start, end = page.locator(source).bounding_box(), page.locator(target).bounding_box()
+    session = page.context.new_cdp_session(page)
+    point = lambda box: {"x": box["x"] + box["width"] / 2, "y": box["y"] + box["height"] / 2}
+    session.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [point(start)]})
+    time.sleep(0.45)
+    session.send("Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [point(end)]})
+    session.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+    session.detach()
+
+
+def check_mobile_editor(page, base: str, shots: Path) -> None:
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.goto(base)
+    page.wait_for_selector("#identity:not(.hidden)")
+    page.fill("#username", "e2e_bob")
+    page.click("#join")
+    page.wait_for_selector("#prediction:not(.hidden)")
+    if not page.is_visible("#mobile-picks-handle"):
+        raise AssertionError("the mobile Top 10 handle is missing")
+    handle = page.locator("#mobile-picks-handle").bounding_box()
+    page.mouse.move(handle["x"] + 12, handle["y"] + 45)
+    page.mouse.down()
+    page.mouse.move(handle["x"] + 90, handle["y"] + 45, steps=6)
+    page.mouse.up()
+    page.wait_for_selector("body.mobile-picks-open")
+    if page.is_visible("#mobile-picks-handle"):
+        raise AssertionError("the left handle overlays the open Top 10 popup")
+    page.click("#mobile-picks-backdrop", position={"x": 360, "y": 30})
+    if not page.is_visible("#mobile-picks-handle"):
+        raise AssertionError("the left handle did not return after closing the popup")
+    page.click("#mobile-picks-handle")
+    page.wait_for_selector("body.mobile-picks-open")
+    if page.locator("#picks li").count() != 10 or page.locator("#wildcards li").count() != 3:
+        raise AssertionError("the mobile drawer does not show all Top 10 and wildcard slots")
+    if page.is_visible("#list-switcher") or page.is_visible("#clear-picks") or page.is_visible("#save"):
+        raise AssertionError("the drawer shows actions below the picks")
+    top, wildcard = page.locator('#picks li[data-position="0"]').get_attribute("data-picked-rider"), page.locator('#wildcards li[data-wildcard-slot="0"]').get_attribute("data-picked-rider")
+    touch_move_pick(page, '#picks li[data-position="0"]', '#wildcards li[data-wildcard-slot="0"]')
+    if page.locator('#picks li[data-position="0"]').get_attribute("data-picked-rider") != wildcard:
+        raise AssertionError("touch hold did not move a Top 10 rider into a wildcard slot")
+    touch_move_pick(page, '#picks li[data-position="0"]', '#wildcards li[data-wildcard-slot="0"]')
+    if page.locator('#picks li[data-position="0"]').get_attribute("data-picked-rider") != top:
+        raise AssertionError("touch hold did not restore the Top 10 order")
+    page.screenshot(path=shots / "mobile-top10-drawer.png", full_page=False)
+    page.click("#mobile-picks-backdrop", position={"x": 360, "y": 30})
+    page.wait_for_selector("body.mobile-picks-open", state="detached")
+    page.locator("#riders .rider:not(.selected) [data-rider-add]").first.click()
+    page.wait_for_selector("body.mobile-picking")
+    if page.is_visible("#mobile-picks-handle"):
+        raise AssertionError("the left handle overlays the add-rider popup")
+    if not page.is_visible("#wildcards li:last-child"):
+        raise AssertionError("the add-rider popup does not include the wildcards")
+    page.click("#mobile-picks-backdrop", position={"x": 360, "y": 30})
+    page.wait_for_selector("body.mobile-picking", state="detached")
+    page.evaluate("() => { state.finalAutosave = false; render(); }")
+    if not page.is_visible("#mobile-save"):
+        raise AssertionError("manual FINAL mode does not show the floating Save button")
+    page.evaluate("() => window.scrollTo(0, document.body.scrollHeight)")
+    page.click("#back-to-top")
+    page.wait_for_function("() => Math.abs(window.scrollY - document.querySelector('#prediction').offsetTop) < 35")
+    page.set_viewport_size({"width": 1280, "height": 900})
 
 
 def tab_menu(page, tab, action: str) -> None:
@@ -329,7 +425,7 @@ def keep_a_template(
     page.keyboard.press("Enter")
     page.wait_for_selector('.list-tab.active:has-text("Plan A")')
     page.click("#save")
-    saved_message(page, "as your final prediction")
+    saved_message(page, "as My Picks")
 
     # A template has no Save button: the edit goes out by itself.
     with page.expect_response(template_saved_with(spare)):
@@ -345,7 +441,7 @@ def keep_a_template(
     page.click('[data-list="final"]')
     page.wait_for_selector('.list-tab.final.active')
     if shown_top_ten(page) != picks[:10]:
-        raise AssertionError(f"Final tab shows {shown_top_ten(page)}, expected {picks[:10]}")
+        raise AssertionError(f"My Picks tab shows {shown_top_ten(page)}, expected {picks[:10]}")
     page.click('.list-tab:has-text("Plan A")')
     page.wait_for_selector('.list-tab.active:has-text("Plan A")')
     if shown_top_ten(page) != edited:
@@ -502,6 +598,8 @@ def main() -> int:
                     ]:
                         failures.append(f"{username}: template stored as {lists}")
 
+            print("Checking the mobile Top 10 drawer")
+            check_mobile_editor(page, base, shots)
             print("Previewing the scoring on the admin page")
             preview = simulate(page, base, finish, shots)
             alice = httpx.get(f"{base}/api/players/by-username/e2e_alice").json()
