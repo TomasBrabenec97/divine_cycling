@@ -372,7 +372,7 @@ button.matrix-cell.on { border-color:var(--sage); background:var(--sage); box-sh
 /* The mobile picks drawer keeps all thirteen slots visible while browsing. */
 .mobile-picks-backdrop,.mobile-picks-handle,.mobile-save { display:none; }
 @media(max-width:650px) {
-  body:has(#prediction:not(.hidden)) .mobile-picks-handle { position:fixed; z-index:22; top:54%; left:0; display:grid; width:33px; height:96px; place-items:center; border:1px solid #858987; border-left:0; border-radius:0 22px 22px 0; background:rgba(160,164,162,.78); color:var(--ink); padding:0; box-shadow:2px 3px 8px rgba(47,49,54,.22); touch-action:none; }
+  body:has(#prediction:not(.hidden)) .mobile-picks-handle { position:fixed; z-index:22; top:58%; left:0; display:grid; width:33px; height:96px; place-items:center; border:1px solid #858987; border-left:0; border-radius:0 22px 22px 0; background:rgba(160,164,162,.78); color:var(--ink); padding:0; box-shadow:2px 3px 8px rgba(47,49,54,.22); touch-action:none; }
   body:has(#prediction:not(.hidden)):is(.mobile-picks-open,.mobile-picking,.mobile-dragging) .mobile-picks-handle { display:none; }
   .mobile-picks-handle span { font-size:23px; }
   .mobile-picks-open .mobile-picks-handle span,.mobile-picking .mobile-picks-handle span { transform:rotate(180deg); }
