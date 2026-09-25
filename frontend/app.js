@@ -18,7 +18,7 @@ const emptyProfileFilters = () => Object.fromEntries(PROFILE_FILTERS.map((filter
 const emptyAdvancedFilters = () => ({ resultCells: [], resultMin: "", resultMax: "", profile: emptyProfileFilters() });
 // One UCI range filter, read in points or in rank: only the unit shown applies.
 const emptyFilters = (uciUnit = "points") => ({ search: "", countries: [], teams: [], uciUnit, rankMin: "", rankMax: "", pointsMin: "", pointsMax: "", ...emptyAdvancedFilters() });
-const state = { event: null, player: null, reference: null, referencePromise: null, teamIcons: {}, apiStatus: "starting", apiReadyPromise: null, picks: Array(10).fill(null), savedPicks: Array(10).fill(null), wildcards: Array(WILDCARD_COUNT).fill(null), savedWildcards: Array(WILDCARD_COUNT).fill(null), undoStack: [], redoStack: [], mobilePendingRiderId: null, riderView: "country", riderSort: "alphabetical", riderSortDirection: "asc", riderSelectionFilter: "all", filters: emptyFilters(), advancedDraft: null, lists: { final: null, templates: [] }, activeList: "final", renamingList: null, favourites: new Set(), favouritesOnly: false };
+const state = { event: null, player: null, reference: null, referencePromise: null, teamIcons: {}, apiStatus: "starting", apiReadyPromise: null, picks: Array(10).fill(null), savedPicks: Array(10).fill(null), wildcards: Array(WILDCARD_COUNT).fill(null), savedWildcards: Array(WILDCARD_COUNT).fill(null), finalAutosave: true, finalDraft: null, undoStack: [], redoStack: [], mobilePendingRiderId: null, riderView: "country", riderSort: "alphabetical", riderSortDirection: "asc", riderSelectionFilter: "all", filters: emptyFilters(), advancedDraft: null, lists: { final: null, templates: [] }, activeList: "final", renamingList: null, favourites: new Set(), favouritesOnly: false };
 const $ = (selector) => document.querySelector(selector);
 const isMobileLayout = () => window.matchMedia("(max-width: 650px)").matches;
 const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
@@ -591,6 +591,25 @@ function matchesFilters(rider, filters = state.filters) {
 }
 
 function ensurePickActions() {
+  let autosave = $("#final-autosave-control");
+  if (!autosave) {
+    autosave = document.createElement("div");
+    autosave.id = "final-autosave-control";
+    autosave.className = "final-autosave-control";
+    autosave.innerHTML = '<label for="final-autosave"><input id="final-autosave" type="checkbox" /> Auto-save</label><span id="final-save-status" role="status" aria-live="polite"></span><button id="retry-final-save" type="button" class="hidden">Retry</button>';
+    autosave.querySelector("input").addEventListener("change", (event) => {
+      state.finalAutosave = event.target.checked;
+      localStorage.setItem(finalAutosavePreferenceKey(), String(state.finalAutosave));
+      failedFinalAutosave = "";
+      if (!state.finalAutosave) window.clearTimeout(finalAutosaveTimer);
+      render();
+    });
+    autosave.querySelector("#retry-final-save").addEventListener("click", () => {
+      failedFinalAutosave = "";
+      saveFinal({ automatic: true });
+    });
+    $("#wildcards-block").insertAdjacentElement("afterend", autosave);
+  }
   let clear = $("#clear-picks");
   if (!clear) {
     clear = document.createElement("button");
@@ -608,7 +627,7 @@ function ensurePickActions() {
       showMessage("#prediction-message", "Top 10 and wildcards cleared.", true);
       render();
     });
-    $("#wildcards-block").insertAdjacentElement("afterend", clear);
+    autosave.insertAdjacentElement("afterend", clear);
   }
   let actions = $("#revert-actions");
   if (!actions) {
@@ -658,7 +677,7 @@ function ensurePickActions() {
     message.classList.add("top10-message");
     save.insertAdjacentElement("afterend", message);
   }
-  return { clear, revert, save, undo: $("#undo-picks"), redo: $("#redo-picks") };
+  return { autosave, clear, revert, save, undo: $("#undo-picks"), redo: $("#redo-picks") };
 }
 
 // -- lists: the final prediction plus named templates --------------------------
@@ -674,7 +693,7 @@ function listFromPicks(selections = [], wildcards = []) {
 const workingList = () => ({ picks: [...state.picks], wildcards: [...state.wildcards] });
 const picksPayload = (list = workingList()) => ({ selections: list.picks.flatMap((rider_id, index) => rider_id ? [{ position: index + 1, rider_id }] : []), wildcards: list.wildcards.filter(Boolean) });
 const templateById = (id) => state.lists.templates.find((template) => template.id === id);
-const listName = (id) => (id === "final" ? "your final prediction" : `“${templateById(id)?.name || "this list"}”`);
+const listName = (id) => (id === "final" ? "My Picks" : `“${templateById(id)?.name || "this list"}”`);
 const wildcardKey = (list) => list.wildcards.filter(Boolean).sort((a, b) => a - b).join(",");
 const sameList = (a, b) => Boolean(a && b) && a.picks.every((riderId, index) => riderId === b.picks[index]) && wildcardKey(a) === wildcardKey(b);
 function uniqueTemplateName() {
@@ -684,6 +703,10 @@ function uniqueTemplateName() {
 function markSaved(list) {
   state.savedPicks = [...list.picks];
   state.savedWildcards = [...list.wildcards];
+}
+const finalAutosavePreferenceKey = () => `divine-final-autosave:${state.player.id}`;
+function loadFinalAutosavePreference() {
+  state.finalAutosave = localStorage.getItem(finalAutosavePreferenceKey()) !== "false";
 }
 
 async function loadLists() {
@@ -695,7 +718,9 @@ async function loadLists() {
   ]);
   state.favourites = new Set(favourites);
   state.lists.final = prediction ? listFromPicks(prediction.selections, prediction.wildcards) : null;
+  state.finalDraft = null;
   state.lists.templates = templates.map((template) => ({ id: template.id, name: template.name, ...listFromPicks(template.selections, template.wildcards) }));
+  loadFinalAutosavePreference();
   openList("final", { force: true });
 }
 
@@ -703,12 +728,17 @@ function openList(listId, { force = false } = {}) {
   if (!force && listId === state.activeList) return;
   // A template saves itself on the way out; only the final can hold unsaved picks.
   flushTemplateAutosave();
-  if (!force && hasUnsavedPickChanges() && !window.confirm(`You have unsaved changes in ${listName(state.activeList)}. Switch lists and discard them?`)) return;
-  const source = (listId === "final" ? state.lists.final : templateById(listId)) || emptyList();
+  const autosavingFinal = state.activeList === "final" && state.finalAutosave && state.picks.some(Boolean);
+  if (!force && hasUnsavedPickChanges() && !autosavingFinal && !window.confirm(`You have unsaved changes in ${listName(state.activeList)}. Switch lists and discard them?`)) return;
+  if (!force && autosavingFinal && hasUnsavedPickChanges()) {
+    state.finalDraft = workingList();
+    flushFinalAutosave();
+  }
+  const source = (listId === "final" ? state.finalDraft || state.lists.final : templateById(listId)) || emptyList();
   state.activeList = listId;
   state.picks = [...source.picks];
   state.wildcards = [...source.wildcards];
-  markSaved(source);
+  markSaved(listId === "final" ? state.lists.final || emptyList() : source);
   state.renamingList = null;
   state.mobilePendingRiderId = null;
   document.body.classList.remove("mobile-picking");
@@ -723,25 +753,81 @@ const queueTemplateWrite = (task) => (templateWrites = templateWrites.catch(() =
 // Ids are taken when a write is asked for: the player may log out before it runs.
 const writeIds = () => ({ event: state.event.id, player: state.player.id });
 
+// Final writes are serialized, so a slow earlier request cannot overwrite the
+// most recent picks. A failed autosave waits for a new edit or an explicit retry.
+const FINAL_AUTOSAVE_MS = 600;
+let finalAutosaveTimer = 0;
+let finalWrites = Promise.resolve();
+let pendingFinalSaves = new Set();
+let failedFinalAutosave = "";
+const finalSaveKey = (ids, list) => `${ids.event}|${ids.player}|${listKey("final", list)}`;
+function scheduleFinalAutosave() {
+  window.clearTimeout(finalAutosaveTimer);
+  if (!state.player || state.activeList !== "final" || !state.finalAutosave || !hasUnsavedPickChanges() || !state.picks.some(Boolean)) return;
+  const key = finalSaveKey(writeIds(), workingList());
+  if (key !== failedFinalAutosave) failedFinalAutosave = "";
+  if (key === failedFinalAutosave || pendingFinalSaves.has(key)) return;
+  finalAutosaveTimer = window.setTimeout(() => saveFinal({ automatic: true }), FINAL_AUTOSAVE_MS);
+}
+function flushFinalAutosave() {
+  window.clearTimeout(finalAutosaveTimer);
+  if (state.activeList === "final" && state.finalAutosave && hasUnsavedPickChanges() && state.picks.some(Boolean)) return saveFinal({ automatic: true });
+  return finalWrites;
+}
 // Each save records the list it sent, not whatever is on screen when the answer
 // arrives: the player may have switched lists or kept editing meanwhile.
-async function saveFinal() {
+function saveFinal({ automatic = false } = {}) {
   if (!state.picks.some(Boolean)) return showMessage("#prediction-message", "Pick at least one Top 10 rider first.");
   const list = workingList();
   const listId = state.activeList;
-  try {
-    await request(`/api/events/${state.event.id}/predictions`, { method: "PUT", body: JSON.stringify({ player_id: state.player.id, ...picksPayload(list) }) });
-    state.lists.final = list;
-    if (listId === "final") {
-      if (state.activeList === "final") markSaved(list);
-      showMessage("#prediction-message", "Final prediction saved. You can edit it until the deadline.", true);
-    } else {
-      showMessage("#prediction-message", `Saved ${listName(listId)} as your final prediction. It is the one that will be scored.`, true);
+  const ids = writeIds();
+  const key = finalSaveKey(ids, list);
+  if (automatic && (pendingFinalSaves.has(key) || failedFinalAutosave === key)) return finalWrites;
+  pendingFinalSaves.add(key);
+  if (state.player?.id === ids.player) renderFinalSaveStatus();
+  finalWrites = finalWrites.catch(() => {}).then(async () => {
+    try {
+      await request(`/api/events/${ids.event}/predictions`, { method: "PUT", body: JSON.stringify({ player_id: ids.player, ...picksPayload(list) }) });
+      if (state.player?.id !== ids.player) return true;
+      state.lists.final = list;
+      if (!automatic || sameList(state.finalDraft, list)) state.finalDraft = null;
+      if (listId === "final") {
+        if (state.activeList === "final") markSaved(list);
+        if (!automatic) showMessage("#prediction-message", "My Picks saved. You can edit them until the deadline.", true);
+      } else {
+        showMessage("#prediction-message", `Saved ${listName(listId)} as My Picks. These picks will count toward your score.`, true);
+      }
+      if (failedFinalAutosave === key) failedFinalAutosave = "";
+      return true;
+    } catch (error) {
+      if (automatic) failedFinalAutosave = key;
+      if (state.player?.id === ids.player) showMessage("#prediction-message", `${automatic ? "Auto-save failed: " : ""}${error.message}`);
+      return false;
+    } finally {
+      pendingFinalSaves.delete(key);
+      if (state.player?.id === ids.player) render();
     }
-    render();
-  } catch (error) {
-    showMessage("#prediction-message", error.message);
-  }
+  });
+  return finalWrites;
+}
+function renderFinalSaveStatus() {
+  const control = $("#final-autosave-control");
+  if (!control || !state.player) return;
+  const editingFinal = state.activeList === "final";
+  control.classList.toggle("hidden", !editingFinal);
+  control.querySelector("input").checked = state.finalAutosave;
+  if (!editingFinal) return;
+  const dirty = hasUnsavedPickChanges();
+  const key = finalSaveKey(writeIds(), workingList());
+  const failed = state.finalAutosave && dirty && failedFinalAutosave === key;
+  const saving = [...pendingFinalSaves].some((pending) => pending.startsWith(`${state.event.id}|${state.player.id}|`));
+  const status = !state.finalAutosave ? (dirty ? "Auto-save off · Unsaved changes" : "Auto-save off")
+    : failed ? "Auto-save failed"
+    : dirty && !state.picks.some(Boolean) ? "Add a Top 10 rider to save"
+    : saving ? "Saving…"
+    : dirty ? "Saving shortly…" : state.lists.final ? "All changes saved" : "On · Add a rider to start";
+  control.querySelector("#final-save-status").textContent = status;
+  control.querySelector("#retry-final-save").classList.toggle("hidden", !failed);
 }
 
 async function putTemplate(ids, template, name, list, options = {}) {
@@ -1086,7 +1172,7 @@ function renderListSwitcher() {
   };
   const scrollLeft = strip.scrollLeft;
   strip.innerHTML = [
-    tab("final", "Final", "Your final prediction: the one that is scored"),
+    tab("final", "My Picks", "These picks count toward your score and can be changed until the deadline"),
     ...state.lists.templates.map((template) => state.renamingList === template.id
       ? `<div class="list-tab renaming"><input class="list-name-input" data-rename="${template.id}" value="${escapeHtml(template.name)}" maxlength="40" aria-label="Template name" /></div>`
       : tab(template.id, template.name, template.name)),
@@ -1175,12 +1261,15 @@ function render() {
   const pickActions = ensurePickActions();
   const editingTemplate = state.activeList !== "final";
   document.body.classList.toggle("mobile-manual-final", !editingTemplate && state.finalAutosave === false);
-  pickActions.save.textContent = editingTemplate ? "Save as final prediction" : "Save final prediction";
+  pickActions.save.textContent = editingTemplate ? "Use as My Picks" : "Save My Picks";
+  pickActions.save.classList.toggle("hidden", !editingTemplate && state.finalAutosave);
   renderListSwitcher();
   scheduleTemplateAutosave();
+  scheduleFinalAutosave();
+  renderFinalSaveStatus();
   pickActions.clear.disabled = savedPicks().length === 0;
   // On a template, Revert stays clickable to explain why there is nothing to revert.
-  pickActions.revert.disabled = !editingTemplate && !hasUnsavedPickChanges();
+  pickActions.revert.disabled = !editingTemplate && (state.finalAutosave || !hasUnsavedPickChanges());
   pickActions.undo.disabled = state.undoStack.length === 0;
   pickActions.redo.disabled = state.redoStack.length === 0;
   const riderById = new Map(state.event.riders.map((rider) => [rider.id, rider]));
@@ -1597,9 +1686,58 @@ $("#reset-advanced-filters").addEventListener("click", () => {
   renderAdvancedFilters();
   render();
 });
-$("#logout").addEventListener("click", () => { flushTemplateAutosave(); if (hasUnsavedPickChanges() && !window.confirm("Did you forget to save your prediction?")) return; window.clearTimeout(autosaveTimer); closeListMenu(); localStorage.removeItem("ten-up-player"); state.player = null; state.picks = Array(10).fill(null); state.savedPicks = Array(10).fill(null); state.wildcards = Array(WILDCARD_COUNT).fill(null); state.savedWildcards = Array(WILDCARD_COUNT).fill(null); state.lists = { final: null, templates: [] }; state.activeList = "final"; state.renamingList = null; state.favourites = new Set(); state.favouritesOnly = false; resetPickHistory(); state.mobilePendingRiderId = null; document.body.classList.remove("mobile-picking", "mobile-dragging"); $("#prediction").classList.add("hidden"); $("#identity").classList.remove("hidden"); $("#username").value = ""; renderSessionControls(); showMessage("#identity-message", "You have logged out on this device.", true); $("#username").focus(); });
+$("#logout").addEventListener("click", async () => {
+  flushTemplateAutosave();
+  const canAutosave = state.activeList === "final" && state.finalAutosave && state.picks.some(Boolean);
+  if (hasUnsavedPickChanges() && !canAutosave && !window.confirm("Did you forget to save your prediction?")) return;
+  if (canAutosave && hasUnsavedPickChanges()) {
+    failedFinalAutosave = "";
+    if (!await flushFinalAutosave()) return;
+  }
+  window.clearTimeout(autosaveTimer);
+  window.clearTimeout(finalAutosaveTimer);
+  closeListMenu();
+  localStorage.removeItem("ten-up-player");
+  state.player = null;
+  state.picks = Array(10).fill(null);
+  state.savedPicks = Array(10).fill(null);
+  state.wildcards = Array(WILDCARD_COUNT).fill(null);
+  state.savedWildcards = Array(WILDCARD_COUNT).fill(null);
+  state.lists = { final: null, templates: [] };
+  state.finalDraft = null;
+  state.activeList = "final";
+  state.renamingList = null;
+  state.favourites = new Set();
+  state.favouritesOnly = false;
+  resetPickHistory();
+  state.mobilePendingRiderId = null;
+  document.body.classList.remove("mobile-picking", "mobile-dragging");
+  $("#prediction").classList.add("hidden");
+  $("#identity").classList.remove("hidden");
+  $("#username").value = "";
+  renderSessionControls();
+  showMessage("#identity-message", "You have logged out on this device.", true);
+  $("#username").focus();
+});
 $("#save").addEventListener("click", saveFinal);
-window.addEventListener("beforeunload", (event) => { if (!state.player) return; flushTemplateAutosave({ keepalive: true }); if (!hasUnsavedPickChanges()) return; event.preventDefault(); event.returnValue = ""; });
+window.addEventListener("beforeunload", (event) => {
+  if (!state.player) return;
+  flushTemplateAutosave({ keepalive: true });
+  if (!hasUnsavedPickChanges()) return;
+  const canAutosave = state.activeList === "final" && state.finalAutosave && state.picks.some(Boolean);
+  if (canAutosave) {
+    const prefix = `${state.event.id}|${state.player.id}|`;
+    const saving = [...pendingFinalSaves].some((key) => key.startsWith(prefix));
+    const failed = failedFinalAutosave === finalSaveKey(writeIds(), workingList());
+    if (!saving && !failed) {
+      window.clearTimeout(finalAutosaveTimer);
+      request(`/api/events/${state.event.id}/predictions`, { method: "PUT", keepalive: true, body: JSON.stringify({ player_id: state.player.id, ...picksPayload() }) }).catch(() => {});
+      return;
+    }
+  }
+  event.preventDefault();
+  event.returnValue = "";
+});
 window.addEventListener("keydown", (event) => { if (!(event.ctrlKey || event.metaKey) || event.altKey || event.target instanceof HTMLElement && event.target.matches("input, textarea, select")) return; if (event.key.toLowerCase() === "z") { event.preventDefault(); if (event.shiftKey) restorePickState(state.redoStack, state.undoStack, "Redid last change."); else restorePickState(state.undoStack, state.redoStack, "Undid last change."); } else if (event.key.toLowerCase() === "y") { event.preventDefault(); restorePickState(state.redoStack, state.undoStack, "Redid last change."); } });
 $("#cancel-pick").addEventListener("click", cancelPendingPick);
 $("#mobile-picks-backdrop").addEventListener("click", closeMobilePicks);

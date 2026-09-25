@@ -158,7 +158,7 @@ Your Top 10, and how the race went. Ranks are UCI ranks.
 - **Finishes below 10th** earn placement points when they are within 9 places of your guess; results are entered down to 25th. The permutation bonuses and wildcards look at the top 10 only.
 - **Rounding.** Every part keeps its fractions; only the final score is rounded, to two decimals. That is why rounded rows can add up to a cent more or less than the total.
 - **Ties** are not broken: players on equal points are simply listed alphabetically.
-- **Your final prediction** — the list on the *Final* tab, as last saved before the deadline — is the one scored. Templates are private drafts and never count.
+- **My Picks** — the list on the *My Picks* tab, as last saved before the deadline — is what counts toward your score. You can change it until the deadline. Templates are private drafts and never count.
 - **Stored results.** When the result is published, every score is stored with the rules version it was calculated under, so the leaderboard never changes afterwards.
 
 *Rules version v3.0. The design notes behind these numbers are in the repository at `docs/SCORING_MODEL_V2.md`.*
