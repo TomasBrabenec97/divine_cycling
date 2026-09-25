@@ -272,7 +272,11 @@ def check_mobile_editor(page, base: str, shots: Path) -> None:
     page.mouse.move(handle["x"] + 90, handle["y"] + 45, steps=6)
     page.mouse.up()
     page.wait_for_selector("body.mobile-picks-open")
+    if page.is_visible("#mobile-picks-handle"):
+        raise AssertionError("the left handle overlays the open Top 10 popup")
     page.click("#mobile-picks-backdrop", position={"x": 360, "y": 30})
+    if not page.is_visible("#mobile-picks-handle"):
+        raise AssertionError("the left handle did not return after closing the popup")
     page.click("#mobile-picks-handle")
     page.wait_for_selector("body.mobile-picks-open")
     if page.locator("#picks li").count() != 10 or page.locator("#wildcards li").count() != 3:
@@ -291,6 +295,8 @@ def check_mobile_editor(page, base: str, shots: Path) -> None:
     page.wait_for_selector("body.mobile-picks-open", state="detached")
     page.locator("#riders .rider:not(.selected) [data-rider-add]").first.click()
     page.wait_for_selector("body.mobile-picking")
+    if page.is_visible("#mobile-picks-handle"):
+        raise AssertionError("the left handle overlays the add-rider popup")
     if not page.is_visible("#wildcards li:last-child"):
         raise AssertionError("the add-rider popup does not include the wildcards")
     page.click("#mobile-picks-backdrop", position={"x": 360, "y": 30})
