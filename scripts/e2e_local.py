@@ -236,10 +236,41 @@ def use_filters(page) -> None:
 
 def fill_top_ten(page, base: str, username: str, picks: list[int], shots: Path) -> None:
     sign_in_and_pick(page, base, username, picks)
+    if page.inner_text('[data-list="final"] .list-tab-label') != "My Picks":
+        raise AssertionError("the scored list tab should be named My Picks")
+    if not page.is_checked("#final-autosave") or not page.is_disabled("#revert-picks"):
+        raise AssertionError("FINAL must start with auto-save on and Revert disabled")
+    page.wait_for_function(
+        "() => document.querySelector('#final-save-status').textContent === 'All changes saved'"
+    )
     bulk_favourites(page)
     use_filters(page)
-    page.click("#save")
-    saved_message(page, "Final prediction saved")
+    page.uncheck("#final-autosave")
+    if not page.is_visible("#save"):
+        raise AssertionError("turning off auto-save did not show Save")
+    page.reload()
+    page.wait_for_selector("#prediction:not(.hidden)")
+    if page.is_checked("#final-autosave"):
+        raise AssertionError("the player auto-save preference did not survive a reload")
+    page.click('[data-remove="9"]')
+    page.wait_for_timeout(850)
+    player = httpx.get(f"{base}/api/players/by-username/{username}").json()
+    event_id = httpx.get(f"{base}/api/events/active").json()["id"]
+    prediction_url = f"{base}/api/events/{event_id}/predictions/{player['id']}"
+    if len(httpx.get(prediction_url).json()["selections"]) != 10:
+        raise AssertionError("FINAL changed on the server while auto-save was off")
+    page.click("#revert-picks")
+    if shown_top_ten(page) != picks[:10]:
+        raise AssertionError("Revert did not restore the saved FINAL list")
+    page.click('[data-remove="9"]')
+    with page.expect_response(lambda response: response.request.method == "PUT" and "/predictions" in response.url):
+        page.click("#save")
+    if len(httpx.get(prediction_url).json()["selections"]) != 9:
+        raise AssertionError("manual Save did not persist the edited FINAL list")
+    page.click(f'[data-rider-add="{picks[9]}"]')
+    with page.expect_response(lambda response: response.request.method == "PUT" and "/predictions" in response.url):
+        page.click("#save")
+    saved_message(page, "My Picks saved")
     page.screenshot(path=shots / f"{username}-top10.png", full_page=True)
     page.click("#logout")
     page.wait_for_selector("#identity:not(.hidden)")
@@ -293,7 +324,7 @@ def keep_a_template(
     page.keyboard.press("Enter")
     page.wait_for_selector('.list-tab.active:has-text("Plan A")')
     page.click("#save")
-    saved_message(page, "as your final prediction")
+    saved_message(page, "as My Picks")
 
     # A template has no Save button: the edit goes out by itself.
     with page.expect_response(template_saved_with(spare)):
@@ -309,7 +340,7 @@ def keep_a_template(
     page.click('[data-list="final"]')
     page.wait_for_selector('.list-tab.final.active')
     if shown_top_ten(page) != picks[:10]:
-        raise AssertionError(f"Final tab shows {shown_top_ten(page)}, expected {picks[:10]}")
+        raise AssertionError(f"My Picks tab shows {shown_top_ten(page)}, expected {picks[:10]}")
     page.click('.list-tab:has-text("Plan A")')
     page.wait_for_selector('.list-tab.active:has-text("Plan A")')
     if shown_top_ten(page) != edited:
