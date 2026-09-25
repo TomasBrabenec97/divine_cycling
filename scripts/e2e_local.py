@@ -245,6 +245,65 @@ def fill_top_ten(page, base: str, username: str, picks: list[int], shots: Path) 
     page.wait_for_selector("#identity:not(.hidden)")
 
 
+def touch_move_pick(page, source: str, target: str) -> None:
+    """Hold a mobile pick, then move it to another visible slot."""
+    start, end = page.locator(source).bounding_box(), page.locator(target).bounding_box()
+    session = page.context.new_cdp_session(page)
+    point = lambda box: {"x": box["x"] + box["width"] / 2, "y": box["y"] + box["height"] / 2}
+    session.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [point(start)]})
+    time.sleep(0.45)
+    session.send("Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [point(end)]})
+    session.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+    session.detach()
+
+
+def check_mobile_editor(page, base: str, shots: Path) -> None:
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.goto(base)
+    page.wait_for_selector("#identity:not(.hidden)")
+    page.fill("#username", "e2e_bob")
+    page.click("#join")
+    page.wait_for_selector("#prediction:not(.hidden)")
+    if not page.is_visible("#mobile-picks-handle"):
+        raise AssertionError("the mobile Top 10 handle is missing")
+    handle = page.locator("#mobile-picks-handle").bounding_box()
+    page.mouse.move(handle["x"] + 12, handle["y"] + 45)
+    page.mouse.down()
+    page.mouse.move(handle["x"] + 90, handle["y"] + 45, steps=6)
+    page.mouse.up()
+    page.wait_for_selector("body.mobile-picks-open")
+    page.click("#mobile-picks-backdrop", position={"x": 360, "y": 30})
+    page.click("#mobile-picks-handle")
+    page.wait_for_selector("body.mobile-picks-open")
+    if page.locator("#picks li").count() != 10 or page.locator("#wildcards li").count() != 3:
+        raise AssertionError("the mobile drawer does not show all Top 10 and wildcard slots")
+    if page.is_visible("#list-switcher") or page.is_visible("#clear-picks") or page.is_visible("#save"):
+        raise AssertionError("the drawer shows actions below the picks")
+    top, wildcard = page.locator('#picks li[data-position="0"]').get_attribute("data-picked-rider"), page.locator('#wildcards li[data-wildcard-slot="0"]').get_attribute("data-picked-rider")
+    touch_move_pick(page, '#picks li[data-position="0"]', '#wildcards li[data-wildcard-slot="0"]')
+    if page.locator('#picks li[data-position="0"]').get_attribute("data-picked-rider") != wildcard:
+        raise AssertionError("touch hold did not move a Top 10 rider into a wildcard slot")
+    touch_move_pick(page, '#picks li[data-position="0"]', '#wildcards li[data-wildcard-slot="0"]')
+    if page.locator('#picks li[data-position="0"]').get_attribute("data-picked-rider") != top:
+        raise AssertionError("touch hold did not restore the Top 10 order")
+    page.screenshot(path=shots / "mobile-top10-drawer.png", full_page=False)
+    page.click("#mobile-picks-backdrop", position={"x": 360, "y": 30})
+    page.wait_for_selector("body.mobile-picks-open", state="detached")
+    page.locator("#riders .rider:not(.selected) [data-rider-add]").first.click()
+    page.wait_for_selector("body.mobile-picking")
+    if not page.is_visible("#wildcards li:last-child"):
+        raise AssertionError("the add-rider popup does not include the wildcards")
+    page.click("#mobile-picks-backdrop", position={"x": 360, "y": 30})
+    page.wait_for_selector("body.mobile-picking", state="detached")
+    page.evaluate("() => { state.finalAutosave = false; render(); }")
+    if not page.is_visible("#mobile-save"):
+        raise AssertionError("manual FINAL mode does not show the floating Save button")
+    page.evaluate("() => window.scrollTo(0, document.body.scrollHeight)")
+    page.click("#back-to-top")
+    page.wait_for_function("() => Math.abs(window.scrollY - document.querySelector('#prediction').offsetTop) < 35")
+    page.set_viewport_size({"width": 1280, "height": 900})
+
+
 def tab_menu(page, tab, action: str) -> None:
     """Right-click a list tab and choose from its menu."""
     tab.click(button="right")
@@ -464,6 +523,8 @@ def main() -> int:
                     ]:
                         failures.append(f"{username}: template stored as {lists}")
 
+            print("Checking the mobile Top 10 drawer")
+            check_mobile_editor(page, base, shots)
             print("Previewing the scoring on the admin page")
             preview = simulate(page, base, finish, shots)
             browser.close()
