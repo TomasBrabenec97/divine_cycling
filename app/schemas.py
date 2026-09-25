@@ -43,6 +43,10 @@ class LeagueStatus(BaseModel):
     league: LeagueResponse | None
 
 
+class AdminDeletePlayer(BaseModel):
+    confirmation: str
+
+
 class RiderResponse(BaseModel):
     id: int
     name: str

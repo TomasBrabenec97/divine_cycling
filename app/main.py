@@ -35,6 +35,7 @@ from app.models import (
 )
 from app.response_cache import ResponseCache
 from app.schemas import (
+    AdminDeletePlayer,
     EventResponse,
     FavouritesUpdate,
     LeaderboardEntry,
@@ -786,6 +787,7 @@ def admin_overview(db: Session = Depends(get_db)) -> dict:
         "events": [
             {
                 "id": event.id,
+                "slug": event.slug,
                 "name": event.name,
                 "status": event.status,
                 "players_joined": len(db.scalars(select(Player)).all()),
@@ -807,6 +809,65 @@ def admin_event(event_id: int, db: Session = Depends(get_db)) -> EventResponse:
     if event is None:
         raise HTTPException(status_code=404, detail="Event not found")
     return event_response(event, db)
+
+
+@app.get("/api/admin/events/{event_id}/players", dependencies=[Depends(require_admin)])
+def admin_players(event_id: int, db: Session = Depends(get_db)) -> dict:
+    event = db.get(Event, event_id)
+    if event is None:
+        raise HTTPException(status_code=404, detail="Event not found")
+    predictions = {
+        row.player_id: row
+        for row in db.scalars(select(Prediction).where(Prediction.event_id == event_id)).all()
+    }
+    memberships = {
+        row.player_id: row.league.code
+        for row in db.scalars(
+            select(LeagueMembership)
+            .options(joinedload(LeagueMembership.league))
+            .where(LeagueMembership.event_id == event_id)
+        ).all()
+    }
+    players = [
+        {
+            "id": player.id,
+            "username": player.username,
+            "submitted_flag": player.id in predictions,
+            "last_edit": predictions[player.id].updated_at if player.id in predictions else None,
+            "league_code": memberships.get(player.id),
+        }
+        for player in db.scalars(select(Player).order_by(Player.username)).all()
+    ]
+    leagues = [
+        league_response(db, league).model_dump(mode="json")
+        for league in db.scalars(
+            select(LocalLeague).where(LocalLeague.event_id == event_id).order_by(LocalLeague.code)
+        ).all()
+    ]
+    return {"event_id": event_id, "players": players, "leagues": leagues}
+
+
+@app.post("/api/admin/players/{player_id}/delete", dependencies=[Depends(require_admin)])
+def admin_delete_player(
+    player_id: int, payload: AdminDeletePlayer, db: Session = Depends(get_db)
+) -> dict[str, str]:
+    if payload.confirmation != "DELETE":
+        raise HTTPException(status_code=422, detail="Type DELETE to confirm")
+    player = db.get(Player, player_id)
+    if player is None:
+        raise HTTPException(status_code=404, detail="Player not found")
+    prediction_ids = select(Prediction.id).where(Prediction.player_id == player_id)
+    db.execute(delete(ScoreLine).where(ScoreLine.prediction_id.in_(prediction_ids)))
+    db.execute(delete(PredictionItem).where(PredictionItem.prediction_id.in_(prediction_ids)))
+    db.execute(delete(PredictionWildcard).where(PredictionWildcard.prediction_id.in_(prediction_ids)))
+    db.execute(delete(Prediction).where(Prediction.player_id == player_id))
+    db.execute(delete(PredictionTemplate).where(PredictionTemplate.player_id == player_id))
+    db.execute(delete(FavouriteRider).where(FavouriteRider.player_id == player_id))
+    db.execute(delete(LeagueMembership).where(LeagueMembership.player_id == player_id))
+    db.delete(player)
+    db.commit()
+    leaderboard_cache.clear()
+    return {"deleted": player.username}
 
 
 @app.post(

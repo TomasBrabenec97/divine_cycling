@@ -9,7 +9,15 @@ import app.db as db_module
 import app.seed as seed_module
 from app.db import Base
 from app.main import app, leaderboard_cache, reference_cache
-from app.models import Event, LocalLeague
+from app.models import (
+    Event,
+    FavouriteRider,
+    LeagueMembership,
+    LocalLeague,
+    Prediction,
+    PredictionTemplate,
+    ScoreLine,
+)
 from app.seed import seed_mock_data
 
 
@@ -536,3 +544,49 @@ def test_local_leaderboard_contains_only_members() -> None:
     assert local.status_code == 200
     assert {entry["username"] for entry in local.json()["entries"]} == {"LeagueOne", "LeagueTwo"}
     assert client.get(url, params={"league_code": "unknown"}).status_code == 404
+
+
+def test_admin_players_summary_and_confirmed_delete(monkeypatch) -> None:
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "admin_api_key", "test-admin-key")
+    client = TestClient(app)
+    event = client.get("/api/events/active").json()
+    player_id = client.post("/api/players", json={"username": "DeleteMe"}).json()["id"]
+    with db_module.SessionLocal() as db:
+        league = LocalLeague(event_id=event["id"], code="office")
+        db.add(league)
+        db.flush()
+        db.add(LeagueMembership(event_id=event["id"], player_id=player_id, league_id=league.id))
+        db.add(PredictionTemplate(event_id=event["id"], player_id=player_id, name="Draft"))
+        db.add(FavouriteRider(event_id=event["id"], player_id=player_id, rider_id=event["riders"][0]["id"]))
+        db.commit()
+    pick = {"player_id": player_id, "selections": [{"position": 1, "rider_id": event["riders"][0]["id"]}]}
+    assert client.put(f"/api/events/{event['id']}/predictions", json=pick).status_code == 200
+    summary_url = f"/api/admin/events/{event['id']}/players"
+    assert client.get(summary_url).status_code == 401
+    headers = {"X-Admin-Key": "test-admin-key"}
+    summary = client.get(summary_url, headers=headers).json()
+    assert summary["players"] == [{
+        "id": player_id,
+        "username": "DeleteMe",
+        "submitted_flag": True,
+        "last_edit": summary["players"][0]["last_edit"],
+        "league_code": "office",
+    }]
+    assert summary["leagues"][0]["joined_players"] == 1
+    assert summary["leagues"][0]["submitted_players"] == 1
+    result = {"results": [{"position": 1, "rider_id": event["riders"][0]["id"]}]}
+    assert client.post(f"/api/admin/events/{event['id']}/results", headers=headers, json=result).status_code == 200
+    assert len(client.get(f"/api/events/{event['id']}/leaderboard").json()["entries"]) == 1
+    delete_url = f"/api/admin/players/{player_id}/delete"
+    assert client.post(delete_url, headers=headers, json={"confirmation": "no"}).status_code == 422
+    assert client.post(delete_url, headers=headers, json={"confirmation": "DELETE"}).status_code == 200
+    assert client.get(summary_url, headers=headers).json()["players"] == []
+    assert client.get(f"/api/events/{event['id']}/leaderboard").json()["entries"] == []
+    with db_module.SessionLocal() as db:
+        assert db.query(Prediction).filter_by(player_id=player_id).count() == 0
+        assert db.query(PredictionTemplate).filter_by(player_id=player_id).count() == 0
+        assert db.query(FavouriteRider).filter_by(player_id=player_id).count() == 0
+        assert db.query(LeagueMembership).filter_by(player_id=player_id).count() == 0
+        assert db.query(ScoreLine).count() == 0

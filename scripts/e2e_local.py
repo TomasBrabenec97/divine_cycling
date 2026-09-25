@@ -602,6 +602,21 @@ def main() -> int:
             check_mobile_editor(page, base, shots)
             print("Previewing the scoring on the admin page")
             preview = simulate(page, base, finish, shots)
+            page.wait_for_selector("#admin-players:not(.hidden)")
+            page.fill("#admin-player-filter", 'league_code = "prg-office" and submitted_flag = FALSE')
+            if page.locator("#admin-player-rows tr").count() != 1 or "e2e_invited" not in page.inner_text("#admin-player-rows"):
+                failures.append("the admin player filter did not select the invited non-submitter")
+            page.screenshot(path=shots / "admin-players.png", full_page=False)
+            page.click("#admin-player-rows button")
+            page.fill("#admin-delete-confirmation", "no")
+            page.click("#admin-delete-submit")
+            if "Type DELETE exactly" not in page.inner_text("#admin-delete-message"):
+                failures.append("the admin delete dialog accepted an invalid confirmation")
+            page.fill("#admin-delete-confirmation", "DELETE")
+            page.click("#admin-delete-submit")
+            page.wait_for_selector("#admin-delete-dialog", state="hidden")
+            if page.locator("#admin-player-rows tr").count() != 0:
+                failures.append("the deleted player still appears in the admin table")
             alice = httpx.get(f"{base}/api/players/by-username/e2e_alice").json()
             joined = httpx.put(
                 f"{base}/api/events/{event['id']}/players/{alice['id']}/league",
