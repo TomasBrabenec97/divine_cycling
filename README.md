@@ -57,6 +57,21 @@ GitHub Pages origin with no trailing path. `APP_ENV` is `production`.
 tab when you need it. The admin page asks for it and keeps it only for the
 browser session, so it never reaches this repository.
 
+Local leagues are event-specific. The API creates the `local_leagues` and
+`league_memberships` tables on startup; players can join an existing code but
+cannot create a league. To create one as an admin, insert a row in the database
+for the event (use a lowercase code with letters, digits, and hyphens):
+
+```sql
+INSERT INTO local_leagues (event_id, code, submission_deadline, created_at)
+SELECT id, 'prg-office', NULL, CURRENT_TIMESTAMP
+FROM events WHERE slug = 'road-worlds-2026';
+```
+
+`NULL` uses the global event deadline. Set `submission_deadline` to a UTC
+timestamp for a league-specific deadline, including one after the race start.
+The invite link is available to members in the page header.
+
 The Render build imports the checked-in 2026 startlist and rider reference
 exports idempotently, so a redeploy converges on whatever the exports say and
 never disturbs predictions that players have already saved.

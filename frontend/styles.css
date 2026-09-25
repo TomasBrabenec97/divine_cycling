@@ -368,6 +368,28 @@ button.matrix-cell.on { border-color:var(--sage); background:var(--sage); box-sh
 .rider.selected.wildcard .rank,.rider.selected.wildcard .pick-position { color:#8c4a28; }
 .rider.selected.wildcard .rank-scale::after,.rider.selected.wildcard:hover .rank-scale::after { background:#f3dccd; }
 .wildcard-slot.pick-filled .wildcard-mark { color:var(--terracotta); }
+.league-controls { display:grid; justify-items:end; gap:3px; width:max-content; max-width:220px; padding:8px 0; text-align:right; }
+.league-controls #league-summary { color:var(--ink); font-size:11px; font-weight:700; }
+.league-controls #league-counts { color:var(--muted); font-size:10px; }
+.league-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:4px 10px; }
+.session-controls .league-actions button { border:0; border-bottom:1px solid var(--line); border-radius:0; padding:2px 0; color:var(--terracotta); font-size:11px; }
+.session-controls .league-actions button:hover { border-bottom-color:var(--terracotta); color:var(--ink); }
+.session-controls .league-actions button.hidden { display:none; }
+.league-invite { margin:12px 0 0; padding:9px 11px; border-left:3px solid var(--sage); background:var(--surface); font-size:13px; }
+.join-league-dialog { width:min(390px,calc(100vw - 32px)); border:1px solid var(--line); background:var(--paper); color:var(--ink); padding:24px; box-shadow:8px 10px 0 rgba(47,49,54,.12); }
+.join-league-dialog::backdrop { background:rgba(47,49,54,.35); }
+.join-league-dialog h2 { font-size:24px; }
+.join-league-dialog p { font-size:13px; }
+.join-league-dialog label { margin-top:18px; font-size:12px; }
+.join-league-dialog input { width:100%; }
+.league-dialog-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:16px; }
+.league-dialog-actions button { font-size:12px; }
+.league-scope { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px 18px; margin:16px 0 0; color:var(--muted); font-size:13px; }
+.league-scope.hidden { display:none; }
+.league-scope div { display:flex; gap:6px; }
+.league-scope button { border-color:var(--line); padding:7px 11px; color:var(--muted); font-size:12px; }
+.league-scope button.active { border-color:var(--ink); background:var(--ink); color:var(--paper); }
+@media(max-width:650px) { .league-controls { max-width:125px; }.league-actions { gap:3px 8px; } }
 
 /* Favourites: a heart on every rider cell, left of the + button. */
 .rider-fav { position:absolute; top:7px; right:34px; display:grid; width:23px; height:23px; min-width:0; place-items:center; border:0; background:transparent; padding:0; color:var(--placeholder); }

@@ -86,6 +86,12 @@ def build_database(workdir: Path) -> dict[str, str]:
             "UPDATE events SET prediction_deadline = ?, starts_at = ?",
             (deadline.isoformat(sep=" "), (deadline + timedelta(hours=1)).isoformat(sep=" ")),
         )
+        event_id = connection.execute("SELECT id FROM events LIMIT 1").fetchone()[0]
+        connection.execute(
+            "INSERT INTO local_leagues (event_id, code, submission_deadline, created_at)"
+            " VALUES (?, ?, ?, ?)",
+            (event_id, "prg-office", (deadline + timedelta(hours=2)).isoformat(sep=" "), datetime.now(UTC).replace(tzinfo=None).isoformat(sep=" ")),
+        )
     return env
 
 
@@ -144,6 +150,36 @@ def saved_message(page, text: str) -> None:
     page.wait_for_function(
         "text => document.querySelector('#prediction-message').textContent.includes(text)", arg=text
     )
+
+
+def check_league_invite(page, base: str, shots: Path) -> None:
+    page.goto(f"{base}/join_league?league_code=prg-office")
+    page.wait_for_selector("#identity:not(.hidden)")
+    if "prg-office" not in page.inner_text("#league-invite"):
+        raise AssertionError("the invite code is not shown before sign-in")
+    page.fill("#username", "e2e_invited")
+    page.click("#join")
+    page.wait_for_selector("#prediction:not(.hidden)")
+    page.wait_for_function("() => document.querySelector('#league-summary').textContent.includes('prg-office')")
+    page.screenshot(path=shots / "league-profile.png", full_page=False)
+    if "prg-office" not in page.inner_text("#event-meta"):
+        raise AssertionError("the league deadline is not shown on the player page")
+    page.evaluate("() => { window.copiedInvite = ''; Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async text => { window.copiedInvite = text; } } }); }")
+    page.click("#copy-league-link")
+    page.wait_for_function("() => window.copiedInvite.includes('join_league/') && window.copiedInvite.includes('league_code=prg-office')")
+    page.click("#leave-league-button")
+    page.wait_for_function("() => document.querySelector('#league-summary').textContent === 'Global leaderboard'")
+    page.click("#join-league-button")
+    page.fill("#league-code", "missing")
+    page.click("#confirm-join-league")
+    page.wait_for_function("() => document.querySelector('#league-message').textContent.includes('not found')")
+    page.fill("#league-code", "prg-office")
+    page.click("#confirm-join-league")
+    page.wait_for_selector("#join-league-dialog", state="hidden")
+    if "1 joined" not in page.inner_text("#league-counts"):
+        raise AssertionError("the league member count did not update")
+    page.click("#logout")
+    page.wait_for_selector("#identity:not(.hidden)")
 
 
 def sign_in_and_pick(page, base: str, username: str, picks: list[int], favourites=()) -> None:
@@ -429,6 +465,8 @@ def main() -> int:
             context = browser.new_context(viewport={"width": 1280, "height": 900})
             page = context.new_page()
             page.on("pageerror", lambda error: failures.append(f"page error: {error}"))
+            print("Checking the league invite and membership UI")
+            check_league_invite(page, base, shots)
 
             template_edits: dict[str, list[int]] = {}
             for index, (username, rider_ids) in enumerate(picks.items()):
@@ -466,6 +504,35 @@ def main() -> int:
 
             print("Previewing the scoring on the admin page")
             preview = simulate(page, base, finish, shots)
+            alice = httpx.get(f"{base}/api/players/by-username/e2e_alice").json()
+            joined = httpx.put(
+                f"{base}/api/events/{event['id']}/players/{alice['id']}/league",
+                json={"code": "prg-office"},
+            )
+            if joined.status_code != 200:
+                failures.append(f"could not join Alice to the local league: {joined.text}")
+            results = [
+                {"position": position, "rider_id": rider_id}
+                for position, rider_id in enumerate(finish, start=1)
+            ]
+            published = httpx.post(
+                f"{base}/api/admin/events/{event['id']}/results",
+                json={"results": results},
+                headers={"X-Admin-Key": ADMIN_KEY},
+            )
+            if published.status_code != 200:
+                failures.append(f"could not publish the local leaderboard: {published.text}")
+            else:
+                page.goto(f"{base}/leaderboard.html")
+                page.evaluate("player => localStorage.setItem('ten-up-player', JSON.stringify(player))", alice)
+                page.reload()
+                page.wait_for_selector("#league-scope:not(.hidden)")
+                page.wait_for_selector("#leaderboard .lb-row")
+                page.screenshot(path=shots / "local-leaderboard.png", full_page=False)
+                if page.locator("#leaderboard .lb-row").count() != 1 or "e2e_alice" not in page.inner_text("#leaderboard .lb-table"):
+                    failures.append("the local league is not the signed-in player's default leaderboard")
+                page.click('[data-league-scope="global"]')
+                page.wait_for_function("() => document.querySelectorAll('#leaderboard .lb-row').length === 2")
             browser.close()
 
         totals = {entry["username"]: entry["total_points"] for entry in preview["entries"]}

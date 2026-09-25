@@ -10,7 +10,7 @@
     <main class="shell">
       <nav class="page-links"><a class="admin-home" href="./">Home</a><a class="admin-home" href="scoring.html">How scoring works</a></nav>
       <p class="eyebrow">ROAD WORLDS / FINAL RESULTS</p>
-      <h2>Leaderboard</h2>
+      <h2>Leaderboard</h2><div id="league-scope" class="league-scope hidden"><span id="league-scope-label"></span><div><button type="button" data-league-scope="local">Local league</button><button type="button" data-league-scope="global">Global</button></div></div>
       <div id="leaderboard" class="card">Loading…</div>
     </main>
     <script src="config.js"></script>
@@ -25,10 +25,38 @@
           return;
         }
         const event = await eventResponse.json();
-        const boardResponse = await fetch(`${API_BASE_URL}/api/events/${event.id}/leaderboard`);
-        const leaderboard = await boardResponse.json();
-        if (!boardResponse.ok) throw new Error(leaderboard.detail);
-        window.renderLeaderboard(node, event, leaderboard);
+        let league = null;
+        try {
+          const player = JSON.parse(localStorage.getItem('ten-up-player') || 'null');
+          if (player?.id) {
+            const response = await fetch(`${API_BASE_URL}/api/events/${event.id}/players/${player.id}/league`);
+            if (response.ok) league = (await response.json()).league;
+          }
+        } catch (_) { /* a visitor without a saved player sees the global board */ }
+        const controls = document.querySelector('#league-scope');
+        let scope = league ? 'local' : 'global';
+        if (league) {
+          controls.classList.remove('hidden');
+          document.querySelector('#league-scope-label').textContent = `Local League · ${league.code}`;
+        }
+        const showBoard = async () => {
+          node.textContent = 'Loading…';
+          const suffix = scope === 'local' ? `?league_code=${encodeURIComponent(league.code)}` : '';
+          const response = await fetch(`${API_BASE_URL}/api/events/${event.id}/leaderboard${suffix}`);
+          const board = await response.json();
+          if (!response.ok) throw new Error(board.detail);
+          controls.querySelectorAll('button').forEach(button => {
+            const active = button.dataset.leagueScope === scope;
+            button.classList.toggle('active', active);
+            button.setAttribute('aria-pressed', String(active));
+          });
+          window.renderLeaderboard(node, event, board);
+        };
+        controls.querySelectorAll('button').forEach(button => button.addEventListener('click', () => {
+          scope = button.dataset.leagueScope;
+          showBoard().catch(error => { node.textContent = error.message; });
+        }));
+        await showBoard();
       })().catch(error => {
         document.querySelector('#leaderboard').textContent = error.message;
       });
