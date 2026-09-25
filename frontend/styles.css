@@ -377,6 +377,30 @@ button.matrix-cell.on { border-color:var(--sage); background:var(--sage); box-sh
 .rider.selected.wildcard .rank-scale::after,.rider.selected.wildcard:hover .rank-scale::after { background:#f3dccd; }
 .wildcard-slot.pick-filled .wildcard-mark { color:var(--terracotta); }
 
+/* The mobile picks drawer keeps all thirteen slots visible while browsing. */
+.mobile-picks-backdrop,.mobile-picks-handle,.mobile-save { display:none; }
+@media(max-width:650px) {
+  body:has(#prediction:not(.hidden)) .mobile-picks-handle { position:fixed; z-index:22; top:58%; left:0; display:grid; width:33px; height:96px; place-items:center; border:1px solid #858987; border-left:0; border-radius:0 22px 22px 0; background:rgba(160,164,162,.78); color:var(--ink); padding:0; box-shadow:2px 3px 8px rgba(47,49,54,.22); touch-action:none; }
+  body:has(#prediction:not(.hidden)):is(.mobile-picks-open,.mobile-picking,.mobile-dragging) .mobile-picks-handle { display:none; }
+  .mobile-picks-handle span { font-size:23px; }
+  .mobile-picks-open .mobile-picks-handle span,.mobile-picking .mobile-picks-handle span { transform:rotate(180deg); }
+  .mobile-picks-open .mobile-picks-backdrop,.mobile-picking .mobile-picks-backdrop,.mobile-dragging .mobile-picks-backdrop { position:fixed; z-index:19; inset:0; display:block; background:rgba(24,35,30,.28); }
+  .mobile-picks-open .picks-column,.mobile-picking .picks-column,.mobile-dragging .picks-column { position:fixed; z-index:20; top:50%; right:10px; bottom:auto; left:10px; height:auto; max-height:calc(100dvh - 24px); overflow-y:auto; transform:translateY(-50%); padding:30px 12px 12px; border:1px solid var(--line); border-radius:12px; background:#faf8f2; box-shadow:0 10px 32px rgba(24,35,30,.22); }
+  .mobile-picks-open .list-switcher { display:none; }
+  .mobile-picks-open .picks-column::before { content:"Your Top 10 and wildcards"; position:absolute; top:9px; left:12px; color:var(--muted); font-size:11px; font-weight:700; letter-spacing:.06em; }
+  .mobile-picks-open .picks li,.mobile-picking .picks li,.mobile-dragging .picks li,.mobile-picks-open .picks.wildcards li,.mobile-picking .picks.wildcards li,.mobile-dragging .picks.wildcards li { min-height:32px; padding:4px 3px; font-size:13px; line-height:22px; }
+  .mobile-picks-open .wildcards-block,.mobile-picking .wildcards-block,.mobile-dragging .wildcards-block { margin-top:8px; }
+  .mobile-picks-open .wildcards-heading,.mobile-picking .wildcards-heading,.mobile-dragging .wildcards-heading { padding:0 3px 4px; }
+  .mobile-picks-open .wildcards-heading span:last-child,.mobile-picking .wildcards-heading span:last-child,.mobile-dragging .wildcards-heading span:last-child { display:none; }
+  .mobile-picks-open .picks-column #clear-picks,.mobile-picking .picks-column #clear-picks,.mobile-dragging .picks-column #clear-picks,.mobile-picks-open .picks-column #revert-actions,.mobile-picking .picks-column #revert-actions,.mobile-dragging .picks-column #revert-actions,.mobile-picks-open .picks-column #save,.mobile-picking .picks-column #save,.mobile-dragging .picks-column #save,.mobile-picks-open .picks-column #prediction-message,.mobile-picking .picks-column #prediction-message,.mobile-dragging .picks-column #prediction-message,.mobile-picks-open .picks-column #final-autosave-control,.mobile-picking .picks-column #final-autosave-control,.mobile-dragging .picks-column #final-autosave-control { display:none; }
+  .mobile-picking .cancel-pick { display:none; }
+  .mobile-picks-open .picks li.pick-filled,.mobile-picking .picks li.pick-filled { touch-action:pan-y; }
+  .mobile-pick-source { opacity:.45; }
+  .mobile-pick-target { background:var(--lime) !important; }
+  body.mobile-manual-final:has(#prediction:not(.hidden)) #mobile-save { position:fixed; z-index:18; bottom:20px; left:16px; display:grid; width:58px; height:58px; place-items:center; border:1px solid var(--ink); border-radius:50%; background:var(--sage); color:var(--ink); padding:0; box-shadow:2px 3px 0 rgba(47,49,54,.18); font-size:12px; }
+  .mobile-picks-open #mobile-save,.mobile-picking #mobile-save,.mobile-dragging #mobile-save { display:none; }
+}
+
 /* Favourites: a heart on every rider cell, left of the + button. */
 .rider-fav { position:absolute; top:7px; right:34px; display:grid; width:23px; height:23px; min-width:0; place-items:center; border:0; background:transparent; padding:0; color:var(--placeholder); }
 .rider-fav svg,.detail-fav svg,.favourites-toggle svg { fill:none; stroke:currentColor; stroke-width:1.8; stroke-linejoin:round; }

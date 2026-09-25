@@ -534,14 +534,27 @@ function cancelPendingPick() {
   if (!state.mobilePendingRiderId) return;
   state.mobilePendingRiderId = null;
   document.body.classList.remove("mobile-picking");
+  $("#mobile-picks-handle").setAttribute("aria-expanded", "false");
   showMessage("#prediction-message", "Pick cancelled.", true);
   render();
+}
+function closeMobilePicks() {
+  document.body.classList.remove("mobile-picks-open");
+  if (state.mobilePendingRiderId) return cancelPendingPick();
+  $("#mobile-picks-handle").setAttribute("aria-expanded", "false");
+}
+function toggleMobilePicks() {
+  if (state.mobilePendingRiderId) return closeMobilePicks();
+  const open = document.body.classList.toggle("mobile-picks-open");
+  $("#mobile-picks-handle").setAttribute("aria-expanded", String(open));
 }
 function addRiderToPicks(riderId) {
   if (isMobileLayout()) {
     if (state.mobilePendingRiderId === riderId) return cancelPendingPick();
     state.mobilePendingRiderId = riderId;
+    document.body.classList.remove("mobile-picks-open");
     document.body.classList.add("mobile-picking");
+    $("#mobile-picks-handle").setAttribute("aria-expanded", "true");
     showMessage("#prediction-message", `Tap a Top 10 position or a wildcard slot for ${riderName(riderId)}.`, true);
     render();
     return;
@@ -1247,6 +1260,7 @@ const groupKeyFor = (rider) => (state.riderView === "team" ? teamLabel(rider.tea
 function render() {
   const pickActions = ensurePickActions();
   const editingTemplate = state.activeList !== "final";
+  document.body.classList.toggle("mobile-manual-final", !editingTemplate && state.finalAutosave === false);
   pickActions.save.textContent = editingTemplate ? "Use as My Picks" : "Save My Picks";
   pickActions.save.classList.toggle("hidden", !editingTemplate && state.finalAutosave);
   renderListSwitcher();
@@ -1304,11 +1318,13 @@ function render() {
   document.querySelectorAll("[data-wildcard-slot]").forEach((slot) => {
     const slotIndex = Number(slot.dataset.wildcardSlot);
     slot.addEventListener("click", (event) => {
+      if (suppressMobilePickClick) return;
       if (event.target.closest("[data-remove-wildcard]")) return;
       if (state.mobilePendingRiderId) {
         const riderId = state.mobilePendingRiderId;
         state.mobilePendingRiderId = null;
         document.body.classList.remove("mobile-picking");
+        $("#mobile-picks-handle").setAttribute("aria-expanded", "false");
         insertWildcard(riderId, slotIndex);
         return;
       }
@@ -1319,7 +1335,7 @@ function render() {
     slot.addEventListener("dragleave", () => slot.classList.remove("drag-over"));
     slot.addEventListener("drop", (event) => { event.preventDefault(); slot.classList.remove("drag-over"); document.body.classList.remove("mobile-dragging"); insertWildcard(Number(event.dataTransfer.getData("text/plain")), slotIndex); });
   });
-  document.querySelectorAll("[data-position]").forEach((slot) => { slot.addEventListener("click", (event) => { if (event.target.closest("[data-remove]")) return; if (state.mobilePendingRiderId) { const riderId = state.mobilePendingRiderId; state.mobilePendingRiderId = null; document.body.classList.remove("mobile-picking"); insertRider(riderId, Number(slot.dataset.position)); return; } const riderId = Number(slot.dataset.pickedRider); if (riderId) openRiderDetail(riderId); }); slot.addEventListener("dragover", (event) => { event.preventDefault(); slot.classList.add("drag-over"); }); slot.addEventListener("dragleave", () => slot.classList.remove("drag-over")); slot.addEventListener("drop", (event) => { event.preventDefault(); slot.classList.remove("drag-over"); document.body.classList.remove("mobile-dragging"); insertRider(Number(event.dataTransfer.getData("text/plain")), Number(slot.dataset.position)); }); });
+  document.querySelectorAll("[data-position]").forEach((slot) => { slot.addEventListener("click", (event) => { if (suppressMobilePickClick || event.target.closest("[data-remove]")) return; if (state.mobilePendingRiderId) { const riderId = state.mobilePendingRiderId; state.mobilePendingRiderId = null; document.body.classList.remove("mobile-picking"); $("#mobile-picks-handle").setAttribute("aria-expanded", "false"); insertRider(riderId, Number(slot.dataset.position)); return; } const riderId = Number(slot.dataset.pickedRider); if (riderId) openRiderDetail(riderId); }); slot.addEventListener("dragover", (event) => { event.preventDefault(); slot.classList.add("drag-over"); }); slot.addEventListener("dragleave", () => slot.classList.remove("drag-over")); slot.addEventListener("drop", (event) => { event.preventDefault(); slot.classList.remove("drag-over"); document.body.classList.remove("mobile-dragging"); insertRider(Number(event.dataTransfer.getData("text/plain")), Number(slot.dataset.position)); }); });
 }
 
 // A searchable multi-select: the country and team filters are two instances.
@@ -1724,10 +1740,88 @@ window.addEventListener("beforeunload", (event) => {
 });
 window.addEventListener("keydown", (event) => { if (!(event.ctrlKey || event.metaKey) || event.altKey || event.target instanceof HTMLElement && event.target.matches("input, textarea, select")) return; if (event.key.toLowerCase() === "z") { event.preventDefault(); if (event.shiftKey) restorePickState(state.redoStack, state.undoStack, "Redid last change."); else restorePickState(state.undoStack, state.redoStack, "Undid last change."); } else if (event.key.toLowerCase() === "y") { event.preventDefault(); restorePickState(state.redoStack, state.undoStack, "Redid last change."); } });
 $("#cancel-pick").addEventListener("click", cancelPendingPick);
+$("#mobile-picks-backdrop").addEventListener("click", closeMobilePicks);
+const mobilePicksHandle = $("#mobile-picks-handle");
+let handleStartX = null;
+let handledHandleSwipe = false;
+mobilePicksHandle.addEventListener("pointerdown", (event) => {
+  handleStartX = event.clientX;
+  mobilePicksHandle.setPointerCapture(event.pointerId);
+});
+mobilePicksHandle.addEventListener("pointerup", (event) => {
+  if (handleStartX === null || Math.abs(event.clientX - handleStartX) < 35) return;
+  handledHandleSwipe = true;
+  if (event.clientX > handleStartX) document.body.classList.add("mobile-picks-open");
+  else closeMobilePicks();
+  mobilePicksHandle.setAttribute("aria-expanded", String(document.body.classList.contains("mobile-picks-open")));
+  handleStartX = null;
+  window.setTimeout(() => { handledHandleSwipe = false; }, 500);
+});
+mobilePicksHandle.addEventListener("pointercancel", () => { handleStartX = null; });
+mobilePicksHandle.addEventListener("click", () => {
+  if (handledHandleSwipe) { handledHandleSwipe = false; return; }
+  toggleMobilePicks();
+});
+$("#mobile-save").addEventListener("click", () => $("#save").click());
+
+// A held pick can be moved by touch between Top 10 positions and wildcards.
+// An ordinary swipe still scrolls the drawer; the drag starts after the hold.
+let mobilePickTouch = null;
+let suppressMobilePickClick = false;
+const clearMobilePickTouch = () => {
+  if (!mobilePickTouch) return;
+  window.clearTimeout(mobilePickTouch.timer);
+  mobilePickTouch.source.classList.remove("mobile-pick-source");
+  mobilePickTouch.target?.classList.remove("mobile-pick-target");
+  mobilePickTouch = null;
+};
+const mobilePickSlotAt = (x, y) => document.elementFromPoint(x, y)?.closest("#picks li[data-position], #wildcards li[data-wildcard-slot]");
+$("#prediction .picks-column").addEventListener("touchstart", (event) => {
+  if (!isMobileLayout() || event.touches.length !== 1 || !document.body.matches(".mobile-picks-open, .mobile-picking")) return;
+  if (event.target.closest("[data-remove], [data-remove-wildcard]")) return;
+  const source = event.target.closest("li[data-picked-rider]");
+  if (!source) return;
+  const touch = event.touches[0];
+  clearMobilePickTouch();
+  mobilePickTouch = { source, riderId: Number(source.dataset.pickedRider), x: touch.clientX, y: touch.clientY, active: false, target: null, timer: 0 };
+  mobilePickTouch.timer = window.setTimeout(() => {
+    if (!mobilePickTouch) return;
+    mobilePickTouch.active = true;
+    mobilePickTouch.source.classList.add("mobile-pick-source");
+  }, 350);
+}, { passive: true });
+document.addEventListener("touchmove", (event) => {
+  if (!mobilePickTouch) return;
+  const touch = event.touches[0];
+  if (!touch) return;
+  if (!mobilePickTouch.active) {
+    if (Math.hypot(touch.clientX - mobilePickTouch.x, touch.clientY - mobilePickTouch.y) > 8) clearMobilePickTouch();
+    return;
+  }
+  event.preventDefault();
+  const target = mobilePickSlotAt(touch.clientX, touch.clientY);
+  mobilePickTouch.target?.classList.remove("mobile-pick-target");
+  mobilePickTouch.target = target;
+  target?.classList.add("mobile-pick-target");
+}, { passive: false });
+document.addEventListener("touchend", (event) => {
+  if (!mobilePickTouch) return;
+  const drag = mobilePickTouch;
+  if (drag.active) {
+    const touch = event.changedTouches[0];
+    const target = touch && mobilePickSlotAt(touch.clientX, touch.clientY);
+    suppressMobilePickClick = true;
+    window.setTimeout(() => { suppressMobilePickClick = false; }, 400);
+    clearMobilePickTouch();
+    if (target?.dataset.position !== undefined) insertRider(drag.riderId, Number(target.dataset.position));
+    else if (target?.dataset.wildcardSlot !== undefined) insertWildcard(drag.riderId, Number(target.dataset.wildcardSlot));
+  } else clearMobilePickTouch();
+});
+document.addEventListener("touchcancel", clearMobilePickTouch);
 // The help popover is a <details>; close it on a tap anywhere else, as a phone user expects.
 document.addEventListener("pointerdown", (event) => { const help = $(".event-help[open]"); if (help && !help.contains(event.target)) help.open = false; });
 const backToTop = $("#back-to-top");
-backToTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+backToTop.addEventListener("click", () => window.scrollTo({ top: Math.max(0, $("#prediction").getBoundingClientRect().top + window.scrollY - 12), behavior: "smooth" }));
 window.addEventListener("scroll", () => backToTop.classList.toggle("hidden", window.scrollY < 400), { passive: true });
 window.addEventListener("keydown", (event) => { if (event.key === "Escape" && !$("dialog[open]")) { closeListMenu(); cancelPendingPick(); } });
 boot();
