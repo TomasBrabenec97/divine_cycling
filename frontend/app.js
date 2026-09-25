@@ -18,7 +18,7 @@ const emptyProfileFilters = () => Object.fromEntries(PROFILE_FILTERS.map((filter
 const emptyAdvancedFilters = () => ({ resultCells: [], resultMin: "", resultMax: "", profile: emptyProfileFilters() });
 // One UCI range filter, read in points or in rank: only the unit shown applies.
 const emptyFilters = (uciUnit = "points") => ({ search: "", countries: [], teams: [], uciUnit, rankMin: "", rankMax: "", pointsMin: "", pointsMax: "", ...emptyAdvancedFilters() });
-const state = { event: null, player: null, reference: null, referencePromise: null, teamIcons: {}, apiStatus: "starting", apiReadyPromise: null, picks: Array(10).fill(null), savedPicks: Array(10).fill(null), wildcards: Array(WILDCARD_COUNT).fill(null), savedWildcards: Array(WILDCARD_COUNT).fill(null), finalAutosave: true, finalDraft: null, undoStack: [], redoStack: [], mobilePendingRiderId: null, riderView: "country", riderSort: "alphabetical", riderSortDirection: "asc", riderSelectionFilter: "all", filters: emptyFilters(), advancedDraft: null, lists: { final: null, templates: [] }, activeList: "final", renamingList: null, favourites: new Set(), favouritesOnly: false };
+const state = { event: null, player: null, reference: null, referencePromise: null, teamIcons: {}, apiStatus: "starting", apiReadyPromise: null, picks: Array(10).fill(null), savedPicks: Array(10).fill(null), wildcards: Array(WILDCARD_COUNT).fill(null), savedWildcards: Array(WILDCARD_COUNT).fill(null), undoStack: [], redoStack: [], mobilePendingRiderId: null, riderView: "country", riderSort: "alphabetical", riderSortDirection: "asc", riderSelectionFilter: "all", filters: emptyFilters(), advancedDraft: null, lists: { final: null, templates: [] }, activeList: "final", renamingList: null, favourites: new Set(), favouritesOnly: false };
 const $ = (selector) => document.querySelector(selector);
 const isMobileLayout = () => window.matchMedia("(max-width: 650px)").matches;
 const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
@@ -484,7 +484,46 @@ async function openRiderDetail(riderId) {
     window.requestAnimationFrame(positionModalAndPage);
   }
 }
-function renderSessionControls() { const signedIn = Boolean(state.player); $("#session-controls").classList.toggle("hidden", !signedIn); $("#event-context").classList.toggle("hidden", !signedIn); $("#session-username").textContent = signedIn ? state.player.username : ""; }
+function renderSessionControls() {
+  const signedIn = Boolean(state.player);
+  $("#session-controls").classList.toggle("hidden", !signedIn);
+  $("#event-context").classList.toggle("hidden", !signedIn);
+  $("#session-username").textContent = signedIn ? state.player.username : "";
+  $("#league-summary").textContent = state.league ? `Local League · ${state.league.code}` : "Global leaderboard";
+  $("#league-counts").textContent = state.league ? `${state.league.joined_players} joined · ${state.league.submitted_players} submitted` : "";
+  $("#join-league-button").classList.toggle("hidden", Boolean(state.league));
+  $("#copy-league-link").classList.toggle("hidden", !state.league);
+  $("#leave-league-button").classList.toggle("hidden", !state.league);
+}
+function renderDeadline() {
+  if (!state.event) return;
+  const deadline = state.league?.submission_deadline || state.event.prediction_deadline;
+  const utcDeadline = /[zZ]|[+-]\d{2}:\d{2}$/.test(deadline) ? deadline : `${deadline}Z`;
+  const formatted = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(utcDeadline));
+  $("#event-meta").textContent = `Submit your ${state.league ? `${state.league.code} league` : "global"} prediction by ${formatted}.`;
+}
+async function loadLeagueInfo() {
+  if (!state.player || !state.event) return;
+  const status = await request(`/api/events/${state.event.id}/players/${state.player.id}/league`);
+  state.league = status.league;
+  renderSessionControls();
+  renderDeadline();
+}
+async function joinLeagueCode(code) {
+  const status = await request(`/api/events/${state.event.id}/players/${state.player.id}/league`, { method: "PUT", body: JSON.stringify({ code }) });
+  state.league = status.league;
+  renderSessionControls();
+  renderDeadline();
+}
+async function applyInvite() {
+  if (!state.inviteCode) return;
+  await joinLeagueCode(state.inviteCode);
+  state.inviteCode = "";
+  $("#league-invite").classList.add("hidden");
+  const url = new URL(window.location.href);
+  url.searchParams.delete("league_code");
+  window.history.replaceState({}, "", url);
+}
 function insertRider(riderId, position) {
   const wildcardSlot = state.wildcards.indexOf(riderId);
   if (wildcardSlot < 0 && state.picks.indexOf(riderId) === position) return;
@@ -1577,9 +1616,8 @@ let filtersConfigured = false;
 async function loadEvent() {
   state.event = await request("/api/events/active");
   if (!filtersConfigured) { configureFilters(); filtersConfigured = true; }
-  const deadline = new Intl.DateTimeFormat(undefined, { weekday:"long", month:"long", day:"numeric", hour:"numeric", minute:"2-digit" }).format(new Date(state.event.prediction_deadline));
   $("#event-title").textContent = state.event.name;
-  $("#event-meta").textContent = `Submit your prediction by ${deadline}.`;
+  renderDeadline();
 }
 function restoreSession() {
   const saved = localStorage.getItem("ten-up-player");
@@ -1589,6 +1627,10 @@ function restoreSession() {
   // The sign-in card starts hidden so a returning player never sees it flash
   // during the seconds the API spends waking up.
   if (!state.player) $("#identity").classList.remove("hidden");
+  if (state.inviteCode) {
+    $("#league-invite").textContent = `League invite: ${state.inviteCode}. Continue with your race name to join.`;
+    $("#league-invite").classList.remove("hidden");
+  }
   renderSessionControls();
 }
 // Trend arrows need the PCS reference set; fetch it behind the first render.
@@ -1604,6 +1646,8 @@ async function boot() {
       $("#identity").classList.add("hidden");
       $("#prediction").classList.remove("hidden");
       renderSessionControls();
+      try { await applyInvite(); } catch (error) { showMessage("#prediction-message", error.message); }
+      await loadLeagueInfo();
       await loadPrediction();
       loadReferenceInBackground();
     } else {
@@ -1642,6 +1686,7 @@ $("#join").addEventListener("click", async () => {
       if (!await whenApiReady()) return showMessage("#identity-message", "The server is still not answering. Give it a minute and try again.");
     }
     if (!state.event) await loadEvent();
+    if (state.inviteCode) await request(`/api/events/${state.event.id}/leagues/${encodeURIComponent(state.inviteCode)}`);
     try {
       state.player = await request(`/api/players/by-username/${encodeURIComponent(username)}`);
     } catch (error) {
@@ -1652,6 +1697,8 @@ $("#join").addEventListener("click", async () => {
     $("#identity").classList.add("hidden");
     $("#prediction").classList.remove("hidden");
     renderSessionControls();
+    try { await applyInvite(); } catch (error) { showMessage("#prediction-message", error.message); }
+    await loadLeagueInfo();
     await loadPrediction();
     loadReferenceInBackground();
   } catch (error) {
@@ -1663,6 +1710,43 @@ $("#join").addEventListener("click", async () => {
   }
 });
 $("#username").addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); $("#join").click(); } });
+$("#join-league-button").addEventListener("click", () => {
+  $("#league-code").value = "";
+  $("#league-message").textContent = "";
+  $("#join-league-dialog").showModal();
+  $("#league-code").focus();
+});
+$("#cancel-join-league").addEventListener("click", () => $("#join-league-dialog").close());
+$("#league-code").addEventListener("keydown", (event) => {
+  if (event.key === "Enter") { event.preventDefault(); $("#confirm-join-league").click(); }
+});
+$("#confirm-join-league").addEventListener("click", async () => {
+  const code = $("#league-code").value.trim().toLowerCase();
+  if (!code) return showMessage("#league-message", "Enter a league code first.");
+  try {
+    await joinLeagueCode(code);
+    $("#join-league-dialog").close();
+    showMessage("#prediction-message", `Joined ${state.league.code}. Your deadline is shown above.`, true);
+  } catch (error) { showMessage("#league-message", error.message); }
+});
+$("#leave-league-button").addEventListener("click", async () => {
+  try {
+    await request(`/api/events/${state.event.id}/players/${state.player.id}/league`, { method: "DELETE" });
+    state.league = null;
+    renderSessionControls();
+    renderDeadline();
+    showMessage("#prediction-message", "You left the local league. The global deadline now applies.", true);
+  } catch (error) { showMessage("#prediction-message", error.message); }
+});
+$("#copy-league-link").addEventListener("click", async () => {
+  if (!state.league) return;
+  const invite = new URL("join_league/", new URL(".", window.location.href));
+  invite.searchParams.set("league_code", state.league.code);
+  try {
+    await navigator.clipboard.writeText(invite.href);
+    showMessage("#prediction-message", "League invite link copied.", true);
+  } catch (_) { window.prompt("Copy your league invite link", invite.href); }
+});
 $("#close-rider-detail").addEventListener("click", () => $("#rider-detail-modal").close());
 $("#rider-detail-modal").addEventListener("click", (event) => {
   if (event.target === event.currentTarget) return event.currentTarget.close();
@@ -1686,39 +1770,7 @@ $("#reset-advanced-filters").addEventListener("click", () => {
   renderAdvancedFilters();
   render();
 });
-$("#logout").addEventListener("click", async () => {
-  flushTemplateAutosave();
-  const canAutosave = state.activeList === "final" && state.finalAutosave && state.picks.some(Boolean);
-  if (hasUnsavedPickChanges() && !canAutosave && !window.confirm("Did you forget to save your prediction?")) return;
-  if (canAutosave && hasUnsavedPickChanges()) {
-    failedFinalAutosave = "";
-    if (!await flushFinalAutosave()) return;
-  }
-  window.clearTimeout(autosaveTimer);
-  window.clearTimeout(finalAutosaveTimer);
-  closeListMenu();
-  localStorage.removeItem("ten-up-player");
-  state.player = null;
-  state.picks = Array(10).fill(null);
-  state.savedPicks = Array(10).fill(null);
-  state.wildcards = Array(WILDCARD_COUNT).fill(null);
-  state.savedWildcards = Array(WILDCARD_COUNT).fill(null);
-  state.lists = { final: null, templates: [] };
-  state.finalDraft = null;
-  state.activeList = "final";
-  state.renamingList = null;
-  state.favourites = new Set();
-  state.favouritesOnly = false;
-  resetPickHistory();
-  state.mobilePendingRiderId = null;
-  document.body.classList.remove("mobile-picking", "mobile-dragging");
-  $("#prediction").classList.add("hidden");
-  $("#identity").classList.remove("hidden");
-  $("#username").value = "";
-  renderSessionControls();
-  showMessage("#identity-message", "You have logged out on this device.", true);
-  $("#username").focus();
-});
+$("#logout").addEventListener("click", () => { flushTemplateAutosave(); if (hasUnsavedPickChanges() && !window.confirm("Did you forget to save your prediction?")) return; window.clearTimeout(autosaveTimer); closeListMenu(); localStorage.removeItem("ten-up-player"); state.player = null; state.picks = Array(10).fill(null); state.savedPicks = Array(10).fill(null); state.wildcards = Array(WILDCARD_COUNT).fill(null); state.savedWildcards = Array(WILDCARD_COUNT).fill(null); state.lists = { final: null, templates: [] }; state.activeList = "final"; state.renamingList = null; state.favourites = new Set(); state.favouritesOnly = false; resetPickHistory(); state.mobilePendingRiderId = null; document.body.classList.remove("mobile-picking", "mobile-dragging"); $("#prediction").classList.add("hidden"); $("#identity").classList.remove("hidden"); $("#username").value = ""; renderSessionControls(); showMessage("#identity-message", "You have logged out on this device.", true); $("#username").focus(); });
 $("#save").addEventListener("click", saveFinal);
 window.addEventListener("beforeunload", (event) => {
   if (!state.player) return;

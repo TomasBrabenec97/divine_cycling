@@ -40,6 +40,32 @@ class Event(Base):
     predictions: Mapped[list["Prediction"]] = relationship(back_populates="event")
 
 
+class LocalLeague(Base):
+    __tablename__ = "local_leagues"
+    __table_args__ = (UniqueConstraint("event_id", "code", name="uq_event_league_code"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    event_id: Mapped[int] = mapped_column(ForeignKey("events.id"), index=True)
+    code: Mapped[str] = mapped_column(String(40))
+    # Null follows the event deadline. Admins may set a later deadline.
+    submission_deadline: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    event: Mapped[Event] = relationship()
+
+
+class LeagueMembership(Base):
+    __tablename__ = "league_memberships"
+    __table_args__ = (UniqueConstraint("event_id", "player_id", name="uq_event_player_league"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    event_id: Mapped[int] = mapped_column(ForeignKey("events.id"), index=True)
+    league_id: Mapped[int] = mapped_column(ForeignKey("local_leagues.id"), index=True)
+    player_id: Mapped[int] = mapped_column(ForeignKey("players.id"), index=True)
+    joined_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    league: Mapped[LocalLeague] = relationship()
+    player: Mapped[Player] = relationship()
+
+
 class Rider(Base):
     __tablename__ = "riders"
 

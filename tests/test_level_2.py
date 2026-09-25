@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -7,6 +9,7 @@ import app.db as db_module
 import app.seed as seed_module
 from app.db import Base
 from app.main import app, leaderboard_cache, reference_cache
+from app.models import Event, LocalLeague
 from app.seed import seed_mock_data
 
 
@@ -471,3 +474,65 @@ def test_a_published_leaderboard_is_cached_until_the_result_is_republished(monke
     assert len(builds) == 1
     assert again.json()["entries"] == corrected.json()["entries"]
     assert again.json()["entries"] != board.json()["entries"]
+
+
+def test_local_league_join_deadline_and_exit() -> None:
+    client = TestClient(app)
+    event = client.get("/api/events/active").json()
+    league_player = client.post("/api/players", json={"username": "LeagueRider"}).json()
+    global_player = client.post("/api/players", json={"username": "GlobalRider"}).json()
+    status_url = f"/api/events/{event['id']}/players/{league_player['id']}/league"
+    assert client.get(status_url).json() == {"league": None}
+    assert client.put(status_url, json={"code": "missing"}).status_code == 404
+
+    with db_module.SessionLocal() as db:
+        stored_event = db.get(Event, event["id"])
+        stored_event.prediction_deadline = datetime.utcnow() - timedelta(minutes=5)
+        deadline = datetime.utcnow() + timedelta(hours=2)
+        db.add(LocalLeague(event_id=event["id"], code="prg-office", submission_deadline=deadline))
+        db.add(LocalLeague(event_id=event["id"], code="default-deadline"))
+        db.commit()
+
+    joined = client.put(status_url, json={"code": "PRG-OFFICE"})
+    assert joined.status_code == 200
+    assert joined.json()["league"]["code"] == "prg-office"
+    assert joined.json()["league"]["joined_players"] == 1
+    assert joined.json()["league"]["submitted_players"] == 0
+    assert joined.json()["league"]["submission_deadline"] == deadline.isoformat()
+    assert client.get(f"/api/events/{event['id']}/leagues/missing").status_code == 404
+
+    pick = {"selections": [{"position": 1, "rider_id": event["riders"][0]["id"]}]}
+    prediction_url = f"/api/events/{event['id']}/predictions"
+    assert client.put(prediction_url, json={"player_id": global_player["id"], **pick}).status_code == 409
+    assert client.put(prediction_url, json={"player_id": league_player["id"], **pick}).status_code == 200
+    assert client.get(status_url).json()["league"]["submitted_players"] == 1
+    assert client.put(status_url, json={"code": "default-deadline"}).status_code == 200
+    assert client.put(prediction_url, json={"player_id": league_player["id"], **pick}).status_code == 409
+    assert client.delete(status_url).status_code == 204
+    assert client.get(status_url).json() == {"league": None}
+
+
+def test_local_leaderboard_contains_only_members() -> None:
+    client = TestClient(app)
+    event = client.get("/api/events/active").json()
+    with db_module.SessionLocal() as db:
+        db.add(LocalLeague(event_id=event["id"], code="friends"))
+        db.commit()
+    ids = [rider["id"] for rider in event["riders"]]
+    first, first_save = save_prediction(client, event, "LeagueOne", ids[:10])
+    second, second_save = save_prediction(client, event, "LeagueTwo", ids[1:11])
+    _, global_save = save_prediction(client, event, "Elsewhere", ids[2:12])
+    assert all(saved.status_code == 200 for saved in (first_save, second_save, global_save))
+    for player_id in (first, second):
+        response = client.put(
+            f"/api/events/{event['id']}/players/{player_id}/league", json={"code": "friends"}
+        )
+        assert response.status_code == 200
+    results = [{"position": position, "rider_id": rider_id} for position, rider_id in enumerate(ids[:10], 1)]
+    assert client.post(f"/api/admin/events/{event['id']}/results", json={"results": results}).status_code == 200
+    url = f"/api/events/{event['id']}/leaderboard"
+    assert len(client.get(url).json()["entries"]) == 3
+    local = client.get(url, params={"league_code": "friends"})
+    assert local.status_code == 200
+    assert {entry["username"] for entry in local.json()["entries"]} == {"LeagueOne", "LeagueTwo"}
+    assert client.get(url, params={"league_code": "unknown"}).status_code == 404

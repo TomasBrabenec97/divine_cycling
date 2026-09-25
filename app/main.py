@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload, selectinload
 
@@ -19,6 +19,8 @@ from app.models import (
     EventResult,
     EventRider,
     FavouriteRider,
+    LeagueMembership,
+    LocalLeague,
     Player,
     Prediction,
     PredictionItem,
@@ -37,6 +39,9 @@ from app.schemas import (
     FavouritesUpdate,
     LeaderboardEntry,
     LeaderboardResponse,
+    LeagueJoin,
+    LeagueResponse,
+    LeagueStatus,
     PicksBase,
     PlayerCreate,
     PlayerResponse,
@@ -196,6 +201,97 @@ def get_latest_finished_event(db: Session = Depends(get_db)) -> EventResponse:
     return event_response(event, db)
 
 
+def local_league_or_404(db: Session, event_id: int, code: str) -> LocalLeague:
+    league = db.scalar(
+        select(LocalLeague).where(
+            LocalLeague.event_id == event_id, LocalLeague.code == code.strip().lower()
+        )
+    )
+    if league is None:
+        raise HTTPException(status_code=404, detail="League code not found")
+    return league
+
+
+def player_membership(db: Session, event_id: int, player_id: int) -> LeagueMembership | None:
+    return db.scalar(
+        select(LeagueMembership)
+        .options(joinedload(LeagueMembership.league))
+        .where(LeagueMembership.event_id == event_id, LeagueMembership.player_id == player_id)
+    )
+
+
+def league_response(db: Session, league: LocalLeague) -> LeagueResponse:
+    joined = db.scalar(
+        select(func.count()).select_from(LeagueMembership).where(
+            LeagueMembership.league_id == league.id
+        )
+    ) or 0
+    submitted = db.scalar(
+        select(func.count()).select_from(LeagueMembership)
+        .join(
+            Prediction,
+            (Prediction.player_id == LeagueMembership.player_id)
+            & (Prediction.event_id == LeagueMembership.event_id),
+        )
+        .where(LeagueMembership.league_id == league.id)
+    ) or 0
+    return LeagueResponse(
+        code=league.code,
+        submission_deadline=league.submission_deadline or league.event.prediction_deadline,
+        joined_players=joined,
+        submitted_players=submitted,
+    )
+
+
+@app.get("/api/events/{event_id}/leagues/{code}", response_model=LeagueResponse)
+def get_local_league(
+    event_id: int, code: str, db: Session = Depends(get_db)
+) -> LeagueResponse:
+    return league_response(db, local_league_or_404(db, event_id, code))
+
+
+@app.get("/api/events/{event_id}/players/{player_id}/league", response_model=LeagueStatus)
+def get_player_league(
+    event_id: int, player_id: int, db: Session = Depends(get_db)
+) -> LeagueStatus:
+    if db.get(Player, player_id) is None:
+        raise HTTPException(status_code=404, detail="Player not found")
+    membership = player_membership(db, event_id, player_id)
+    return LeagueStatus(league=league_response(db, membership.league) if membership else None)
+
+
+@app.put("/api/events/{event_id}/players/{player_id}/league", response_model=LeagueStatus)
+def join_local_league(
+    event_id: int, player_id: int, payload: LeagueJoin, db: Session = Depends(get_db)
+) -> LeagueStatus:
+    if db.get(Player, player_id) is None:
+        raise HTTPException(status_code=404, detail="Player not found")
+    league = local_league_or_404(db, event_id, payload.code)
+    membership = player_membership(db, event_id, player_id)
+    if membership is None:
+        db.add(LeagueMembership(event_id=event_id, player_id=player_id, league_id=league.id))
+    else:
+        membership.league_id = league.id
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="League membership changed; try again") from None
+    return LeagueStatus(league=league_response(db, league))
+
+
+@app.delete(
+    "/api/events/{event_id}/players/{player_id}/league", status_code=status.HTTP_204_NO_CONTENT
+)
+def leave_local_league(
+    event_id: int, player_id: int, db: Session = Depends(get_db)
+) -> None:
+    membership = player_membership(db, event_id, player_id)
+    if membership is not None:
+        db.delete(membership)
+        db.commit()
+
+
 @app.get("/api/riders/reference")
 def rider_reference_data(request: Request, db: Session = Depends(get_db)) -> Response:
     """Read-only PCS background data, delivered once for the rider detail UI."""
@@ -280,11 +376,15 @@ def rider_reference_payload(db: Session) -> dict:
     }
 
 
-def require_open_event(event_id: int, db: Session) -> Event:
+def require_open_event(event_id: int, db: Session, player_id: int | None = None) -> Event:
     event = db.get(Event, event_id)
     if event is None:
         raise HTTPException(status_code=404, detail="Event not found")
-    if event.status != "open" or datetime.utcnow() >= event.prediction_deadline:
+    membership = player_membership(db, event_id, player_id) if player_id is not None else None
+    deadline = event.prediction_deadline
+    if membership and membership.league.submission_deadline:
+        deadline = membership.league.submission_deadline
+    if event.status != "open" or datetime.utcnow() >= deadline:
         raise HTTPException(status_code=409, detail="Predictions are locked for this event")
     return event
 
@@ -308,7 +408,7 @@ def require_startlist_picks(event: Event, picks: PicksBase, db: Session) -> None
 def upsert_prediction(
     event_id: int, payload: PredictionUpsert, db: Session = Depends(get_db)
 ) -> PredictionResponse:
-    event = require_open_event(event_id, db)
+    event = require_open_event(event_id, db, payload.player_id)
     if db.get(Player, payload.player_id) is None:
         raise HTTPException(status_code=404, detail="Player not found")
 
@@ -458,7 +558,7 @@ def reorder_templates(
 def create_template(
     event_id: int, payload: TemplateUpsert, db: Session = Depends(get_db)
 ) -> TemplateResponse:
-    event = require_open_event(event_id, db)
+    event = require_open_event(event_id, db, payload.player_id)
     if db.get(Player, payload.player_id) is None:
         raise HTTPException(status_code=404, detail="Player not found")
     require_startlist_picks(event, payload, db)
@@ -492,7 +592,7 @@ def create_template(
 def update_template(
     event_id: int, template_id: int, payload: TemplateUpsert, db: Session = Depends(get_db)
 ) -> TemplateResponse:
-    event = require_open_event(event_id, db)
+    event = require_open_event(event_id, db, payload.player_id)
     template = owned_template(db, event_id, template_id, payload.player_id)
     require_startlist_picks(event, payload, db)
     require_unique_template_name(db, event_id, payload.player_id, payload.name, template_id)
@@ -510,7 +610,7 @@ def update_template(
 def delete_template(
     event_id: int, template_id: int, player_id: int, db: Session = Depends(get_db)
 ) -> None:
-    require_open_event(event_id, db)
+    require_open_event(event_id, db, player_id)
     db.delete(owned_template(db, event_id, template_id, player_id))
     db.commit()
 
@@ -801,22 +901,36 @@ def persisted_leaderboard(event: Event, run: ScoreRun, db: Session) -> Leaderboa
 
 @app.get("/api/events/{event_id}/leaderboard", response_model=LeaderboardResponse)
 def leaderboard(
-    event_id: int, request: Request, db: Session = Depends(get_db)
+    event_id: int, request: Request, league_code: str | None = None, db: Session = Depends(get_db)
 ) -> Response | LeaderboardResponse:
     event = db.get(Event, event_id)
     if event is None:
         raise HTTPException(status_code=404, detail="Event not found")
     if event.status != "finished":
         raise HTTPException(status_code=409, detail="Leaderboard is available after the race is finalized")
+    league = local_league_or_404(db, event_id, league_code) if league_code else None
     run = latest_published_run(event, db)
     if run is None or not run.rules_version.startswith(STORED_BREAKDOWN_VERSIONS):
-        return score_event(event, db, is_simulation=False)
-    # The timestamp keeps a rebuilt database that reuses a run id from being
-    # served the board of the run it replaced.
-    payload = leaderboard_cache.get(
-        event.id, (run.id, run.created_at), lambda: persisted_leaderboard(event, run, db)
+        board = score_event(event, db, is_simulation=False)
+    elif league is not None:
+        board = persisted_leaderboard(event, run, db)
+    else:
+        # The timestamp keeps a rebuilt database that reuses a run id from being
+        # served the board of the run it replaced.
+        payload = leaderboard_cache.get(
+            event.id, (run.id, run.created_at), lambda: persisted_leaderboard(event, run, db)
+        )
+        return payload.response(request, max_age=LEADERBOARD_MAX_AGE_SECONDS)
+    if league is None:
+        return board
+    usernames = set(
+        db.scalars(
+            select(Player.username)
+            .join(LeagueMembership, LeagueMembership.player_id == Player.id)
+            .where(LeagueMembership.league_id == league.id)
+        ).all()
     )
-    return payload.response(request, max_age=LEADERBOARD_MAX_AGE_SECONDS)
+    return board.model_copy(update={"entries": [entry for entry in board.entries if entry.username in usernames]})
 
 
 frontend_dir = Path(__file__).resolve().parent.parent / "frontend"
@@ -830,6 +944,11 @@ def admin_page() -> FileResponse:
 @app.get("/leaderboard", include_in_schema=False)
 def leaderboard_page() -> FileResponse:
     return FileResponse(frontend_dir / "leaderboard.html")
+
+
+@app.get("/join_league", include_in_schema=False)
+def join_league_page() -> FileResponse:
+    return FileResponse(frontend_dir / "index.html")
 
 
 if frontend_dir.exists():
