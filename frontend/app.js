@@ -680,7 +680,7 @@ function listFromPicks(selections = [], wildcards = []) {
 const workingList = () => ({ picks: [...state.picks], wildcards: [...state.wildcards] });
 const picksPayload = (list = workingList()) => ({ selections: list.picks.flatMap((rider_id, index) => rider_id ? [{ position: index + 1, rider_id }] : []), wildcards: list.wildcards.filter(Boolean) });
 const templateById = (id) => state.lists.templates.find((template) => template.id === id);
-const listName = (id) => (id === "final" ? "your final prediction" : `“${templateById(id)?.name || "this list"}”`);
+const listName = (id) => (id === "final" ? "My Picks" : `“${templateById(id)?.name || "this list"}”`);
 const wildcardKey = (list) => list.wildcards.filter(Boolean).sort((a, b) => a - b).join(",");
 const sameList = (a, b) => Boolean(a && b) && a.picks.every((riderId, index) => riderId === b.picks[index]) && wildcardKey(a) === wildcardKey(b);
 function uniqueTemplateName() {
@@ -780,9 +780,9 @@ function saveFinal({ automatic = false } = {}) {
       if (!automatic || sameList(state.finalDraft, list)) state.finalDraft = null;
       if (listId === "final") {
         if (state.activeList === "final") markSaved(list);
-        if (!automatic) showMessage("#prediction-message", "Final prediction saved. You can edit it until the deadline.", true);
+        if (!automatic) showMessage("#prediction-message", "My Picks saved. You can edit them until the deadline.", true);
       } else {
-        showMessage("#prediction-message", `Saved ${listName(listId)} as your final prediction. It is the one that will be scored.`, true);
+        showMessage("#prediction-message", `Saved ${listName(listId)} as My Picks. These picks will count toward your score.`, true);
       }
       if (failedFinalAutosave === key) failedFinalAutosave = "";
       return true;
@@ -1159,7 +1159,7 @@ function renderListSwitcher() {
   };
   const scrollLeft = strip.scrollLeft;
   strip.innerHTML = [
-    tab("final", "Final", "Your final prediction: the one that is scored"),
+    tab("final", "My Picks", "These picks count toward your score and can be changed until the deadline"),
     ...state.lists.templates.map((template) => state.renamingList === template.id
       ? `<div class="list-tab renaming"><input class="list-name-input" data-rename="${template.id}" value="${escapeHtml(template.name)}" maxlength="40" aria-label="Template name" /></div>`
       : tab(template.id, template.name, template.name)),
@@ -1247,7 +1247,7 @@ const groupKeyFor = (rider) => (state.riderView === "team" ? teamLabel(rider.tea
 function render() {
   const pickActions = ensurePickActions();
   const editingTemplate = state.activeList !== "final";
-  pickActions.save.textContent = editingTemplate ? "Save as final prediction" : "Save final prediction";
+  pickActions.save.textContent = editingTemplate ? "Use as My Picks" : "Save My Picks";
   pickActions.save.classList.toggle("hidden", !editingTemplate && state.finalAutosave);
   renderListSwitcher();
   scheduleTemplateAutosave();

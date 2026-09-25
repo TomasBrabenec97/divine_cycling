@@ -236,6 +236,8 @@ def use_filters(page) -> None:
 
 def fill_top_ten(page, base: str, username: str, picks: list[int], shots: Path) -> None:
     sign_in_and_pick(page, base, username, picks)
+    if page.inner_text('[data-list="final"] .list-tab-label') != "My Picks":
+        raise AssertionError("the scored list tab should be named My Picks")
     if not page.is_checked("#final-autosave") or not page.is_disabled("#revert-picks"):
         raise AssertionError("FINAL must start with auto-save on and Revert disabled")
     page.wait_for_function(
@@ -268,7 +270,7 @@ def fill_top_ten(page, base: str, username: str, picks: list[int], shots: Path) 
     page.click(f'[data-rider-add="{picks[9]}"]')
     with page.expect_response(lambda response: response.request.method == "PUT" and "/predictions" in response.url):
         page.click("#save")
-    saved_message(page, "Final prediction saved")
+    saved_message(page, "My Picks saved")
     page.screenshot(path=shots / f"{username}-top10.png", full_page=True)
     page.click("#logout")
     page.wait_for_selector("#identity:not(.hidden)")
@@ -322,7 +324,7 @@ def keep_a_template(
     page.keyboard.press("Enter")
     page.wait_for_selector('.list-tab.active:has-text("Plan A")')
     page.click("#save")
-    saved_message(page, "as your final prediction")
+    saved_message(page, "as My Picks")
 
     # A template has no Save button: the edit goes out by itself.
     with page.expect_response(template_saved_with(spare)):
@@ -338,7 +340,7 @@ def keep_a_template(
     page.click('[data-list="final"]')
     page.wait_for_selector('.list-tab.final.active')
     if shown_top_ten(page) != picks[:10]:
-        raise AssertionError(f"Final tab shows {shown_top_ten(page)}, expected {picks[:10]}")
+        raise AssertionError(f"My Picks tab shows {shown_top_ten(page)}, expected {picks[:10]}")
     page.click('.list-tab:has-text("Plan A")')
     page.wait_for_selector('.list-tab.active:has-text("Plan A")')
     if shown_top_ten(page) != edited:
