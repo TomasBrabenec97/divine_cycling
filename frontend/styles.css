@@ -397,6 +397,15 @@ button.matrix-cell.on { border-color:var(--sage); background:var(--sage); box-sh
 .league-scope div { display:flex; gap:6px; }
 .league-scope button { border-color:var(--line); padding:7px 11px; color:var(--muted); font-size:12px; }
 .league-scope button.active { border-color:var(--ink); background:var(--ink); color:var(--paper); }
+.admin-section { margin:28px 0; }
+.admin-section label { display:block; margin:14px 0 5px; font-size:12px; font-weight:700; }
+.admin-section input { width:min(100%,650px); }
+.admin-table-wrap { width:100%; overflow-x:auto; margin-top:12px; }
+.admin-table { width:100%; border-collapse:collapse; font-size:13px; }
+.admin-table th,.admin-table td { padding:10px 12px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; }
+.admin-table th { color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.08em; }
+.admin-table td:last-child { text-align:right; }
+.admin-table button { padding:4px 9px; font-size:11px; color:var(--terracotta); }
 @media(max-width:650px) { .league-controls { max-width:125px; }.league-actions { gap:3px 8px; } }
 
 /* The mobile picks drawer keeps all thirteen slots visible while browsing. */
