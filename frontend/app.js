@@ -583,7 +583,7 @@ function ensurePickActions() {
     autosave = document.createElement("div");
     autosave.id = "final-autosave-control";
     autosave.className = "final-autosave-control";
-    autosave.innerHTML = '<label for="final-autosave"><input id="final-autosave" type="checkbox" /> Auto-save FINAL</label><span id="final-save-status" role="status" aria-live="polite"></span><button id="retry-final-save" type="button" class="hidden">Retry</button>';
+    autosave.innerHTML = '<label for="final-autosave"><input id="final-autosave" type="checkbox" /> Auto-save final</label><span id="final-save-status" role="status" aria-live="polite"></span><button id="retry-final-save" type="button" class="hidden">Retry</button>';
     autosave.querySelector("input").addEventListener("change", (event) => {
       state.finalAutosave = event.target.checked;
       localStorage.setItem(finalAutosavePreferenceKey(), String(state.finalAutosave));
