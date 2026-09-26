@@ -26,4 +26,4 @@ services:
       - key: ADMIN_API_KEY
         generateValue: true
       - key: CORS_ORIGINS
-        value: https://tomasbrabenec97.github.io
+        value: https://www.cycling-divine.com,https://tomasbrabenec97.github.io
