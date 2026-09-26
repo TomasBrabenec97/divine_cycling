@@ -70,6 +70,13 @@ def init_db(seed_mock_data: bool = False) -> None:
                     "sort_order INTEGER NOT NULL DEFAULT 0"
                 )
             )
+    event_columns = {column["name"] for column in inspect(engine).get_columns("events")}
+    if "results_expected_at" not in event_columns:
+        if_missing = "IF NOT EXISTS " if engine.dialect.name == "postgresql" else ""
+        with engine.begin() as connection:
+            connection.execute(
+                text(f"ALTER TABLE events ADD COLUMN {if_missing}results_expected_at TIMESTAMP")
+            )
     if seed_mock_data:
         from app.seed import seed_mock_data as seed
 

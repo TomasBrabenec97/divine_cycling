@@ -155,6 +155,8 @@ def import_startlist(pcs_html_path: Path, include_uci: bool = True) -> dict[str,
                 name="2026 Road World Championship — Men Elite Road Race",
                 starts_at=datetime(2026, 9, 27, 13, 0),
                 prediction_deadline=datetime(2026, 9, 27, 12, 30),
+                # 21:40 CEST, the estimated finish time for the elite men's race.
+                results_expected_at=datetime(2026, 9, 27, 19, 40),
                 status="open",
                 source_name="PCS preliminary startlist",
                 source_updated_at=datetime.utcnow(),
