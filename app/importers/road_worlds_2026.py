@@ -163,6 +163,10 @@ def import_startlist(pcs_html_path: Path, include_uci: bool = True) -> dict[str,
             )
             db.add(event)
             db.flush()
+        # A row created before `results_expected_at` existed would otherwise be
+        # stuck on NULL forever, since only new rows set it above.
+        if event.results_expected_at is None:
+            event.results_expected_at = datetime(2026, 9, 27, 19, 40)
 
         matched = 0
         for item in startlist:

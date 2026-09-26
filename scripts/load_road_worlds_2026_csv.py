@@ -85,6 +85,10 @@ def main() -> None:
             )
             session.add(event)
             session.flush()
+        # A row created before `results_expected_at` existed would otherwise be
+        # stuck on NULL forever, since only new rows set it above.
+        if event.results_expected_at is None:
+            event.results_expected_at = datetime(2026, 9, 27, 19, 40)
         event.source_name = "Local 2026 Road Worlds CSV export"
         event.source_updated_at = datetime.now()
 
