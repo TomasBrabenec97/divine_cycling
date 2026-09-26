@@ -33,6 +33,8 @@ class Event(Base):
     name: Mapped[str] = mapped_column(String(160))
     starts_at: Mapped[datetime] = mapped_column(DateTime)
     prediction_deadline: Mapped[datetime] = mapped_column(DateTime)
+    # Shown on the leaderboard placeholder while results are still pending.
+    results_expected_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     status: Mapped[str] = mapped_column(String(20), default="open")
     source_name: Mapped[str] = mapped_column(String(80), default="mock data")
     source_updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

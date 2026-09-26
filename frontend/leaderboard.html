@@ -21,7 +21,16 @@
         const node = document.querySelector('#leaderboard');
         const eventResponse = await fetch(`${API_BASE_URL}/api/events/latest-finished`);
         if (!eventResponse.ok) {
-          node.textContent = 'Leaderboard is available after the race is finalized.';
+          let pending = null;
+          try { pending = await (await fetch(`${API_BASE_URL}/api/events/active`)).json(); } catch (_) { /* no upcoming event either */ }
+          const expected = pending?.results_expected_at || pending?.starts_at;
+          if (expected) {
+            const utcExpected = /[zZ]|[+-]\d{2}:\d{2}$/.test(expected) ? expected : `${expected}Z`;
+            const formatted = new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }).format(new Date(utcExpected));
+            node.textContent = `Results aren't in yet. The leaderboard should be ready around ${formatted}, once the race finishes.`;
+          } else {
+            node.textContent = 'Leaderboard is available after the race is finalized.';
+          }
           return;
         }
         const event = await eventResponse.json();

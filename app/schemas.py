@@ -66,6 +66,7 @@ class EventResponse(BaseModel):
     name: str
     starts_at: datetime
     prediction_deadline: datetime
+    results_expected_at: datetime | None = None
     status: str
     source_name: str
     source_updated_at: datetime
