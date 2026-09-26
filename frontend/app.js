@@ -18,7 +18,7 @@ const emptyProfileFilters = () => Object.fromEntries(PROFILE_FILTERS.map((filter
 const emptyAdvancedFilters = () => ({ resultCells: [], resultMin: "", resultMax: "", profile: emptyProfileFilters() });
 // One UCI range filter, read in points or in rank: only the unit shown applies.
 const emptyFilters = (uciUnit = "points") => ({ search: "", countries: [], teams: [], uciUnit, rankMin: "", rankMax: "", pointsMin: "", pointsMax: "", ...emptyAdvancedFilters() });
-const state = { event: null, player: null, reference: null, referencePromise: null, teamIcons: {}, apiStatus: "starting", apiReadyPromise: null, picks: Array(10).fill(null), savedPicks: Array(10).fill(null), wildcards: Array(WILDCARD_COUNT).fill(null), savedWildcards: Array(WILDCARD_COUNT).fill(null), undoStack: [], redoStack: [], mobilePendingRiderId: null, riderView: "country", riderSort: "alphabetical", riderSortDirection: "asc", riderSelectionFilter: "all", filters: emptyFilters(), advancedDraft: null, lists: { final: null, templates: [] }, activeList: "final", renamingList: null, favourites: new Set(), favouritesOnly: false };
+const state = { event: null, player: null, reference: null, referencePromise: null, teamIcons: {}, apiStatus: "starting", apiReadyPromise: null, inviteCode: new URLSearchParams(window.location.search).get("league_code") || "", picks: Array(10).fill(null), savedPicks: Array(10).fill(null), wildcards: Array(WILDCARD_COUNT).fill(null), savedWildcards: Array(WILDCARD_COUNT).fill(null), undoStack: [], redoStack: [], mobilePendingRiderId: null, riderView: "country", riderSort: "alphabetical", riderSortDirection: "asc", riderSelectionFilter: "all", filters: emptyFilters(), advancedDraft: null, lists: { final: null, templates: [] }, activeList: "final", renamingList: null, favourites: new Set(), favouritesOnly: false };
 const $ = (selector) => document.querySelector(selector);
 const isMobileLayout = () => window.matchMedia("(max-width: 650px)").matches;
 const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
@@ -455,10 +455,21 @@ function renderRiderDetail(riderId) {
   const resultMap = new Map(reference.results.map((result) => [`${result.race_key}-${result.year}`, result]));
   const season = currentSeason(reference);
   const careerWins = profile.wins_total === null || profile.wins_total === undefined ? "" : `<span class="rider-detail-wins">${profile.wins_total} career wins</span>`;
+  const seasonLine = season ? `<span class="rider-detail-season">${season.season}: ${season.wins} wins · ${season.top10s} top 10s</span>` : "";
   const team = `<span class="rider-detail-team-name">${rider.team ? `${teamIcon(rider.team)}${escapeHtml(rider.team)}` : escapeHtml(countryName(rider.nation))}</span>`;
   const pcsLink = profile.profile_url ? `<a class="pcs-link" href="${escapeHtml(profile.profile_url)}" target="_blank" rel="noopener noreferrer">ProCyclingStats profile <span aria-hidden="true">↗</span></a>` : "";
   const favourite = state.player ? heartButton(rider, "detail-fav") : "";
-  content.innerHTML = `<header class="rider-detail-header"><div><p class="eyebrow">RIDER PROFILE</p><h2>${flag(rider.nation)}${escapeHtml(rider.name)}</h2><p class="rider-detail-team">${team}${careerWins}</p><div class="rider-detail-links">${favourite}${pcsLink}</div></div></header><section class="rider-stat-grid"><div><span>Age</span><strong>${profile.age ?? "—"}</strong></div><div><span>UCI now</span><strong>${displayPoints(rider.uci_points)}</strong><small>${displayRank(rider.uci_rank === 999999 ? null : rider.uci_rank)}</small></div><div><span>Season start</span><strong>${displayPoints(seasonStart?.uci_points)}</strong><small>${displayRank(seasonStart?.uci_rank)}</small></div><div class="ranking-trend ${trendClass}"><span>Ranking trend</span><strong>${trendText}</strong><small>${season ? `${season.season}: ${season.wins} wins · ${season.top10s} top 10s` : "Season totals unavailable"}</small></div></section><section class="rider-history"><div class="rider-history-heading"><div><p class="eyebrow">PAST RESULTS</p><h3>Tracked one-day races</h3></div></div><div class="rider-history-table-wrap"><table class="rider-history-table"><thead><tr><th scope="col">Race</th>${years.map((year) => `<th scope="col">${year}${races.some((race) => race.editions.some((edition) => edition.year === year && edition.note)) ? "<small>upcoming</small>" : ""}</th>`).join("")}</tr></thead><tbody>${races.map((race) => `<tr><th scope="row">${escapeHtml(race.label)}</th>${years.map((year) => `<td>${resultCell(resultMap.get(`${race.key}-${year}`))}</td>`).join("")}</tr>`).join("")}</tbody></table></div><p class="rider-history-legend"><span class="result-medal medal-1">1</span> podium <span class="result-top-ten">7</span> top 10 <span class="result-status">DNF</span> did not finish · blank: not on the startlist</p></section>`;
+  const addButton = state.player ? riderDetailAddButton(rider) : "";
+  content.innerHTML = `<header class="rider-detail-header"><div><p class="eyebrow">RIDER PROFILE</p><h2>${flag(rider.nation)}${escapeHtml(rider.name)}</h2><p class="rider-detail-team">${team}${careerWins}${seasonLine}</p><div class="rider-detail-links">${favourite}${pcsLink}</div></div>${addButton}</header><section class="rider-stat-grid"><div><span>Age</span><strong>${profile.age ?? "—"}</strong></div><div><span>UCI now</span><strong>${displayRank(rider.uci_rank === 999999 ? null : rider.uci_rank)}</strong><small>${displayPoints(rider.uci_points)}</small></div><div><span>Season start</span><strong>${displayRank(seasonStart?.uci_rank)}</strong><small>${displayPoints(seasonStart?.uci_points)}</small></div><div class="ranking-trend ${trendClass}"><span>Ranking trend</span><strong>${trendText}</strong></div></section><section class="rider-history"><div class="rider-history-heading"><div><p class="eyebrow">PAST RESULTS</p><h3>Tracked one-day races</h3></div></div><div class="rider-history-table-wrap"><table class="rider-history-table"><thead><tr><th scope="col">Race</th>${years.map((year) => `<th scope="col">${year}${races.some((race) => race.editions.some((edition) => edition.year === year && edition.note)) ? "<small>upcoming</small>" : ""}</th>`).join("")}</tr></thead><tbody>${races.map((race) => `<tr><th scope="row">${escapeHtml(race.label)}</th>${years.map((year) => `<td>${resultCell(resultMap.get(`${race.key}-${year}`))}</td>`).join("")}</tr>`).join("")}</tbody></table></div><p class="rider-history-legend"><span class="result-medal medal-1">1</span> podium <span class="result-top-ten">7</span> top 10 <span class="result-status">DNF</span> did not finish · blank: not on the startlist</p></section>`;
+}
+// The modal's own add button mirrors the startlist card's `+`/badge, so a
+// rider already in the Top 10 or wildcards shows its slot instead of `+`.
+function riderDetailAddButton(rider) {
+  const topTenPosition = state.picks.indexOf(rider.id);
+  const isWildcard = state.wildcards.includes(rider.id);
+  if (topTenPosition >= 0) return `<button type="button" class="rider-add rider-detail-add on" data-rider-add="${rider.id}" aria-label="${escapeHtml(rider.name)} is Top 10 pick #${topTenPosition + 1}" title="Top 10 position ${topTenPosition + 1}">#${topTenPosition + 1}</button>`;
+  if (isWildcard) return `<button type="button" class="rider-add rider-detail-add on" data-rider-add="${rider.id}" aria-label="${escapeHtml(rider.name)} is a wildcard" title="Wildcard">★</button>`;
+  return `<button type="button" class="rider-add rider-detail-add" data-rider-add="${rider.id}" aria-label="Add ${escapeHtml(rider.name)} to your Top 10 or wildcards" title="Add to Top 10 or wildcards">+</button>`;
 }
 
 async function openRiderDetail(riderId) {
@@ -467,7 +478,7 @@ async function openRiderDetail(riderId) {
   const content = $("#rider-detail-content");
   const pageScrollY = window.scrollY;
   const positionModalAndPage = () => {
-    dialog.scrollTop = 0;
+    dialog.querySelector(".rider-detail-scroll").scrollTop = 0;
     window.scrollTo(0, pageScrollY);
   };
   content.innerHTML = "<p class=\"muted\">Loading rider history…</p>";
@@ -1752,6 +1763,15 @@ $("#rider-detail-modal").addEventListener("click", (event) => {
   if (event.target === event.currentTarget) return event.currentTarget.close();
   const heart = event.target.closest("[data-rider-fav]");
   if (heart) toggleFavourite(Number(heart.dataset.riderFav));
+  const add = event.target.closest("[data-rider-add]");
+  if (add) {
+    const riderId = Number(add.dataset.riderAdd);
+    // On mobile, adding hands off to the tap-a-slot flow, which needs the
+    // picks panel visible, so the modal closes first.
+    if (isMobileLayout()) event.currentTarget.close();
+    addRiderToPicks(riderId);
+    if (event.currentTarget.open) renderRiderDetail(riderId);
+  }
 });
 $("#advanced-filter-button").addEventListener("click", openAdvancedFilters);
 $("#close-advanced-filters").addEventListener("click", () => $("#advanced-filter-modal").close());
