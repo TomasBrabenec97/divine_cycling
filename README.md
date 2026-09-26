@@ -223,6 +223,27 @@ them up by itself and an existing database needs no reset.
 what each one holds, how to serve it in one payload, the edge cases that
 otherwise render wrong, and transformations worth showing.
 
+### Publish the race result
+
+```powershell
+# fetch, match against the startlist, print the payload, publish nothing
+python -m scripts.upload_results --local --dry-run
+
+# fetch, match, and publish through the admin endpoint (scores + leaderboard)
+python -m scripts.upload_results --local
+python -m scripts.upload_results --prod --admin-key "$env:ADMIN_API_KEY"
+```
+
+Fetches the classification from PCS (cached like the other fetchers), matches
+finishers onto the event's startlist by `riders.external_id`, and posts the
+result to `POST /api/admin/events/{id}/results` -- the same endpoint the admin
+page uses, so scoring and the leaderboard come out identical to a manual
+entry. `--local` and `--prod` each pick a matching database (for the
+read-only startlist lookup) and base URL (for the publish); `--prod` reads
+`DATABASE_URL_UNPOOLED` from `.env.local` and needs the `ADMIN_API_KEY` Render
+generated for the service (Render dashboard -> Environment), passed with
+`--admin-key` or set in the environment -- it is not read from `.env.local`.
+
 ## Architecture at a glance
 
 - **Frontend:** static HTML/CSS/JS, deployable to GitHub Pages. It talks to the API using JSON REST calls.
