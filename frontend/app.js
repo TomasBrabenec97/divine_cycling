@@ -478,7 +478,7 @@ async function openRiderDetail(riderId) {
   const content = $("#rider-detail-content");
   const pageScrollY = window.scrollY;
   const positionModalAndPage = () => {
-    dialog.scrollTop = 0;
+    dialog.querySelector(".rider-detail-scroll").scrollTop = 0;
     window.scrollTo(0, pageScrollY);
   };
   content.innerHTML = "<p class=\"muted\">Loading rider history…</p>";
