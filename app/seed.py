@@ -40,7 +40,7 @@ def seed_mock_data() -> None:
                 name="2027 Road World Championship (mock)",
                 starts_at=datetime(2027, 9, 26, 10, 0),
                 prediction_deadline=datetime(2027, 9, 26, 9, 30),
-                results_expected_at=datetime(2027, 9, 26, 18, 40),
+                results_expected_at=datetime(2027, 9, 26, 18, 30),
                 status="open",
                 source_name="Artificial development data",
                 source_updated_at=datetime.utcnow(),
