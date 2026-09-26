@@ -134,6 +134,7 @@ def event_response(event: Event, db: Session) -> EventResponse:
         name=event.name,
         starts_at=event.starts_at,
         prediction_deadline=event.prediction_deadline,
+        results_expected_at=event.results_expected_at,
         status=event.status,
         source_name=event.source_name,
         source_updated_at=event.source_updated_at,

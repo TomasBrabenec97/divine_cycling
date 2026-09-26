@@ -79,10 +79,16 @@ def main() -> None:
                 name="2026 Road World Championship — Men Elite Road Race",
                 starts_at=datetime(2026, 9, 27, 13, 0),
                 prediction_deadline=datetime(2026, 9, 27, 12, 30),
+                # 21:30 CEST, the estimated finish time for the elite men's race.
+                results_expected_at=datetime(2026, 9, 27, 19, 30),
                 status="open",
             )
             session.add(event)
             session.flush()
+        # A row created before `results_expected_at` existed would otherwise be
+        # stuck on NULL forever, since only new rows set it above.
+        if event.results_expected_at is None:
+            event.results_expected_at = datetime(2026, 9, 27, 19, 30)
         event.source_name = "Local 2026 Road Worlds CSV export"
         event.source_updated_at = datetime.now()
 
