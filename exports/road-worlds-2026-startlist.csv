@@ -21,7 +21,7 @@ Nicholas,Narraway,BM,662,115.0,nicholas-narraway,True
 Henrique da Silva,Avancini,BR,470,184.0,henrique-da-silva-avancini,True
 Derrick,Chavarria,BZ,477,180.0,derrick-chavarria,True
 Pier-André,Côté,CA,561,144.0,pier-andre-cote,True
-Derek,Gee-West,CA,62,1258.3,derek-gee,True
+Derek,Gee-West,CA,62,1258.3,derek-gee,False
 Hugo,Houle,CA,1059,59.0,hugo-houle,True
 Michael,Leonard,CA,703,106.3,michael-leonard1,True
 Michael,Woods,CA,1179,50.0,michael-woods,True
@@ -61,15 +61,15 @@ Mads,Pedersen,DK,18,2374.3,mads-pedersen,True
 Michael,Valgren,DK,143,644.1,michael-valgren-andersen,True
 Kohath,Baron,DM,1196,50.0,kohath-baron,True
 Oussama Abdellah,Mimouni,DZ,398,241.0,oussama-abdellah-mimouni,True
-Jefferson Alexander,Cepeda,EC,429,216.0,jefferson-alexander-cepeda,True
-Jefferson Alveiro,Cepeda,EC,284,341.1,jefferson-cepeda-hernandez,True
+Jefferson Alexander,Cepeda,EC,429,216.0,jefferson-alexander-cepeda,False
+Jefferson Alveiro,Cepeda,EC,284,341.1,jefferson-cepeda-hernandez,False
 Jhonatan,Narváez,EC,78,1075.0,jhonatan-narvaez,True
 Madis,Mihkels,EE,286,339.0,madis-mihkels,True
 Amanuel,Ghebreigzabhier,ER,774,94.0,amanuel-ghebreigzabhier,True
 Biniam,Girmay,ER,41,1524.0,biniam-girmay,True
 Merhawi,Kudus,ER,299,330.0,merhawi-kudus,True
 Henok,Mulubrhan,ER,126,720.0,henok-mulubrhan,True
-Natnael,Tesfatsion,ER,57,1281.0,natnael-tesfatsion,True
+Natnael,Tesfatsion,ER,57,1281.0,natnael-tesfatsion,False
 Igor,Arrieta,ES,101,865.1,igor-arrieta-lizarraga,True
 Juan,Ayuso,ES,30,1810.5,juan-ayuso-pesquera,True
 Markel,Beloki,ES,241,410.6,markel-beloki,True
@@ -116,7 +116,7 @@ Matteo,Trentin,IT,66,1193.1,matteo-trentin,True
 Jo,Hashikawa,JP,945,70.0,jo-hashikawa,True
 Anton,Kuzmin,KZ,1541,30.0,anton-kuzmin,True
 Daniil,Marukhin,KZ,,,daniil-marukhin,True
-Arthur,Kluckers,LU,660,115.5,arthur-kluckers,True
+Arthur,Kluckers,LU,660,115.5,arthur-kluckers,False
 Arno,Wallenborn,LU,679,111.0,arno-wallenborn,True
 Kristiāns,Belohvoščiks,LV,369,263.0,kristians-belohvosciks,True
 Emīls,Liepiņš,LV,656,117.0,emils-liepins,True
@@ -145,8 +145,8 @@ Andreas,Leknessund,NO,52,1401.0,andreas-leknessund,True
 Jørgen,Nordhagen,NO,110,827.6,jorgen-nordhagen,True
 Anders,Skaarseth,NO,507,161.3,anders-skaarseth,True
 Embret,Svestad-Bårdseng,NO,285,340.0,embret-svestad-bardseng,True
-George,Bennett,NZ,425,223.0,george-bennett,True
-Finn,Fisher-Black,NZ,96,914.9,finn-fisher-black,True
+George,Bennett,NZ,425,223.0,george-bennett,False
+Finn,Fisher-Black,NZ,96,914.9,finn-fisher-black,False
 Ben,Oliver,NZ,219,449.0,ben-oliver,True
 Laurence,Pithie,NZ,34,1664.9,laurence-pithie,True
 Corbin,Strong,NZ,86,996.0,corbin-strong,True
@@ -172,20 +172,26 @@ Luka,Mezgec,SI,1143,52.0,luka-mezgec,True
 Matej,Mohorič,SI,207,466.7,matej-mohoric,True
 Primož,Roglič,SI,22,2214.0,primoz-roglic,True
 Jan,Tratnik,SI,1138,52.8,jan-tratnik,True
-Martin,Svrček,SK,1070,58.0,martin-svrcek,True
+Martin,Svrček,SK,1070,58.0,martin-svrcek,False
 Athit,Poulard,TH,391,246.0,athit-poulard,True
 Heorhii,Antonenko,UA,494,170.0,heorhii-antonenko,True
 Matteo,Jorgenson,US,38,1589.8,matteo-jorgenson,True
 Brandon,Mcnulty,US,64,1251.9,brandon-mcnulty,True
-Neilson,Powless,US,793,90.0,neilson-powless,True
+Neilson,Powless,US,793,90.0,neilson-powless,False
 Sean,Quinn,US,436,210.4,sean-quinn,True
 Artem,Shmidt,US,245,406.0,artem-shmidt,True
 Quinn,Simmons,US,37,1602.8,quinn-simmons,True
 Kevin,Vermaerke,US,171,560.7,kevin-vermaerke,True
 Larry,Warbasse,US,504,165.0,lawrence-warbasse,True
-Eric Antonio,Fagúndez,UY,160,608.4,eric-antonio-fagundez,True
+Eric Antonio,Fagúndez,UY,160,608.4,eric-antonio-fagundez,False
 Guillermo Thomas,Silva,UY,35,1639.0,guillermo-thomas-silva-coussan,True
 Samandar,Janikulov,UZ,988,65.0,samandar-janikulov,True
-Orluis,Aular,VE,186,516.4,orluis-aular,True
-Francisco Joel,Peñuela,VE,357,271.4,francisco-penuela,True
+Orluis,Aular,VE,186,516.4,orluis-aular,False
+Francisco Joel,Peñuela,VE,357,271.4,francisco-penuela,False
 Byron,Munton,ZA,330,295.0,byron-munton,True
+Guillaume,Boivin,CA,,,guillaume-boivin,True
+Riley,Sheehan,US,,,riley-sheehan,True
+Vladimir,Kovacik,SK,,,vladimir-kovacik,True
+Aleksandr,Vlasov,AIN,,,aleksandr-vlasov,True
+Andrea,Mifsud,MT,,,andrea-mifsud,True
+Amir Arsalan,Ansari,REF,,,amir-arsalan-ansari,True
