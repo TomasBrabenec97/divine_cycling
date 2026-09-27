@@ -364,6 +364,11 @@ button.matrix-cell.on { border-color:var(--sage); background:var(--sage); box-sh
 
 .page-links { display:flex; gap:8px; }
 #event-meta a { color:var(--ink); text-underline-offset:2px; }
+.deadline-countdown { display:inline-block; margin-left:6px; color:#c0392b; font-weight:700; font-variant-numeric:tabular-nums; }
+.picks-lock-banner { color:#c0392b; font-weight:700; }
+body.picks-locked #picks,body.picks-locked #wildcards { opacity:.7; cursor:not-allowed; }
+body.picks-locked #picks .remove,body.picks-locked #wildcards .remove,body.picks-locked .rider-add { display:none; }
+body.picks-locked #picks li[data-picked-rider],body.picks-locked #wildcards li[data-picked-rider] { cursor:default; }
 @media(max-width:650px) { .viz-svg { min-width:660px; }
 .viz-axis { font-size:13px; }
 .viz-value,.viz-end-label { font-size:14px; }
@@ -392,7 +397,7 @@ button.matrix-cell.on { border-color:var(--sage); background:var(--sage); box-sh
 .join-league-dialog input { width:100%; }
 .league-dialog-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:16px; }
 .league-dialog-actions button { font-size:12px; }
-.league-scope { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px 18px; margin:16px 0 0; color:var(--muted); font-size:13px; }
+.league-scope { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-start; gap:8px 18px; margin:16px 0 0; color:var(--muted); font-size:13px; }
 .league-scope.hidden { display:none; }
 .league-scope div { display:flex; gap:6px; }
 .league-scope button { border-color:var(--line); padding:7px 11px; color:var(--muted); font-size:12px; }
