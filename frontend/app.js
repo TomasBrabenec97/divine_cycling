@@ -18,7 +18,7 @@ const emptyProfileFilters = () => Object.fromEntries(PROFILE_FILTERS.map((filter
 const emptyAdvancedFilters = () => ({ resultCells: [], resultMin: "", resultMax: "", profile: emptyProfileFilters() });
 // One UCI range filter, read in points or in rank: only the unit shown applies.
 const emptyFilters = (uciUnit = "points") => ({ search: "", countries: [], teams: [], uciUnit, rankMin: "", rankMax: "", pointsMin: "", pointsMax: "", ...emptyAdvancedFilters() });
-const state = { event: null, player: null, reference: null, referencePromise: null, teamIcons: {}, apiStatus: "starting", apiReadyPromise: null, inviteCode: new URLSearchParams(window.location.search).get("league_code") || "", picks: Array(10).fill(null), savedPicks: Array(10).fill(null), wildcards: Array(WILDCARD_COUNT).fill(null), savedWildcards: Array(WILDCARD_COUNT).fill(null), undoStack: [], redoStack: [], mobilePendingRiderId: null, riderView: "country", riderSort: "alphabetical", riderSortDirection: "asc", riderSelectionFilter: "all", filters: emptyFilters(), advancedDraft: null, lists: { final: null, templates: [] }, activeList: "final", renamingList: null, favourites: new Set(), favouritesOnly: false };
+const state = { event: null, player: null, reference: null, referencePromise: null, teamIcons: {}, apiStatus: "starting", apiReadyPromise: null, inviteCode: new URLSearchParams(window.location.search).get("league_code") || "", picks: Array(10).fill(null), savedPicks: Array(10).fill(null), wildcards: Array(WILDCARD_COUNT).fill(null), savedWildcards: Array(WILDCARD_COUNT).fill(null), undoStack: [], redoStack: [], mobilePendingRiderId: null, riderView: "country", riderSort: "alphabetical", riderSortDirection: "asc", riderSelectionFilter: "all", filters: emptyFilters(), advancedDraft: null, lists: { final: null, templates: [] }, activeList: "final", renamingList: null, favourites: new Set(), favouritesOnly: false, picksLocked: false };
 const $ = (selector) => document.querySelector(selector);
 const isMobileLayout = () => window.matchMedia("(max-width: 650px)").matches;
 const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
@@ -506,12 +506,52 @@ function renderSessionControls() {
   $("#copy-league-link").classList.toggle("hidden", !state.league);
   $("#leave-league-button").classList.toggle("hidden", !state.league);
 }
+let deadlineCountdownTimer = null;
+function clearDeadlineCountdown() {
+  if (deadlineCountdownTimer) {
+    window.clearInterval(deadlineCountdownTimer);
+    deadlineCountdownTimer = null;
+  }
+}
+function formatCountdown(msRemaining) {
+  const totalSeconds = Math.max(0, Math.floor(msRemaining / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const pad = (value) => String(value).padStart(2, "0");
+  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+}
 function renderDeadline() {
   if (!state.event) return;
+  clearDeadlineCountdown();
   const deadline = state.league?.submission_deadline || state.event.prediction_deadline;
   const utcDeadline = /[zZ]|[+-]\d{2}:\d{2}$/.test(deadline) ? deadline : `${deadline}Z`;
-  const formatted = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(utcDeadline));
-  $("#event-meta").textContent = `Submit your ${state.league ? `${state.league.code} league` : "global"} prediction by ${formatted}.`;
+  const deadlineDate = new Date(utcDeadline);
+  const formatted = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric", hour: "numeric", minute: "2-digit" }).format(deadlineDate);
+  const label = `Submit your ${state.league ? `${state.league.code} league` : "global"} prediction by ${formatted}.`;
+  const meta = $("#event-meta");
+  const lockBanner = $("#picks-lock-banner");
+  const tick = () => {
+    const remaining = deadlineDate.getTime() - Date.now();
+    const wasLocked = state.picksLocked;
+    state.picksLocked = remaining <= 0;
+    if (lockBanner) {
+      lockBanner.classList.toggle("hidden", !state.picksLocked);
+      if (state.picksLocked) {
+        lockBanner.textContent = `🔒 The ${state.league ? `${state.league.code} league` : "global"} deadline has passed — your picks are locked and can no longer be changed.`;
+      }
+    }
+    document.body.classList.toggle("picks-locked", state.picksLocked);
+    if (state.picksLocked !== wasLocked && state.player && state.event?.riders) render();
+    if (remaining <= 0 || remaining > 60 * 60 * 1000) {
+      meta.textContent = label;
+      if (remaining <= 0) clearDeadlineCountdown();
+      return;
+    }
+    meta.innerHTML = `${label} <span class="deadline-countdown">${formatCountdown(remaining)} remaining</span>`;
+  };
+  tick();
+  deadlineCountdownTimer = window.setInterval(tick, 1000);
 }
 async function loadLeagueInfo() {
   if (!state.player || !state.event) return;
@@ -535,7 +575,13 @@ async function applyInvite() {
   url.searchParams.delete("league_code");
   window.history.replaceState({}, "", url);
 }
+function blockIfPicksLocked() {
+  if (!state.picksLocked) return false;
+  showMessage("#prediction-message", "Picks are locked: the deadline has passed.");
+  return true;
+}
 function insertRider(riderId, position) {
+  if (blockIfPicksLocked()) return;
   const wildcardSlot = state.wildcards.indexOf(riderId);
   if (wildcardSlot < 0 && state.picks.indexOf(riderId) === position) return;
   rememberPickState();
@@ -568,6 +614,7 @@ function placeInTopTen(riderId, position) {
 // wildcard trades slots, a Top 10 pick trades places with the displaced
 // wildcard, and a rider from the list simply replaces it.
 function insertWildcard(riderId, slot) {
+  if (blockIfPicksLocked()) return;
   const previousSlot = state.wildcards.indexOf(riderId);
   if (previousSlot === slot) return;
   rememberPickState();
@@ -599,6 +646,7 @@ function toggleMobilePicks() {
   $("#mobile-picks-handle").setAttribute("aria-expanded", String(open));
 }
 function addRiderToPicks(riderId) {
+  if (blockIfPicksLocked()) return;
   if (isMobileLayout()) {
     if (state.mobilePendingRiderId === riderId) return cancelPendingPick();
     state.mobilePendingRiderId = riderId;
@@ -668,6 +716,7 @@ function ensurePickActions() {
     clear.type = "button";
     clear.textContent = "Clear all picks";
     clear.addEventListener("click", () => {
+      if (blockIfPicksLocked()) return;
       if (!savedPicks().length) return;
       rememberPickState();
       state.picks = Array(10).fill(null);
@@ -690,7 +739,7 @@ function ensurePickActions() {
     undo.type = "button";
     undo.textContent = "↶";
     undo.setAttribute("aria-label", "Undo last Top 10 change");
-    undo.addEventListener("click", () => restorePickState(state.undoStack, state.redoStack, "Undid last change."));
+    undo.addEventListener("click", () => { if (!blockIfPicksLocked()) restorePickState(state.undoStack, state.redoStack, "Undid last change."); });
     actions.append(undo);
     const revert = document.createElement("button");
     revert.id = "revert-picks";
@@ -698,6 +747,7 @@ function ensurePickActions() {
     revert.type = "button";
     revert.textContent = "Revert to last saved";
     revert.addEventListener("click", () => {
+      if (blockIfPicksLocked()) return;
       if (state.activeList !== "final") return showMessage("#prediction-message", "Templates save themselves, so there is nothing to revert. Use ↶ to undo a change.", true);
       if (!hasUnsavedPickChanges()) return;
       rememberPickState();
@@ -715,7 +765,7 @@ function ensurePickActions() {
     redo.type = "button";
     redo.textContent = "↷";
     redo.setAttribute("aria-label", "Redo last Top 10 change");
-    redo.addEventListener("click", () => restorePickState(state.redoStack, state.undoStack, "Redid last change."));
+    redo.addEventListener("click", () => { if (!blockIfPicksLocked()) restorePickState(state.redoStack, state.undoStack, "Redid last change."); });
     actions.append(redo);
     clear.insertAdjacentElement("afterend", actions);
   }
@@ -827,6 +877,7 @@ function flushFinalAutosave() {
 // Each save records the list it sent, not whatever is on screen when the answer
 // arrives: the player may have switched lists or kept editing meanwhile.
 function saveFinal({ automatic = false } = {}) {
+  if (state.picksLocked) return automatic ? finalWrites : showMessage("#prediction-message", "Picks are locked: the deadline has passed.");
   if (!state.picks.some(Boolean)) return showMessage("#prediction-message", "Pick at least one Top 10 rider first.");
   const list = workingList();
   const listId = state.activeList;
@@ -1317,14 +1368,15 @@ function render() {
   scheduleTemplateAutosave();
   scheduleFinalAutosave();
   renderFinalSaveStatus();
-  pickActions.clear.disabled = savedPicks().length === 0;
+  pickActions.clear.disabled = state.picksLocked || savedPicks().length === 0;
   // On a template, Revert stays clickable to explain why there is nothing to revert.
-  pickActions.revert.disabled = !editingTemplate && (state.finalAutosave || !hasUnsavedPickChanges());
-  pickActions.undo.disabled = state.undoStack.length === 0;
-  pickActions.redo.disabled = state.redoStack.length === 0;
+  pickActions.revert.disabled = state.picksLocked || (!editingTemplate && (state.finalAutosave || !hasUnsavedPickChanges()));
+  pickActions.undo.disabled = state.picksLocked || state.undoStack.length === 0;
+  pickActions.redo.disabled = state.picksLocked || state.redoStack.length === 0;
+  pickActions.save.disabled = state.picksLocked;
   const riderById = new Map(state.event.riders.map((rider) => [rider.id, rider]));
-  $("#picks").innerHTML = state.picks.map((riderId, index) => { const rider = riderById.get(riderId); return `<li data-position="${index}" class="${rider ? "pick-filled" : "pick-empty"}" ${rider ? `draggable="true" data-picked-rider="${rider.id}" title="Open rider details"` : ""}><span class="position">${index + 1}.</span>${rider ? `${flag(rider.nation)}${escapeHtml(rider.name)}<span class="pick-multiplier" title="Placement points ${formatMultiplier(rider.position_multiplier)} for this rider's UCI rank">${formatMultiplier(rider.position_multiplier)}</span><button class="remove" data-remove="${index}" aria-label="Remove ${escapeHtml(rider.name)}">×</button><span class="rank-scale pick-rank-scale" style="--rank-fill:${rankFill(rider)}%" aria-hidden="true"></span>` : "Drop rider here"}</li>`; }).join("");
-  $("#wildcards").innerHTML = state.wildcards.map((riderId, slot) => { const rider = riderById.get(riderId); return `<li data-wildcard-slot="${slot}" class="wildcard-slot ${rider ? "pick-filled" : "pick-empty"}" ${rider ? `draggable="true" data-picked-rider="${rider.id}" title="Open rider details"` : ""}><span class="position wildcard-mark" aria-label="Wildcard ${slot + 1}">★</span>${rider ? `${flag(rider.nation)}${escapeHtml(rider.name)}<span class="pick-multiplier" title="Wildcard bonus ${formatMultiplier(rider.wildcard_multiplier)} for this rider's UCI rank">${formatMultiplier(rider.wildcard_multiplier)}</span><button class="remove" data-remove-wildcard="${slot}" aria-label="Remove ${escapeHtml(rider.name)}">×</button><span class="rank-scale pick-rank-scale" style="--rank-fill:${rankFill(rider)}%" aria-hidden="true"></span>` : "Drop a wildcard here"}</li>`; }).join("");
+  $("#picks").innerHTML = state.picks.map((riderId, index) => { const rider = riderById.get(riderId); return `<li data-position="${index}" class="${rider ? "pick-filled" : "pick-empty"}" ${rider ? `draggable="${!state.picksLocked}" data-picked-rider="${rider.id}" title="Open rider details"` : ""}><span class="position">${index + 1}.</span>${rider ? `${flag(rider.nation)}${escapeHtml(rider.name)}<span class="pick-multiplier" title="Placement points ${formatMultiplier(rider.position_multiplier)} for this rider's UCI rank">${formatMultiplier(rider.position_multiplier)}</span><button class="remove" data-remove="${index}" aria-label="Remove ${escapeHtml(rider.name)}" ${state.picksLocked ? "disabled" : ""}>×</button><span class="rank-scale pick-rank-scale" style="--rank-fill:${rankFill(rider)}%" aria-hidden="true"></span>` : "Drop rider here"}</li>`; }).join("");
+  $("#wildcards").innerHTML = state.wildcards.map((riderId, slot) => { const rider = riderById.get(riderId); return `<li data-wildcard-slot="${slot}" class="wildcard-slot ${rider ? "pick-filled" : "pick-empty"}" ${rider ? `draggable="${!state.picksLocked}" data-picked-rider="${rider.id}" title="Open rider details"` : ""}><span class="position wildcard-mark" aria-label="Wildcard ${slot + 1}">★</span>${rider ? `${flag(rider.nation)}${escapeHtml(rider.name)}<span class="pick-multiplier" title="Wildcard bonus ${formatMultiplier(rider.wildcard_multiplier)} for this rider's UCI rank">${formatMultiplier(rider.wildcard_multiplier)}</span><button class="remove" data-remove-wildcard="${slot}" aria-label="Remove ${escapeHtml(rider.name)}" ${state.picksLocked ? "disabled" : ""}>×</button><span class="rank-scale pick-rank-scale" style="--rank-fill:${rankFill(rider)}%" aria-hidden="true"></span>` : "Drop a wildcard here"}</li>`; }).join("");
   const filteredRiders = state.event.riders.filter((rider) => matchesFilters(rider));
   const visibleRiders = visibleRiderList();
   // Country and team views share one grouping path; only the key and header differ.
@@ -1341,7 +1393,7 @@ function render() {
   const ridersByGroup = new Map(); visibleRiders.forEach((rider) => ridersByGroup.set(groupKey(rider), [...(ridersByGroup.get(groupKey(rider)) || []), rider]));
   $("#filter-summary").textContent = `${visibleRiders.length} of ${filteredRiders.length} filtered riders shown (${state.event.riders.length} total). The bar shows UCI rank strength (red = stronger); the arrow shows the UCI points trend since the season start.`;
   ensureRiderViewControls();
-  const riderCard = (rider) => { const topTenPosition = state.picks.indexOf(rider.id); const isWildcard = state.wildcards.includes(rider.id); const selected = topTenPosition >= 0 || isWildcard; const riderFlag = state.riderView === "country" ? "" : flag(rider.nation); const badge = topTenPosition >= 0 ? `<span class="pick-position"><strong>#${topTenPosition + 1}</strong><small>Top 10</small></span>` : isWildcard ? `<span class="pick-position"><strong>★</strong><small>Wildcard</small></span>` : ""; return `<article draggable="true" class="rider ${selected ? "selected" : ""} ${isWildcard ? "wildcard" : ""} ${state.favourites.has(rider.id) ? "favourite" : ""}" data-rider="${rider.id}" role="button" tabindex="0" title="${topTenPosition >= 0 ? `Top 10 position ${topTenPosition + 1}. Open rider details, or drag to move it.` : isWildcard ? "Wildcard. Open rider details, or drag to move it." : "Open rider details"}">${riderFlag}${escapeHtml(rider.name)}${heartButton(rider, "rider-fav")}<button type="button" class="rider-add" data-rider-add="${rider.id}" aria-label="Add ${escapeHtml(rider.name)} to your picks">+</button>${badge}<br><span class="rank">${rankingLabel(rider)}</span>${trendArrow(rider)}<span class="rank-scale" style="--rank-fill:${rankFill(rider)}%" aria-hidden="true"></span></article>`; };
+  const riderCard = (rider) => { const topTenPosition = state.picks.indexOf(rider.id); const isWildcard = state.wildcards.includes(rider.id); const selected = topTenPosition >= 0 || isWildcard; const riderFlag = state.riderView === "country" ? "" : flag(rider.nation); const badge = topTenPosition >= 0 ? `<span class="pick-position"><strong>#${topTenPosition + 1}</strong><small>Top 10</small></span>` : isWildcard ? `<span class="pick-position"><strong>★</strong><small>Wildcard</small></span>` : ""; return `<article draggable="${!state.picksLocked}" class="rider ${selected ? "selected" : ""} ${isWildcard ? "wildcard" : ""} ${state.favourites.has(rider.id) ? "favourite" : ""}" data-rider="${rider.id}" role="button" tabindex="0" title="${topTenPosition >= 0 ? `Top 10 position ${topTenPosition + 1}. Open rider details, or drag to move it.` : isWildcard ? "Wildcard. Open rider details, or drag to move it." : "Open rider details"}">${riderFlag}${escapeHtml(rider.name)}${heartButton(rider, "rider-fav")}<button type="button" class="rider-add" data-rider-add="${rider.id}" aria-label="Add ${escapeHtml(rider.name)} to your picks" ${state.picksLocked ? "disabled" : ""}>+</button>${badge}<br><span class="rank">${rankingLabel(rider)}</span>${trendArrow(rider)}<span class="rank-scale" style="--rank-fill:${rankFill(rider)}%" aria-hidden="true"></span></article>`; };
   if (state.riderView === "plain") {
     $("#riders").innerHTML = `<div class="plain-riders">${sortRiders(visibleRiders).map(riderCard).join("")}</div>`;
   } else {
@@ -1358,13 +1410,13 @@ function render() {
     });
     $("#riders").innerHTML = sortedGroups.map(([key, riders]) => { const stats = groupStats.get(key); return `<section class="country-group ${byTeam ? "team-group" : ""}"><h3>${groupIcon(key)}${escapeHtml(groupLabel(key))} <span class="country-meta">${stats.count} ${stats.count === 1 ? "rider" : "riders"} · ${Math.round(stats.points).toLocaleString()} pts</span>${groupHeart(key, riders, groupLabel(key))}</h3><div class="country-riders">${byUciRank(riders).map(riderCard).join("")}</div></section>`; }).join("");
   }
-  document.querySelectorAll(".rider").forEach((node) => { node.addEventListener("click", (event) => { if (event.target.closest("[data-rider-add], [data-rider-fav]")) return; openRiderDetail(Number(node.dataset.rider)); }); node.addEventListener("keydown", (event) => { if (event.target.closest("[data-rider-add], [data-rider-fav]")) return; if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openRiderDetail(Number(node.dataset.rider)); } }); node.addEventListener("dragstart", (event) => { event.dataTransfer.setData("text/plain", node.dataset.rider); document.body.classList.add("mobile-dragging"); }); node.addEventListener("dragend", () => document.body.classList.remove("mobile-dragging")); });
+  document.querySelectorAll(".rider").forEach((node) => { node.addEventListener("click", (event) => { if (event.target.closest("[data-rider-add], [data-rider-fav]")) return; openRiderDetail(Number(node.dataset.rider)); }); node.addEventListener("keydown", (event) => { if (event.target.closest("[data-rider-add], [data-rider-fav]")) return; if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openRiderDetail(Number(node.dataset.rider)); } }); node.addEventListener("dragstart", (event) => { if (state.picksLocked) return event.preventDefault(); event.dataTransfer.setData("text/plain", node.dataset.rider); document.body.classList.add("mobile-dragging"); }); node.addEventListener("dragend", () => document.body.classList.remove("mobile-dragging")); });
   document.querySelectorAll("[data-rider-add]").forEach((button) => button.addEventListener("click", (event) => { event.stopPropagation(); addRiderToPicks(Number(button.dataset.riderAdd)); }));
   document.querySelectorAll("#riders [data-rider-fav]").forEach((button) => button.addEventListener("click", (event) => { event.stopPropagation(); toggleFavourite(Number(button.dataset.riderFav)); }));
   document.querySelectorAll("#riders [data-group-fav]").forEach((button) => button.addEventListener("click", () => toggleGroupFavourites(button.dataset.groupFav)));
-  document.querySelectorAll("[data-picked-rider]").forEach((node) => node.addEventListener("dragstart", (event) => event.dataTransfer.setData("text/plain", node.dataset.pickedRider)));
-  document.querySelectorAll("[data-remove]").forEach((button) => button.addEventListener("click", (event) => { event.stopPropagation(); rememberPickState(); state.picks[Number(button.dataset.remove)] = null; render(); }));
-  document.querySelectorAll("[data-remove-wildcard]").forEach((button) => button.addEventListener("click", (event) => { event.stopPropagation(); rememberPickState(); state.wildcards[Number(button.dataset.removeWildcard)] = null; render(); }));
+  document.querySelectorAll("[data-picked-rider]").forEach((node) => node.addEventListener("dragstart", (event) => { if (state.picksLocked) return event.preventDefault(); event.dataTransfer.setData("text/plain", node.dataset.pickedRider); }));
+  document.querySelectorAll("[data-remove]").forEach((button) => button.addEventListener("click", (event) => { event.stopPropagation(); if (blockIfPicksLocked()) return; rememberPickState(); state.picks[Number(button.dataset.remove)] = null; render(); }));
+  document.querySelectorAll("[data-remove-wildcard]").forEach((button) => button.addEventListener("click", (event) => { event.stopPropagation(); if (blockIfPicksLocked()) return; rememberPickState(); state.wildcards[Number(button.dataset.removeWildcard)] = null; render(); }));
   document.querySelectorAll("[data-wildcard-slot]").forEach((slot) => {
     const slotIndex = Number(slot.dataset.wildcardSlot);
     slot.addEventListener("click", (event) => {
@@ -1625,7 +1677,14 @@ function configureRangeFilter({ prefix, min, max, toScale, fromScale, roundMin, 
 const loadPrediction = loadLists;
 let filtersConfigured = false;
 async function loadEvent() {
-  state.event = await request("/api/events/active");
+  try {
+    state.event = await request("/api/events/active");
+  } catch (error) {
+    // No open event (results already published): fall back to the just-finished
+    // one so returning players -- and anyone in a league whose own deadline
+    // outlasts the global one -- can still log in and see where they stand.
+    state.event = await request("/api/events/latest-finished");
+  }
   if (!filtersConfigured) { configureFilters(); filtersConfigured = true; }
   $("#event-title").textContent = state.event.name;
   renderDeadline();

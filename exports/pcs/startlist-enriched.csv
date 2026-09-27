@@ -21,7 +21,7 @@ Nicholas,Narraway,BM,665,115.0,nicholas-narraway,True,Competitive Edge Racing,56
 Henrique da Silva,Avancini,BR,481,184.0,henrique-da-silva-avancini,True,Localiza Meoo / Swift Pro Cycling,1864,16.0,168.0,1050.0,1383,74.2,2026-09-22,2025-12-30
 Derrick,Chavarria,BZ,491,180.0,derrick-chavarria,True,China Meitan Cycling Team,633,115.0,65.0,56.5,142,22.4,2026-09-22,2025-12-30
 Pier-André,Côté,CA,565,144.0,pier-andre-cote,True,NSN Cycling Team,437,190.6,-46.6,-24.4,-128,-29.3,2026-09-22,2025-12-30
-Derek,Gee-West,CA,64,1258.3,derek-gee,True,Lidl - Trek,38,1620.0,-361.7,-22.3,-26,-68.4,2026-09-22,2025-12-30
+Derek,Gee-West,CA,64,1258.3,derek-gee,False,Lidl - Trek,38,1620.0,-361.7,-22.3,-26,-68.4,2026-09-22,2025-12-30
 Hugo,Houle,CA,1057,59.0,hugo-houle,True,Alpecin - Premier Tech,534,144.0,-85.0,-59.0,-523,-97.9,2026-09-22,2025-12-30
 Michael,Leonard,CA,761,96.3,michael-leonard1,True,EF Education - EasyPost,479,162.4,-66.1,-40.7,-282,-58.9,2026-09-22,2025-12-30
 Michael,Woods,CA,1179,50.0,michael-woods,True,,470,170.0,-120.0,-70.6,-709,-150.9,2026-09-22,2025-12-30
@@ -61,15 +61,15 @@ Mads,Pedersen,DK,18,2374.3,mads-pedersen,True,Lidl - Trek,4,5074.5,-2700.2,-53.2
 Michael,Valgren,DK,141,644.1,michael-valgren-andersen,True,EF Education - EasyPost,501,153.0,491.1,321.0,360,71.9,2026-09-22,2025-12-30
 Kohath,Baron,DM,1196,50.0,kohath-baron,True,,1124,50.0,0.0,0.0,-72,-6.4,2026-09-22,2025-12-30
 Oussama Abdellah,Mimouni,DZ,402,241.0,oussama-abdellah-mimouni,True,Madar Pro Cycling Team,370,231.0,10.0,4.3,-32,-8.6,2026-09-22,2025-12-30
-Jefferson Alexander,Cepeda,EC,437,216.0,jefferson-alexander-cepeda,True,EF Education - EasyPost,460,175.0,41.0,23.4,23,5.0,2026-09-22,2025-12-30
-Jefferson Alveiro,Cepeda,EC,289,341.1,jefferson-cepeda-hernandez,True,Movistar Team,314,278.1,63.0,22.7,25,8.0,2026-09-22,2025-12-30
+Jefferson Alexander,Cepeda,EC,437,216.0,jefferson-alexander-cepeda,False,EF Education - EasyPost,460,175.0,41.0,23.4,23,5.0,2026-09-22,2025-12-30
+Jefferson Alveiro,Cepeda,EC,289,341.1,jefferson-cepeda-hernandez,False,Movistar Team,314,278.1,63.0,22.7,25,8.0,2026-09-22,2025-12-30
 Jhonatan,Narváez,EC,82,1030.0,jhonatan-narvaez,True,UAE Team Emirates - XRG,44,1497.1,-467.1,-31.2,-38,-86.4,2026-09-22,2025-12-30
 Madis,Mihkels,EE,291,339.0,madis-mihkels,True,EF Education - EasyPost,165,580.3,-241.3,-41.6,-126,-76.4,2026-09-22,2025-12-30
 Amanuel,Ghebreigzabhier,ER,776,94.0,amanuel-ghebreigzabhier,True,Lidl - Trek,554,136.7,-42.7,-31.2,-222,-40.1,2026-09-22,2025-12-30
 Biniam,Girmay,ER,48,1405.0,biniam-girmay,True,NSN Cycling Team,37,1646.0,-241.0,-14.6,-11,-29.7,2026-09-22,2025-12-30
 Merhawi,Kudus,ER,297,336.0,merhawi-kudus,True,Burgos Burpellet BH,297,302.0,34.0,11.3,0,0.0,2026-09-22,2025-12-30
 Henok,Mulubrhan,ER,124,720.0,henok-mulubrhan,True,XDS Astana Team,117,733.0,-13.0,-1.8,-7,-6.0,2026-09-22,2025-12-30
-Natnael,Tesfatsion,ER,62,1261.0,natnael-tesfatsion,True,Movistar Team,208,440.0,821.0,186.6,146,70.2,2026-09-22,2025-12-30
+Natnael,Tesfatsion,ER,62,1261.0,natnael-tesfatsion,False,Movistar Team,208,440.0,821.0,186.6,146,70.2,2026-09-22,2025-12-30
 Igor,Arrieta,ES,91,948.1,igor-arrieta-lizarraga,True,UAE Team Emirates - XRG,262,351.0,597.1,170.1,171,65.3,2026-09-22,2025-12-30
 Juan,Ayuso,ES,31,1810.5,juan-ayuso-pesquera,True,Lidl - Trek,14,2577.5,-767.0,-29.8,-17,-121.4,2026-09-22,2025-12-30
 Markel,Beloki,ES,243,410.6,markel-beloki,True,EF Education - EasyPost,524,147.3,263.3,178.8,281,53.6,2026-09-22,2025-12-30
@@ -116,7 +116,7 @@ Matteo,Trentin,IT,80,1041.1,matteo-trentin,True,Tudor Pro Cycling Team,91,890.0,
 Jo,Hashikawa,JP,949,70.0,jo-hashikawa,True,Kinan Racing Team,1089,53.0,17.0,32.1,140,12.9,2026-09-22,2025-12-30
 Anton,Kuzmin,KZ,1545,30.0,anton-kuzmin,True,XDS Astana Team,401,208.3,-178.3,-85.6,-1144,-285.3,2026-09-22,2025-12-30
 Daniil,Marukhin,KZ,,,daniil-marukhin,True,,782,85.0,,,,,2026-09-22,2025-12-30
-Arthur,Kluckers,LU,664,115.5,arthur-kluckers,True,Tudor Pro Cycling Team,564,133.3,-17.8,-13.4,-100,-17.7,2026-09-22,2025-12-30
+Arthur,Kluckers,LU,664,115.5,arthur-kluckers,False,Tudor Pro Cycling Team,564,133.3,-17.8,-13.4,-100,-17.7,2026-09-22,2025-12-30
 Arno,Wallenborn,LU,678,112.0,arno-wallenborn,True,Team Lotto Kern-Haus Outlet Montabaur,610,120.0,-8.0,-6.7,-68,-11.1,2026-09-22,2025-12-30
 Kristiāns,Belohvoščiks,LV,376,263.0,kristians-belohvosciks,True,BIKE AID,530,145.0,118.0,81.4,154,29.1,2026-09-22,2025-12-30
 Emīls,Liepiņš,LV,654,120.0,emils-liepins,True,Pinarello Q36.5 Pro Cycling Team,1245,43.0,77.0,179.1,591,47.5,2026-09-22,2025-12-30
@@ -145,8 +145,8 @@ Andreas,Leknessund,NO,61,1271.0,andreas-leknessund,True,Uno-X Mobility,161,593.0
 Jørgen,Nordhagen,NO,109,827.6,jorgen-nordhagen,True,Team Visma | Lease a Bike,228,402.0,425.6,105.9,119,52.2,2026-09-22,2025-12-30
 Anders,Skaarseth,NO,517,161.3,anders-skaarseth,True,Uno-X Mobility,1387,35.0,126.3,360.9,870,62.7,2026-09-22,2025-12-30
 Embret,Svestad-Bårdseng,NO,290,340.0,embret-svestad-bardseng,True,Netcompany INEOS,373,228.0,112.0,49.1,83,22.3,2026-09-22,2025-12-30
-George,Bennett,NZ,432,220.0,george-bennett,True,NSN Cycling Team,457,177.6,42.4,23.9,25,5.5,2026-09-22,2025-12-30
-Finn,Fisher-Black,NZ,97,914.9,finn-fisher-black,True,Red Bull - BORA - hansgrohe,128,705.0,209.9,29.8,31,24.2,2026-09-22,2025-12-30
+George,Bennett,NZ,432,220.0,george-bennett,False,NSN Cycling Team,457,177.6,42.4,23.9,25,5.5,2026-09-22,2025-12-30
+Finn,Fisher-Black,NZ,97,914.9,finn-fisher-black,False,Red Bull - BORA - hansgrohe,128,705.0,209.9,29.8,31,24.2,2026-09-22,2025-12-30
 Ben,Oliver,NZ,222,449.0,ben-oliver,True,Modern Adventure Pro Cycling,665,105.0,344.0,327.6,443,66.6,2026-09-22,2025-12-30
 Laurence,Pithie,NZ,30,1837.9,laurence-pithie,True,Red Bull - BORA - hansgrohe,227,404.0,1433.9,354.9,197,86.8,2026-09-22,2025-12-30
 Corbin,Strong,NZ,85,996.0,corbin-strong,True,NSN Cycling Team,47,1450.0,-454.0,-31.3,-38,-80.9,2026-09-22,2025-12-30
@@ -172,20 +172,26 @@ Luka,Mezgec,SI,1145,52.0,luka-mezgec,True,Team Jayco AlUla,,,,,,,2026-09-22,2025
 Matej,Mohorič,SI,207,472.7,matej-mohoric,True,Bahrain - Victorious,200,484.0,-11.3,-2.3,-7,-3.5,2026-09-22,2025-12-30
 Primož,Roglič,SI,21,2214.0,primoz-roglic,True,Red Bull - BORA - hansgrohe,32,1856.0,358.0,19.3,11,34.4,2026-09-22,2025-12-30
 Jan,Tratnik,SI,1021,62.8,jan-tratnik,True,Red Bull - BORA - hansgrohe,1162,48.0,14.8,30.8,141,12.1,2026-09-22,2025-12-30
-Martin,Svrček,SK,1071,58.0,martin-svrcek,True,Soudal Quick-Step,736,93.0,-35.0,-37.6,-335,-45.5,2026-09-22,2025-12-30
+Martin,Svrček,SK,1071,58.0,martin-svrcek,False,Soudal Quick-Step,736,93.0,-35.0,-37.6,-335,-45.5,2026-09-22,2025-12-30
 Athit,Poulard,TH,367,266.0,athit-poulard,True,Roojai Insurance Winspace,,,,,,,2026-09-22,2025-12-30
 Heorhii,Antonenko,UA,506,170.0,heorhii-antonenko,True,Energus Cycling Team,1069,55.0,115.0,209.1,563,52.7,2026-09-22,2025-12-30
 Matteo,Jorgenson,US,39,1589.8,matteo-jorgenson,True,Team Visma | Lease a Bike,29,1962.1,-372.3,-19.0,-10,-34.5,2026-09-22,2025-12-30
 Brandon,Mcnulty,US,66,1211.9,brandon-mcnulty,True,UAE Team Emirates - XRG,23,2153.6,-941.7,-43.7,-43,-187.0,2026-09-22,2025-12-30
-Neilson,Powless,US,795,90.0,neilson-powless,True,EF Education - EasyPost,39,1610.5,-1520.5,-94.4,-756,-1938.5,2026-09-22,2025-12-30
+Neilson,Powless,US,795,90.0,neilson-powless,False,EF Education - EasyPost,39,1610.5,-1520.5,-94.4,-756,-1938.5,2026-09-22,2025-12-30
 Sean,Quinn,US,445,210.4,sean-quinn,True,EF Education - EasyPost,745,90.3,120.1,133.0,300,40.3,2026-09-22,2025-12-30
 Artem,Shmidt,US,254,391.0,artem-shmidt,True,Netcompany INEOS,646,110.0,281.0,255.5,392,60.7,2026-09-22,2025-12-30
 Quinn,Simmons,US,38,1602.8,quinn-simmons,True,Lidl - Trek,55,1280.0,322.8,25.2,17,30.9,2026-09-22,2025-12-30
 Kevin,Vermaerke,US,170,560.7,kevin-vermaerke,True,UAE Team Emirates - XRG,336,258.0,302.7,117.3,166,49.4,2026-09-22,2025-12-30
 Larry,Warbasse,US,512,165.0,lawrence-warbasse,True,Tudor Pro Cycling Team,588,127.0,38.0,29.9,76,12.9,2026-09-22,2025-12-30
-Eric Antonio,Fagúndez,UY,120,738.4,eric-antonio-fagundez,True,Burgos Burpellet BH,168,563.0,175.4,31.2,48,28.6,2026-09-22,2025-12-30
+Eric Antonio,Fagúndez,UY,120,738.4,eric-antonio-fagundez,False,Burgos Burpellet BH,168,563.0,175.4,31.2,48,28.6,2026-09-22,2025-12-30
 Guillermo Thomas,Silva,UY,35,1679.0,guillermo-thomas-silva-coussan,True,XDS Astana Team,92,883.0,796.0,90.1,57,62.0,2026-09-22,2025-12-30
 Samandar,Janikulov,UZ,987,65.0,samandar-janikulov,True,7 Saber Uzbekistan Cycling Team,1007,60.0,5.0,8.3,20,2.0,2026-09-22,2025-12-30
-Orluis,Aular,VE,185,516.4,orluis-aular,True,Movistar Team,64,1158.4,-642.0,-55.4,-121,-189.1,2026-09-22,2025-12-30
-Francisco Joel,Peñuela,VE,325,301.4,francisco-penuela,True,Caja Rural - Seguros RGA,396,214.0,87.4,40.8,71,17.9,2026-09-22,2025-12-30
+Orluis,Aular,VE,185,516.4,orluis-aular,False,Movistar Team,64,1158.4,-642.0,-55.4,-121,-189.1,2026-09-22,2025-12-30
+Francisco Joel,Peñuela,VE,325,301.4,francisco-penuela,False,Caja Rural - Seguros RGA,396,214.0,87.4,40.8,71,17.9,2026-09-22,2025-12-30
 Byron,Munton,ZA,336,293.0,byron-munton,True,Modern Adventure Pro Cycling,723,95.0,198.0,208.4,387,53.5,2026-09-22,2025-12-30
+Guillaume,Boivin,CA,2435,9.0,guillaume-boivin,True,NSN Cycling Team,847,75.0,-66.0,-88.0,-1588,-187.5,2026-09-22,2025-12-30
+Riley,Sheehan,US,135,662.0,riley-sheehan,True,NSN Cycling Team,209,440.0,222.0,50.5,74,35.4,2026-09-22,2025-12-30
+Vladimir,Kovacik,SK,,,vladimir-kovacik,True,,,,,,,,2026-09-22,2025-12-30
+Aleksandr,Vlasov,AIN,132,672.9,aleksandr-vlasov,True,Red Bull - BORA - hansgrohe,330,260.7,412.2,158.1,198,60.0,2026-09-22,2025-12-30
+Andrea,Mifsud,MT,477,189.0,andrea-mifsud,True,Team Polti VisitMalta,1896,15.0,174.0,1160.0,1419,74.8,2026-09-22,2025-12-30
+Amir Arsalan,Ansari,REF,,,amir-arsalan-ansari,True,,3317,1.0,,,,,2026-09-22,2025-12-30
