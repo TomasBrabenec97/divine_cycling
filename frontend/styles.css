@@ -363,6 +363,30 @@ button.matrix-cell.on { border-color:var(--sage); background:var(--sage); box-sh
  }
 
 .page-links { display:flex; gap:8px; }
+
+/* Winter landing page and shared author footer. */
+.winter-shell { display:flex; min-height:100vh; flex-direction:column; }
+.winter-shell .page-links { justify-content:flex-end; }
+.winter-card { width:min(100%,680px); margin:auto; padding:clamp(28px,7vw,64px); border:1px solid var(--line); background:var(--surface); box-shadow:8px 8px 0 rgba(47,49,54,.08); }
+.winter-card h1 { margin:0; font-size:clamp(58px,12vw,100px); line-height:.9; letter-spacing:-.08em; }
+.winter-card .tagline { margin:12px 0 0; color:var(--muted); font-size:17px; }
+.winter-links { display:flex; width:fit-content; flex-direction:column; align-items:stretch; gap:10px; margin-top:28px; }
+.winter-link { display:inline-flex; min-height:44px; align-items:center; justify-content:center; border:1px solid var(--line); background:var(--paper); padding:10px 16px; color:var(--ink); font-size:15px; font-weight:700; text-align:center; text-decoration:none; transition:background .15s ease,border-color .15s ease,transform .15s ease; }
+.winter-link:hover { transform:translateY(-1px); border-color:var(--terracotta); background:var(--beige-tint); }
+.winter-link:focus-visible { outline:2px solid var(--terracotta); outline-offset:3px; }
+.winter-link-primary { min-height:50px; border-color:var(--terracotta); background:var(--terracotta); padding:12px 20px; color:var(--surface); font-size:17px; }
+.winter-link-primary:hover { border-color:#a9532d; background:#a9532d; color:var(--surface); }
+.winter-message { margin-top:clamp(42px,8vw,76px); padding-top:24px; border-top:1px solid var(--line); }
+.winter-thanks { margin:0 0 20px; color:var(--muted); }
+.winter-message h2 { margin:0; font-size:clamp(32px,7vw,54px); line-height:1.05; letter-spacing:-.04em; }
+.winter-subtitle { margin:12px 0 0; color:var(--muted); font-size:18px; }
+.winter-feedback { margin:32px 0 0; }
+.winter-feedback a { color:var(--ink); font-weight:700; text-decoration-color:var(--terracotta); text-underline-offset:3px; }
+.site-footer { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:8px 18px; margin-top:42px; padding-top:16px; border-top:1px solid var(--line); color:var(--muted); font-size:12px; }
+.strava-link { display:inline-flex; align-items:center; gap:5px; color:var(--ink); font-weight:700; text-decoration:none; }
+.strava-link:hover { color:var(--terracotta); }
+.strava-link svg { width:18px; height:18px; fill:currentColor; }
+@media(max-width:650px) { .winter-shell { padding-top:18px; }.winter-card { margin:48px auto 0; padding:28px 22px; }.winter-links { align-items:stretch; flex-direction:column; }.winter-link { width:100%; }.winter-shell .site-footer { margin-top:28px; }.site-footer { justify-content:flex-start; } }
 #event-meta a { color:var(--ink); text-underline-offset:2px; }
 .deadline-countdown { display:inline-block; margin-left:6px; color:#c0392b; font-weight:700; font-variant-numeric:tabular-nums; }
 .picks-lock-banner { color:#c0392b; font-weight:700; }
