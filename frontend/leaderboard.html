@@ -9,67 +9,18 @@
   <body class="analysis-page">
     <main class="shell">
       <nav class="page-links"><a class="admin-home" href="./">Home</a><a class="admin-home" href="scoring.html">How scoring works</a></nav>
-      <p class="eyebrow">ROAD WORLDS / FINAL RESULTS</p>
-      <h2>Leaderboard</h2><div id="league-scope" class="league-scope hidden"><span id="league-scope-label"></span><div><button type="button" data-league-scope="local">Local league</button><button type="button" data-league-scope="global">Global</button></div></div>
-      <div id="leaderboard" class="card">Loading…</div>
+      <p class="eyebrow" id="event-label">FINAL RESULTS</p>
+      <h2 id="event-name">Leaderboard</h2>
+      <div id="leaderboard" class="card"></div>
       <footer class="site-footer"><span>© 2026 divine.</span><span>Made by Tomas Brabenec</span><a class="strava-link" href="https://www.strava.com/athletes/21578610" target="_blank" rel="noopener noreferrer" aria-label="Tomas Brabenec on Strava" title="Tomas Brabenec on Strava"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169" /></svg><span>Strava</span></a></footer>
     </main>
-    <script src="config.js"></script>
+    <script src="leaderboard-data.js"></script>
     <script src="leaderboard-ui.js"></script>
     <script>
-      const API_BASE_URL = (window.DIVINE_API_BASE_URL || '').replace(/\/$/, '');
-      (async () => {
-        const node = document.querySelector('#leaderboard');
-        const eventResponse = await fetch(`${API_BASE_URL}/api/events/latest-finished`);
-        if (!eventResponse.ok) {
-          let pending = null;
-          try { pending = await (await fetch(`${API_BASE_URL}/api/events/active`)).json(); } catch (_) { /* no upcoming event either */ }
-          const expected = pending?.results_expected_at || pending?.starts_at;
-          if (expected) {
-            const utcExpected = /[zZ]|[+-]\d{2}:\d{2}$/.test(expected) ? expected : `${expected}Z`;
-            const formatted = new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }).format(new Date(utcExpected));
-            node.textContent = `Results aren't in yet. The leaderboard should be ready around ${formatted}, once the race finishes.`;
-          } else {
-            node.textContent = 'Leaderboard is available after the race is finalized.';
-          }
-          return;
-        }
-        const event = await eventResponse.json();
-        let league = null;
-        try {
-          const player = JSON.parse(localStorage.getItem('ten-up-player') || 'null');
-          if (player?.id) {
-            const response = await fetch(`${API_BASE_URL}/api/events/${event.id}/players/${player.id}/league`);
-            if (response.ok) league = (await response.json()).league;
-          }
-        } catch (_) { /* a visitor without a saved player sees the global board */ }
-        const controls = document.querySelector('#league-scope');
-        let scope = league ? 'local' : 'global';
-        if (league) {
-          controls.classList.remove('hidden');
-          document.querySelector('#league-scope-label').textContent = `Local League · ${league.code}`;
-        }
-        const showBoard = async () => {
-          node.textContent = 'Loading…';
-          const suffix = scope === 'local' ? `?league_code=${encodeURIComponent(league.code)}` : '';
-          const response = await fetch(`${API_BASE_URL}/api/events/${event.id}/leaderboard${suffix}`);
-          const board = await response.json();
-          if (!response.ok) throw new Error(board.detail);
-          controls.querySelectorAll('button').forEach(button => {
-            const active = button.dataset.leagueScope === scope;
-            button.classList.toggle('active', active);
-            button.setAttribute('aria-pressed', String(active));
-          });
-          window.renderLeaderboard(node, event, board);
-        };
-        controls.querySelectorAll('button').forEach(button => button.addEventListener('click', () => {
-          scope = button.dataset.leagueScope;
-          showBoard().catch(error => { node.textContent = error.message; });
-        }));
-        await showBoard();
-      })().catch(error => {
-        document.querySelector('#leaderboard').textContent = error.message;
-      });
+      const snapshot = window.DIVINE_LEADERBOARD;
+      document.querySelector('#event-label').textContent = `${snapshot.event.name} / FINAL RESULTS`;
+      document.querySelector('#event-name').textContent = 'Leaderboard';
+      window.renderLeaderboard(document.querySelector('#leaderboard'), snapshot.event, snapshot.leaderboard);
     </script>
   </body>
 </html>
