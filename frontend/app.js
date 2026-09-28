@@ -22,7 +22,10 @@ const state = { event: null, player: null, reference: null, referencePromise: nu
 const $ = (selector) => document.querySelector(selector);
 const isMobileLayout = () => window.matchMedia("(max-width: 650px)").matches;
 const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
-const flag = (country) => `<span class="flag"><img src="flags/${country.toLocaleLowerCase()}.png" alt="${country} flag" /></span>`;
+// Not every startlist `nation` is an ISO country (a neutral-athlete or
+// refugee-team entry has no flag file): fall back to a neutral flag glyph
+// instead of the browser's broken-image icon.
+const flag = (country) => `<span class="flag"><img src="flags/${country.toLocaleLowerCase()}.png" alt="${country} flag" onerror="this.replaceWith('🏳️')" /></span>`;
 const countryName = (country) => {
   try { return countryNames.of(country) || country; } catch (_) { return country; }
 };
